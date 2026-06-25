@@ -129,8 +129,12 @@ body {
 
 /* Stage layout */
 #stage { flex: 1; display: flex; min-height: 0; }
-#board { flex: 1; min-width: 0; position: relative; display: flex; align-items: safe center; justify-content: safe center;
-  background: radial-gradient(circle at 50% 30%, #2c2924, #161410); overflow: auto; padding: 10px; }
+#board { flex: 1; min-width: 0; position: relative; display: flex; overflow: hidden;
+  background: radial-gradient(circle at 50% 30%, #2c2924, #161410); }
+/* Inner scroller: pans when zoomed in; overlays (zoom controls, hint, guide)
+   live in #board and stay pinned regardless of scroll. */
+#viewport { flex: 1; min-width: 0; display: flex; align-items: safe center; justify-content: safe center;
+  overflow: auto; padding: 10px; }
 /* Draggable dividers */
 .vsplit { flex: 0 0 6px; cursor: ew-resize; background: var(--line); position: relative; z-index: 6; }
 .vsplit:hover, .vsplit.dragging { background: var(--accent); }
@@ -142,6 +146,8 @@ body {
   font-size: 12.5px; line-height: 1.45; box-shadow: 0 6px 22px rgba(0,0,0,.5); }
 .pin-tip.hidden { display: none; }
 #resbar .res, #envbar .env, #needsbar .need { cursor: pointer; }
+.res .rnm { color: var(--muted); font-size: 11px; margin: 0 1px; }
+#btn-labels.on { background: var(--accent); color: #2a2107; border-radius: 6px; }
 #game { background: #6f9e4b; border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.5);
   width: 100%; height: auto; image-rendering: auto; cursor: pointer; display: block; }
 /* Zoom controls (bottom-right of the board) */
