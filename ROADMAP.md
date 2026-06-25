@@ -74,6 +74,10 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] Balance pass: tune drains/yields once conveyors & more buildings land.
 
 ### ➕ Add
+- [x] **Seasons & festivals** — the year turns 🌸 Spring → ☀️ Summer → 🍂 Autumn → ❄️ Winter
+      (3 days each), shifting food, breeding & need-drain; each new season opens with a
+      **festival** that lifts morale & compassion (Harvest also gifts food). A gentle calendar
+      of reasons to return.
 - [x] **Compassion & rescue (kindness as a mechanic)** — a colony **Compassion** stat (💗) rises
       with care, generosity (gifts), healing raiders & burials, and falls with bloodshed; high
       compassion **calms predators** and **draws joiners**. **Lost/hurt animals** wander to your

@@ -6,7 +6,8 @@ import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from '.
 import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
-import { stepEnvironment, envMods } from './environment.js';
+import { stepEnvironment, envMods, seasonKey, currentSeason } from './environment.js';
+import { SEASONS } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -91,6 +92,19 @@ export function stepEconomy(state, dt) {
   stepEvents(state, dt);
   stepFactions(state, dt);
   stepRescues(state, dt);
+  // Seasons turn; each new season opens with a festival — a communal lift.
+  {
+    const sk = seasonKey(state);
+    if (state._seasonKey && state._seasonKey !== sk) {
+      const se = currentSeason(state);
+      state.morale = Math.min(100, (state.morale ?? 100) + 8);
+      addCompassion(state, 3);
+      if (se.harvest) addRes(state, 'food', se.harvest);
+      addFx(state, state.world.spawn.x, state.world.spawn.y, se.icon, 2.8);
+      logMsg(state, `${se.icon} ${se.festival}! ${se.blurb} The colony gathers to celebrate — spirits lift.`);
+    }
+    state._seasonKey = sk;
+  }
   // Compassion drifts gently toward 50; a Sanctuary's daily care keeps it high.
   { const c = state.compassion ?? 50; state.compassion = Math.max(0, Math.min(100, c + (50 - c) * 0.002 * dt + (state._sanctuary || 0) * 0.03 * dt)); }
 
@@ -494,7 +508,7 @@ function updateBreeding(state, dt) {
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0));
+  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0)) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
     state.res.food -= 5;

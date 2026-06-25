@@ -1,5 +1,5 @@
 // environment.js — time-of-day (day/night) and weather.
-import { DAY_SECONDS, DAWN, DUSK, WEATHERS, BIOMES, TICKS_PER_SEC } from './config.js';
+import { DAY_SECONDS, DAWN, DUSK, WEATHERS, BIOMES, TICKS_PER_SEC, SEASONS, SEASON_ORDER, DAYS_PER_SEASON } from './config.js';
 
 // Fraction through the current day, 0..1 (0 = midnight, 0.5 = noon).
 export function dayFraction(state) {
@@ -18,6 +18,12 @@ export function clockString(state) {
 }
 
 export function currentWeather(state) { return WEATHERS[state.env?.weather] || WEATHERS.clear; }
+
+// The current season cycles every DAYS_PER_SEASON in-game days.
+export function seasonKey(state) {
+  return SEASON_ORDER[Math.floor((dayNumber(state) - 1) / DAYS_PER_SEASON) % SEASON_ORDER.length];
+}
+export function currentSeason(state) { return SEASONS[seasonKey(state)] || SEASONS.spring; }
 
 export function initEnv(state) {
   // dayTime = clock position; lived = total seconds actually played (for pacing).
@@ -50,16 +56,18 @@ export function stepEnvironment(state, dt) {
 // Combined environmental modifiers used by economy.js / events.js.
 export function envMods(state) {
   const w = currentWeather(state).effects || {};
+  const s = currentSeason(state); // seasonal shifts stack on top of weather
   const night = isNight(state);
   return {
-    foodMul: w.foodMul || 0,
+    foodMul: (w.foodMul || 0) + (s.foodMul || 0),
     mineMul: w.mineMul || 0,
     speedMul: (w.speedMul || 0) + (night ? -0.0 : 0),
     powerGain: w.powerGain || 0,
     waterGain: w.waterGain || 0,
-    needDrain: (w.needDrain || 0) + (w.healthDrain ? 0 : 0),
-    healthDrain: w.healthDrain || 0,
-    revealMul: w.revealMul || 0,
+    needDrain: (w.needDrain || 0) + (s.needDrain || 0),
+    healthDrain: (w.healthDrain || 0) + (s.healthDrain || 0),
+    revealMul: (w.revealMul || 0) + (s.revealMul || 0),
+    seasonBreed: s.breed || 0,
     // Predators are bolder at night; weather can help or hurt specific ones.
     hazardMul: {
       hawk: (w.hawkMul || 0) + (night ? 0.2 : -0.1),

@@ -661,6 +661,19 @@ export const STARTING = {
   storageCap: 300,
 };
 
+// ---- Seasons & festivals ---------------------------------------------------
+// The year turns spring → summer → autumn → winter; each season shifts food,
+// needs & breeding, and opens with a festival (a communal lift to morale &
+// compassion). A gentle calendar of reasons to come back.
+export const DAYS_PER_SEASON = 3; // four seasons → a 12-day year
+export const SEASON_ORDER = ['spring', 'summer', 'autumn', 'winter'];
+export const SEASONS = {
+  spring: { name: 'Spring', icon: '🌸', foodMul: 0.30, breed: 0.5, needDrain: -0.05, festival: 'Bloom Festival',   blurb: 'New life stirs — crops flourish and families grow.' },
+  summer: { name: 'Summer', icon: '☀️', foodMul: 0.15, breed: 0.1, needDrain: 0.06, revealMul: 0.1, festival: 'Sun Festival', blurb: 'Long bright days — far sight, but thirsty work.' },
+  autumn: { name: 'Autumn', icon: '🍂', foodMul: 0.40, breed: 0.2, festival: 'Harvest Festival', harvest: 35,       blurb: 'The great harvest — stores brim before the cold.' },
+  winter: { name: 'Winter', icon: '❄️', foodMul: -0.30, breed: -0.2, needDrain: 0.12, healthDrain: 0.02, festival: 'Winter Gathering', blurb: 'Lean and cold — the colony huddles close and shares.' },
+};
+
 // ---- Rescues (kindness) ----------------------------------------------------
 // Lost / hurt animals wander to the edge of your colony; take them in for a
 // Compassion & morale boost. A Sanctuary makes them arrive far more often.

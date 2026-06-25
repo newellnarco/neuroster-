@@ -3,7 +3,7 @@ import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIO
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
 import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
-import { dayNumber, clockString, currentWeather, isNight } from './environment.js';
+import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
 import { computeAlerts } from './alerts.js';
 import { MEGAPROJECTS } from './config.js';
@@ -34,6 +34,7 @@ export function createUI(state, ctx) {
       `<span class="env founder" id="founder-chip" title="Your founder hamster — click to rename (once every 30 days)">🐹 ${f.name} · ${BREEDS[f.breed]?.name || ''}</span>` +
       `<span class="env" title="Biome">${biome.icon} ${biome.name}</span>` +
       `<span class="env" title="In-game day & time (1 day = 15 min)">${isNight(state) ? '🌙' : '☀️'} Day ${dayNumber(state)} · ${clockString(state)}</span>` +
+      `<span class="env" title="Season — shifts food, breeding & needs; each new season opens with a festival">${currentSeason(state).icon} ${currentSeason(state).name}</span>` +
       `<span class="env" title="${w.name}: ${w.desc}">${w.icon} ${w.name}</span>` +
       `<span class="env" title="Your highest rodent level — gates advanced content">🎖️ Main Lv.${mainLevel(state)}</span>` +
       `<span class="env" title="Population / cap">👥 ${population(state)}/${state.popCap}</span>` +
