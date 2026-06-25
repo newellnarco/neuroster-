@@ -148,14 +148,40 @@ The game should **reward interaction without punishing absence-for-a-few-minutes
 
 ## Continue here (next session)
 
-- The game is fully playable end-to-end: character creation (breed + name + biome) →
-  fog-revealed world → gather/build/refine → manage per-creature needs & sleep →
-  level up, research skills, evolve species → survive weather, day/night, predators &
-  disasters. Autosaves; no offline progress by design.
-- **Best next step:** implement **Arc 2 — conveyor belt tiers** (placeable logistics that
-  move resources automatically), since it's the keystone for the automation arc and is
-  referenced throughout the original design. Data scaffold: add belt buildings to
-  `BUILDINGS` with a `belt: { tier, throughput }` field and a transport pass in
-  `economy.js` that ships from mines/nodes to nearest storage.
-- After that, **Arc 15 — AI colonies** is the biggest fun multiplier.
-- Keep verifying with the headless + Playwright smoke tests before each push.
+**Current state (all verified, on branch `claude/hamster-game-design-jz3j0f`, PR #1):**
+The game is a deep, fully-playable colony sim. End-to-end loop:
+character creation (breed + name + **difficulty** + **density** + biome) → fog-revealed,
+biome-shaped world → rodents gather **surface** resources (receding 2.5D trees/rocks/
+bushes) & **mine** underground seams → **timed construction** (workers build; more = faster)
+→ refine (**wheat→grain→pellets**, **wood/iron/steel/plastic**, food chain) → automate
+(wheels, **wood→plastic→metal conveyors**, mines, caretakers) → manage **per-creature
+needs/sleep/bond**, **sanitation** (poop → wet tail → vet, **burrow upkeep**, **sand baths**,
+compost→fertilizer) → **lead** (Town Hall equity vs resentment) → **diplomacy** (Trading Hut,
+alliances, faction raids) → **morale/ethics** (bury the dead in tiered graves, heal raiders
+for mercy vs kill) → survive **day/night, weather, predators, biome-unique disasters,
+floods (floodable mines)** with tunnels/walls/towers/levees/species guards. Milestones,
+autosave (no offline progress), and a **deployable server (Docker, configurable IP/port)**.
+
+**Architecture reminders:**
+- Data-driven: most content lives in `src/config.js`. Engine in `src/*.js` (ESM).
+- Per-tick sim order in `economy.js`: environment → AI → construction/burrows → recompute
+  → leadership → production → needs → exploration → sanitation/disease → breeding/loyalty/
+  morale → events/factions → milestones/fx.
+- `state._laborFactor`, `_leadership`, `_envMods`, `_hygiene` etc. are per-tick caches.
+- Verify every change with: `node --check` all files, a headless `stepEconomy` smoke
+  (see scratchpad history), and a Playwright load (zero console errors).
+
+**Best next steps (highest value first):**
+1. **AI colonies as living neighbours** — the factions are economic only; give them a
+   presence on the map (camps, caravans, visible raids) and richer diplomacy. Biggest
+   "turns a builder into a world" multiplier.
+2. **Notifications/alerts** — surface critical needs / imminent raids / degraded burrows
+   as a HUD banner (retention; pairs with milestones already shipped).
+3. **Megaprojects** — multi-session goals (Grand Wheel powers the whole colony; Citadel =
+   ultimate defense) with large cumulative costs.
+4. **True pathfinding** (bigger refactor) — makes tunnels physically gate movement,
+   gophers travel underground, and dams use real river geography (currently abstracted).
+5. **Audio + tutorial/onboarding**, then **save slots / export-import**.
+
+**Known abstractions (logged, not bugs):** tunnel movement-gating, gopher underground
+travel, dam upstream geography, and belt "networks" are approximated (no pathfinding).
