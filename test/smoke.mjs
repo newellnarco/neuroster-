@@ -120,4 +120,17 @@ console.log('Faction camps & caravans:');
   ok('camps & caravans persist through save/load');
 }
 
+// 5) Enrichment buildings: curiosity boost with a capped distraction tradeoff.
+console.log('Enrichment / distraction:');
+{
+  const s = newGame(5, 'woodland', 'syrian', 'Fun', {});
+  // Pile on maze (distract 0.07) — total distraction must cap at 0.2.
+  for (let i = 0; i < 6; i++) s.buildings.push({ id: 100 + i, type: 'maze', x: 2 + i, y: 2, active: true });
+  stepEconomy(s, 0.1);
+  assert(s._distract <= 0.2 + 1e-9, `distraction should cap at 0.2 (got ${s._distract})`);
+  assert(s._distract > 0, 'mazes should register distraction');
+  assert(s._funBld >= 14 * 6, `enrichment should raise colony fun building total (got ${s._funBld})`);
+  ok(`enrichment raises fun (${s._funBld}) and distraction caps at ${s._distract.toFixed(2)}`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

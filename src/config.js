@@ -105,6 +105,18 @@ export const BUILDINGS = {
     name: 'Playground', icon: '🎠', desc: 'Enrichment: raises colony Curiosity & happiness.',
     cost: { wood: 30, planks: 10 }, category: 'Wellbeing', curiosity: 6,
   },
+  toybox: {
+    name: 'Toy Box', icon: '🧸', desc: 'Cheap enrichment — a few toys to nibble & shove. Small Curiosity boost.',
+    cost: { wood: 14, seeds: 6 }, category: 'Wellbeing', curiosity: 4,
+  },
+  funwheel: {
+    name: 'Fun Wheel', icon: '🎡', desc: 'A wheel just for play. Big Curiosity boost, but rodents at play work a little less (distraction).',
+    cost: { wood: 24, planks: 10 }, category: 'Wellbeing', curiosity: 9, distract: 0.04,
+  },
+  maze: {
+    name: 'Hedge Maze', icon: '🌀', desc: 'A puzzle to explore — huge Curiosity relief, but the most distracting (output dips).',
+    cost: { wood: 30, planks: 16, seeds: 12 }, category: 'Wellbeing', curiosity: 14, distract: 0.07,
+  },
   infirmary: {
     name: 'Infirmary', icon: '🏥', desc: 'Tends sick & injured rodents. Raises Health.',
     cost: { planks: 20, iron: 5 }, category: 'Wellbeing', health: 6,

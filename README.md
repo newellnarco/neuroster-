@@ -136,6 +136,9 @@ docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neurost
 - **Sound effects** (synthesised, no asset files): satisfying cues for caring for a rodent,
   placing/finishing buildings, level-ups, milestones, trades, births, and warnings (raids /
   critical needs). Toggle with the **🔊** button — your choice is remembered.
+- **Enrichment & the boredom↔curiosity loop**: build a **🧸 Toy Box**, **🎡 Fun Wheel** or
+  **🌀 Hedge Maze** to keep rodents happy — but the wheel and maze are *distracting*, trading
+  a little colony output for big Fun (a deliberate, capped tradeoff).
 - **Persistent, login-gated time**: autosaves; there is **no offline progress** — the
   world is exactly as you left it.
 
