@@ -8,7 +8,7 @@ import { MILESTONES } from './milestones.js';
 import { computeAlerts } from './alerts.js';
 import { MEGAPROJECTS, DECREES } from './config.js';
 import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount, costText as megaCostText } from './megaprojects.js';
-import { resolveDecree, choiceAllowed } from './decrees.js';
+import { resolveDecree, choiceAllowed, dismissDecree } from './decrees.js';
 import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
 import { learnDoctrine, doctrineStatus, hasDoctrine, doctrineCount } from './doctrines.js';
 
@@ -21,12 +21,14 @@ export function createUI(state, ctx) {
   // ---- Resource bar ----
   function renderResbar() {
     const order = ['wood', 'stone', 'ironore', 'coal', 'seeds', 'water', 'food', 'planks', 'iron', 'power', 'research'];
+    const labels = !!view.showLabels;
     el('resbar').innerHTML = order.map(k => {
       const r = RESOURCES[k];
       const tip = `${r.icon} ${r.name} — ${RESDESC[k] || 'a colony resource'} (click to pin)`;
-      return `<span class="res" title="${escHtml(tip)}">${r.icon}<b>${fmt(state.res[k] || 0)}</b></span>`;
+      const nm = labels ? `<span class="rnm">${escHtml(r.name)}</span>` : '';
+      return `<span class="res" title="${escHtml(tip)}">${r.icon}${nm}<b>${fmt(state.res[k] || 0)}</b></span>`;
     }).join('') +
-      `<span class="res storage" title="Storage used / cap — build Storage Depots to raise the cap; surplus over the cap is wasted (click to pin)">📦<b>${fmt(totalStored(state))}/${state.storageCap}</b></span>`;
+      `<span class="res storage" title="Storage used / cap — build Storage Depots to raise the cap; surplus over the cap is wasted (click to pin)">📦${labels ? '<span class="rnm">Storage</span>' : ''}<b>${fmt(totalStored(state))}/${state.storageCap}</b></span>`;
   }
 
   // ---- Environment bar (biome, day/clock, weather, level, defense) ----
@@ -400,6 +402,17 @@ export function createUI(state, ctx) {
       sync();
       el('btn-mute').onclick = () => { audio.toggle(); sync(); if (!audio.isMuted()) sfx('click'); };
     }
+    // Resource name labels toggle (persisted) — show names instead of relying on hover/click.
+    try { view.showLabels = localStorage.getItem('neuroster.resLabels') === '1'; } catch {}
+    if (el('btn-labels')) {
+      const syncL = () => el('btn-labels').classList.toggle('on', !!view.showLabels);
+      syncL();
+      el('btn-labels').onclick = () => {
+        view.showLabels = !view.showLabels;
+        try { localStorage.setItem('neuroster.resLabels', view.showLabels ? '1' : '0'); } catch {}
+        syncL(); renderResbar(); sfx('click');
+      };
+    }
     // Auto-open the guide on a player's very first visit.
     try { if (!localStorage.getItem('neuroster.seenHelp')) showHelp(); } catch {}
     // Founder rename (delegated click on the env bar chip).
@@ -458,15 +471,15 @@ export function createUI(state, ctx) {
       <p>${escHtml(d.prompt.replace('the neighbour', fac || 'a neighbour'))}</p>
       <div class="cat">Your judgement — there is no free answer</div>
       <div class="grid decree-grid">${choices}</div>
-      <div class="hint">⚖️ Justice ${Math.round(state.justice ?? 50)} · 💗 Compassion ${Math.round(state.compassion ?? 50)} — if you do not decide, the colony will, and dithering costs morale.</div>`;
+      <div class="hint">⚖️ Justice ${Math.round(state.justice ?? 50)} · 💗 Compassion ${Math.round(state.compassion ?? 50)} — don't want to choose? Leave it to the town and they'll decide.</div>
+      <button id="decree-dismiss" class="modal-cancel">🏛️ Let the town decide</button>`;
     m.classList.remove('hidden');
     decreeOpen = true;
+    const close = () => { m.classList.add('hidden'); decreeOpen = false; renderEnv(); renderResbar(); renderRodents(); renderLog(); };
     card.querySelectorAll('[data-choice]').forEach(b => b.onclick = () => {
-      if (resolveDecree(state, +b.dataset.choice)) {
-        sfx('care'); m.classList.add('hidden'); decreeOpen = false;
-        renderEnv(); renderResbar(); renderRodents(); renderLog();
-      }
+      if (resolveDecree(state, +b.dataset.choice)) { sfx('care'); close(); }
     });
+    card.querySelector('#decree-dismiss').onclick = () => { if (dismissDecree(state)) { sfx('click'); close(); } };
   }
 
   // ---- How-to-Play overlay ----

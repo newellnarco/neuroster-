@@ -57,6 +57,21 @@ export function resolveDecree(state, idx) {
   return true;
 }
 
+// Player deliberately defers — the town council decides (its default course).
+// A deliberate hand-off, so no indecision penalty (unlike letting it time out).
+export function dismissDecree(state) {
+  if (!state.decree) return false;
+  const d = DECREES[state.decree.id];
+  if (!d) { state.decree = null; return false; }
+  let idx = d.choices.findIndex(c => c.default && choiceAllowed(state, c));
+  if (idx < 0) idx = d.choices.findIndex(c => choiceAllowed(state, c));
+  if (idx < 0) idx = 0;
+  logMsg(state, '🏛️ You leave the decision to the town council.');
+  applyEffect(state, d.choices[idx], state.decree);
+  state.decree = null;
+  return true;
+}
+
 function autoResolve(state) {
   const d = DECREES[state.decree?.id];
   if (!d) { state.decree = null; return; }

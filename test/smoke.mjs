@@ -333,6 +333,14 @@ console.log('Justice & decrees:');
   s._courts = 1; assert(choiceAllowed(s, mercy), 'a Courthouse unlocks the merciful verdict');
   ok('Courthouse gates the merciful raider verdict');
 
+  // "Let the town decide": deliberately defer → the default course, no penalty.
+  s.justice = 50; s.morale = 80; s.decree = { id: 'triage', life: 75, born: 0 };
+  const { dismissDecree } = await import('../src/decrees.js');
+  const dm = dismissDecree(s);
+  assert(dm && s.decree === null, 'dismissing a decree resolves it (town decides)');
+  assert(s.morale >= 74, 'deferring to the town carries no indecision penalty beyond the choice itself');
+  ok('a decree can be deferred to the town council');
+
   // Dithering auto-resolves a pending decree (and costs a little morale).
   s.morale = 80; s.decree = { id: 'triage', life: 0.05, born: 0 };
   s.env.lived = 9999; // past the decree grace window
