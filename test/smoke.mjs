@@ -443,4 +443,41 @@ console.log('Palette:');
   ok(`64-colour palette: ${PAL.length} unique, quantises & ramps correctly`);
 }
 
+// 16) Pollution & power variety (environmental tradeoffs).
+console.log('Pollution & power:');
+{
+  const { BUILDINGS, POLLUTION } = await import('../src/config.js');
+  // New power buildings exist with the right traits.
+  assert(BUILDINGS.coalplant?.pollutes > 0 && BUILDINGS.coalplant.produces.power, 'coal plant makes power & pollutes');
+  assert(BUILDINGS.solar?.solar && !BUILDINGS.solar.pollutes, 'solar is clean & sun-driven');
+  assert(BUILDINGS.hydro?.upstreamPenalty && BUILDINGS.hydro.produces.power, 'hydro makes power & throttles upstream');
+  assert(!BUILDINGS.wheel?.pollutes, 'the plain wheel stays clean');
+  ok('power buildings: coal (dirty), solar (sun), hydro (upstream), wheel (clean)');
+
+  // A running coal plant raises pollution; pollution drains health when high.
+  const s = newGame(95, 'prairie', 'syrian', 'Smog', {}); // prairie: few trees to scrub
+  s.res.coal = 9999; s.res.stone = 9999; s.res.iron = 9999;
+  const sp = s.world.spawn;
+  for (let i = 0; i < 4; i++) s.buildings.push({ type: 'coalplant', x: sp.x + i, y: sp.y });
+  const p0 = s.pollution;
+  for (let i = 0; i < 200; i++) stepEconomy(s, 0.2);
+  assert(s.pollution > p0 + 4, `coal plants raise pollution (${p0}→${s.pollution.toFixed(1)})`);
+  ok(`coal plants raise pollution to ${s.pollution.toFixed(1)}`);
+
+  // Pollution cuts farm yield: same farm makes less food at high pollution.
+  function farmOutput(pollution) {
+    const g = newGame(96, 'prairie', 'syrian', 'Farm', {});
+    g.res = { wood: 0, stone: 0, water: 0, food: 0, seeds: 120 }; // leave storage room for the harvest
+    g.pollution = pollution;
+    g.units.forEach(u => u.needs.food = 100); // keep them from eating the output
+    const f = g.world.spawn;
+    g.buildings.push({ type: 'storage', x: f.x + 1, y: f.y }, { type: 'storage', x: f.x + 2, y: f.y }); // +400 cap
+    g.buildings.push({ type: 'farm', x: f.x, y: f.y });
+    const before = g.res.food; for (let i = 0; i < 25; i++) stepEconomy(g, 0.2); return g.res.food - before;
+  }
+  const clean = farmOutput(0), dirty = farmOutput(90);
+  assert(dirty < clean, `heavy pollution cuts farm output (${clean.toFixed(1)} → ${dirty.toFixed(1)})`);
+  ok(`pollution poisons farms (clean ${clean.toFixed(1)} > dirty ${dirty.toFixed(1)})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

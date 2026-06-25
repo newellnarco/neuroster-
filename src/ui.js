@@ -47,6 +47,7 @@ export function createUI(state, ctx) {
       `<span class="env${state.decree ? ' decree-due' : ''}" title="Justice / Order — fair, firm rule raises it; wrongs left unanswered lower it. High Justice deters raiders. Decrees trade Justice against Compassion.">⚖️ ${Math.round(state.justice ?? 50)}</span>` +
       (((state.truceUntil || 0) > (state.env?.lived || 0)) ? `<span class="env" title="A brokered truce — raiders & predators hold off until it lapses.">🕊️ Truce ${Math.max(0, Math.ceil((state.truceUntil - (state.env?.lived || 0)) / 60))}m</span>` : '') +
       `<span class="env" title="Valor — martial pride, morally neutral. Rises by standing and winning fights. A proud, battle-hardened colony is fierce & happy in its strength (the Spartan path).">🦁 ${Math.round(state.valor ?? 20)}</span>` +
+      (((state.pollution ?? 0) > 8) ? `<span class="env${(state.pollution > 45) ? ' decree-due' : ''}" title="Pollution — coal industry (coal plant, smelter, steelworks, refinery, electric wheel) emits smog. It poisons farm yield and, when high, sickens rodents. Forests scrub it; clean power (wheels, solar, hydro) emits none.">🏭 ${Math.round(state.pollution)}</span>` : '') +
       `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
       `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>` +
       (megaCount(state) ? `<span class="env" title="Megaprojects completed — permanent colony-wide wonders">🏛️ ${megaCount(state)}</span>` : '');
