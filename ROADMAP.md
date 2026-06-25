@@ -58,7 +58,7 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 17c | Milestones / achievements | ✅ Shipped | 16 goals with reward drip + HUD tracker (retention) |
 | 17d | Sand Bath + burrow upkeep | ✅ Shipped | Sand Bath cleans hamsters (health + anti-wet-tail hygiene); **burrows degrade if not cleaned** (lose housing/breeding) — caretakers auto-clean or click to clean |
 | 17e | Deployment | ✅ Shipped | Zero-dep configurable server (HOST/IP/PORT), Docker + compose, /healthz |
-| 18 | Animation & realism polish | 🟡 Ongoing | Swaying trees/crops, chimney smoke, water droplets, lab glow, fireflies/pollen, rodent ear-twitch/sniff. **Synthesised audio cues** (`audio.js`) for care/build/level/milestone/trade/birth/raid/alarm + a 🔊 mute toggle. More to add (ambient loop, more building anims). |
+| 18 | Animation & realism polish | 🟡 Ongoing | Swaying trees/crops, chimney smoke, water droplets, lab glow, fireflies/pollen, rodent ear-twitch/sniff. **Synthesised audio** (`audio.js`): UI/action cues + a living **ambient soundscape** — wind, rain, running water & fire beds that follow weather/biome, plus scheduled **birds (day), crickets (night), happy chittering/purring (only when safe & content), nibbling, thunder**, and a **scared hamster scream** on raids. 🔊 mute toggle. |
 
 ---
 

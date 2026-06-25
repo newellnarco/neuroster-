@@ -463,7 +463,7 @@ export function createUI(state, ctx) {
       if (cur.miles > prev.miles) sfx('milestone');
       else if (cur.lvl > prev.lvl) sfx('level');
       else if (cur.pop > prev.pop) sfx('born');
-      if (cur.raidId > prev.raidId) sfx('raid');
+      if (cur.raidId > prev.raidId) { sfx('raid'); sfx('scream'); } // attack — the colony panics
     }
     prev = cur;
   }
@@ -475,6 +475,14 @@ export function createUI(state, ctx) {
     acc += dt;
     if (acc > 0.5) {
       acc = 0; renderLog(); renderAlerts(); renderGuide();
+      audio.updateAmbient?.({
+        weather: state.env?.weather,
+        biome: state.world?.biome,
+        night: isNight(state),
+        hasUnits: state.units.length > 0,
+        fire: (state._fireUntil || 0) > (state.env?.lived || 0),
+        happy: (state.morale ?? 100) >= 55 && wellbeingMul(state) > 0.8, // chitter only when safe & content
+      });
       const active = (tab) => el('tab-' + tab).classList.contains('active');
       if (active('rodents')) renderRodents();
       if (active('threats')) renderThreats();

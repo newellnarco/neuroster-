@@ -156,6 +156,7 @@ function fireDisaster(state, key, d, elapsed) {
       break;
     }
     case 'burn': {
+      state._fireUntil = (state.env?.lived || 0) + 18; // crackling fire ambience for a while
       const gone = destroyRandomBuilding(state, Math.max(1, Math.round(sev / 14)));
       damageTunnels(state, sev);
       // wildfire also scorches nearby forests/bushes
