@@ -74,6 +74,10 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] Balance pass: tune drains/yields once conveyors & more buildings land.
 
 ### ➕ Add
+- [x] **Founder coat + creation polish** — choose **coat colour** (9 options) & **pattern**
+      (classic/solid/patched) reflected on the founder rodent, a **🎲 Surprise me** randomiser,
+      and a **predators & disasters On/Off** toggle (peaceful mode). Map-size option still pending
+      (needs a GRID_W/H → per-world dimensions refactor).
 - [x] **Bridges** — buildable over water (and tunnels), tiered **wood→stone→steel** with HP,
       reusing the tunnel-tier system (`fortTiers`); wood **burns** in wildfire / **washes away**
       in floods; click to upgrade/repair; contributes flood protection.

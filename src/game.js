@@ -21,7 +21,7 @@ export function startGame(canvas) {
   if (pending) {
     localStorage.removeItem(START_KEY);
     const opt = JSON.parse(pending);
-    state = newGame(undefined, opt.biome || 'woodland', opt.breed || 'syrian', opt.name || null, { difficulty: opt.difficulty, density: opt.density });
+    state = newGame(undefined, opt.biome || 'woodland', opt.breed || 'syrian', opt.name || null, { difficulty: opt.difficulty, density: opt.density, disasters: opt.disasters, coat: opt.coat });
     startNewSlot(state); // each new colony is its own hamster slot
   } else {
     state = loadGame() || newGame();

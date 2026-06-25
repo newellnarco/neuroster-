@@ -1,5 +1,5 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, TILE, xpForLevel } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, xpForLevel } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
 import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
@@ -366,24 +366,39 @@ export function createUI(state, ctx) {
     try { localStorage.setItem('neuroster.seenHelp', '1'); } catch {}
   }
 
-  // ---- Character creation: breed + name + biome ----
+  // ---- Character creation: breed + coat + name + options + biome ----
   function showCharacterCreation() {
-    const sel = { breed: 'syrian', difficulty: 'normal', density: 'normal', name: HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)] };
+    const rnd = (o) => { const k = Object.keys(o); return k[Math.floor(Math.random() * k.length)]; };
+    const sel = {
+      breed: 'syrian', difficulty: 'normal', density: 'normal', disasters: 'on',
+      coatcolor: 'golden', coatpattern: 'classic',
+      name: HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)],
+    };
+    const DISASTER_OPTS = {
+      on:  { icon: '⚡', name: 'On',  desc: 'Predators, disasters & raids strike — the full challenge.' },
+      off: { icon: '🕊️', name: 'Off', desc: 'Peaceful — build in calm, no predators/disasters/raids.' },
+    };
     const card = el('biome-modal').querySelector('.modal-card');
     const optRow = (group, data) => `<div class="grid" id="cc-${group}">${Object.entries(data).map(([k, v]) =>
       `<button class="card opt" data-${group}="${k}"><div class="ico">${v.icon}</div><div class="nm">${v.name}</div><div class="ds">${v.desc}</div></button>`).join('')}</div>`;
     card.innerHTML = `
       <h2>🐹 Found a New Colony</h2>
       <p>Create your founder hamster, set the challenge, then choose a biome to begin.</p>
+      <button id="cc-surprise" class="cc-surprise">🎲 Surprise me</button>
       <div class="cat">Breed</div>
       <div class="grid" id="cc-breed">${Object.entries(BREEDS).map(([k, b]) =>
         `<button class="card opt" data-breed="${k}"><div class="ico">${b.icon}</div>
           <div class="nm">${b.name}</div><div class="ds">${b.desc}</div></button>`).join('')}</div>
-      <div class="cat">Difficulty</div>${optRow('difficulty', DIFFICULTIES)}
-      <div class="cat">Resource density</div>${optRow('density', DENSITIES)}
+      <div class="cat">Coat colour</div>
+      <div class="grid coats" id="cc-coatcolor">${Object.entries(COAT_COLORS).map(([k, c]) =>
+        `<button class="card opt coat" data-coatcolor="${k}"><div class="swatch" style="background:${c.body}"></div><div class="nm">${c.name}</div></button>`).join('')}</div>
+      <div class="cat">Coat pattern</div>${optRow('coatpattern', COAT_PATTERNS)}
       <div class="cat">Name</div>
       <div class="namerow"><input id="cc-name" value="${sel.name}" maxlength="16" />
         <button id="cc-roll" title="Random name">🎲</button></div>
+      <div class="cat">Difficulty</div>${optRow('difficulty', DIFFICULTIES)}
+      <div class="cat">Resource density</div>${optRow('density', DENSITIES)}
+      <div class="cat">Predators &amp; disasters</div>${optRow('disasters', DISASTER_OPTS)}
       <div class="cat">Biome — pick to begin</div>
       <div class="grid" id="cc-biomes">${Object.entries(BIOMES).map(([k, b]) =>
         `<button class="card" data-biome="${k}"><div class="ico">${b.icon}</div>
@@ -391,17 +406,30 @@ export function createUI(state, ctx) {
       <button id="cc-cancel" class="modal-cancel">Cancel</button>`;
     el('biome-modal').classList.remove('hidden');
 
+    const marks = [];
     const wire = (group) => {
       const btns = card.querySelectorAll(`[data-${group}]`);
       const mark = () => btns.forEach(b => b.classList.toggle('sel', b.dataset[group] === sel[group]));
       btns.forEach(b => b.onclick = () => { sel[group] = b.dataset[group]; mark(); });
-      mark();
+      marks.push(mark); mark();
     };
-    wire('breed'); wire('difficulty'); wire('density');
-    card.querySelector('#cc-roll').onclick = () => { sel.name = HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)]; card.querySelector('#cc-name').value = sel.name; };
+    wire('breed'); wire('coatcolor'); wire('coatpattern'); wire('difficulty'); wire('density'); wire('disasters');
+    const nameInput = card.querySelector('#cc-name');
+    card.querySelector('#cc-roll').onclick = () => { sel.name = HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)]; nameInput.value = sel.name; };
+    card.querySelector('#cc-surprise').onclick = () => {
+      sel.breed = rnd(BREEDS); sel.coatcolor = rnd(COAT_COLORS); sel.coatpattern = rnd(COAT_PATTERNS);
+      sel.name = HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)]; nameInput.value = sel.name;
+      marks.forEach(m => m());
+    };
     card.querySelector('#cc-cancel').onclick = () => el('biome-modal').classList.add('hidden');
     card.querySelectorAll('[data-biome]').forEach(btn => {
-      btn.onclick = () => ctx.onNewGame({ biome: btn.dataset.biome, breed: sel.breed, name: card.querySelector('#cc-name').value.trim() || sel.name, difficulty: sel.difficulty, density: sel.density });
+      btn.onclick = () => ctx.onNewGame({
+        biome: btn.dataset.biome, breed: sel.breed,
+        name: nameInput.value.trim() || sel.name,
+        difficulty: sel.difficulty, density: sel.density,
+        disasters: sel.disasters === 'on',
+        coat: { color: sel.coatcolor, pattern: sel.coatpattern },
+      });
     });
   }
 

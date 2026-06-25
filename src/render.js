@@ -1,6 +1,6 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather } from './environment.js';
 
@@ -573,10 +573,23 @@ export function createRenderer(canvas, state, getView) {
       const moved = Math.hypot(dx, u.y - ly);
       u._rx = u.x; u._ry = u.y;
       const cx = u.x * TILE + TILE / 2, cy = u.y * TILE + TILE / 2;
-      drawCreatureRaw(cx, cy, u._face || 1, VIS[u.species] || VIS.hamster, t * 12 + u.id * 1.7, moved > 0.0015 && u.phase !== 'sleep', u.phase === 'sleep', !!u.carrying, t, u);
+      drawCreatureRaw(cx, cy, u._face || 1, coatFor(u), t * 12 + u.id * 1.7, moved > 0.0015 && u.phase !== 'sleep', u.phase === 'sleep', !!u.carrying, t, u);
       if (u.sick) glyph('🤢', cx + 9, cy - 11, 12); // wet tail
       if (view.selUnit === u.id) { ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, (VIS[u.species]?.size || 15) + 3, 0, 7); ctx.stroke(); }
     }
+  }
+
+  // The founder wears its chosen coat (colour + pattern); everyone else uses
+  // their species defaults.
+  function coatFor(u) {
+    if (u && u.founder && state.founder?.coat) {
+      const c = COAT_COLORS[state.founder.coat.color] || COAT_COLORS.golden;
+      const pat = state.founder.coat.pattern;
+      const belly = pat === 'solid' ? c.body : c.belly;
+      const patch = pat === 'patched' ? (isLight(c.body) ? '#5a5560' : '#f0ead8') : null;
+      return { ...VIS.hamster, body: c.body, belly, patch };
+    }
+    return VIS[u.species] || VIS.hamster;
   }
 
   function drawCreatureRaw(cx, cy, face, vis, legPhase, walking, sleeping, carrying, t = 0, u = null) {
@@ -603,6 +616,7 @@ export function createRenderer(canvas, state, getView) {
     ctx.fillStyle = shade(vis.body, -0.2);
     foot(-3 * s, 6 * s + swing, s); foot(3 * s, 6 * s - swing, s);
     ctx.fillStyle = vis.body; ctx.beginPath(); ctx.ellipse(0, 0, 8 * s, 6 * s, 0, 0, 7); ctx.fill();
+    if (vis.patch) { ctx.fillStyle = vis.patch; ctx.beginPath(); ctx.ellipse(-2 * s, -1.5 * s, 3.4 * s, 2.6 * s, 0, 0, 7); ctx.fill(); } // coat patch
     ctx.fillStyle = vis.belly; ctx.beginPath(); ctx.ellipse(1.5 * s, 2 * s, 4.5 * s, 3.2 * s, 0, 0, 7); ctx.fill();
     const hx = 6.5 * s;
     // idle head bob (sniffing) when not walking
@@ -677,6 +691,7 @@ function rgba(c, a) {
   if (c.startsWith('rgb(')) return c.replace('rgb(', 'rgba(').replace(')', `,${a})`);
   return c;
 }
+function isLight(hex) { const c = hex.replace('#', ''); const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16); return (r * 0.299 + g * 0.587 + b * 0.114) > 150; }
 function hash(x, y) { let h = (x * 73856093) ^ (y * 19349663); h = (h ^ (h >>> 13)) >>> 0; return h; }
 function rnd(h, salt) { let v = (h ^ (salt * 2654435761)) >>> 0; v = (v ^ (v >>> 15)) >>> 0; return (v % 10000) / 10000; }
 function shade(hex, amt) {
