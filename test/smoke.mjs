@@ -250,4 +250,30 @@ console.log('Family & inheritance:');
   ok(`child "${child.name} ${child.family}" inherits coat & traits from ${a.name} & ${b.name}`);
 }
 
+// 11) Compassion & rescue (kindness as a mechanic).
+console.log('Compassion & rescue:');
+{
+  const { addCompassion } = await import('../src/state.js');
+  const { takeInRescue } = await import('../src/buildings.js');
+  const { RESCUE } = await import('../src/config.js');
+  const s = newGame(60, 'woodland', 'syrian', 'Kind', {});
+  assert(s.compassion === 50, 'colony starts at neutral compassion');
+  addCompassion(s, 70); assert(s.compassion === 100, 'compassion clamps at 100');
+  addCompassion(s, -200); assert(s.compassion === 0, 'compassion clamps at 0');
+  ok('compassion stat exists and clamps 0..100');
+
+  // Force a rescue to be available, give housing, and take it in.
+  s.compassion = 50;
+  s.popCap = 20; // ensure room to adopt
+  s.rescue = { species: 'mouse', x: s.world.spawn.x + 4, y: s.world.spawn.y, born: 0, name: 'Lost One' };
+  const before = s.units.length;
+  const r = takeInRescue(s);
+  assert(r.ok && r.joined, 'taking in a stray succeeds and it joins');
+  assert(s.units.length === before + 1, 'the rescued animal joins the colony');
+  assert(s.units.some(u => u.rescued && u.name === 'Lost One'), 'rescued unit is recorded & named');
+  assert(s.compassion === 50 + RESCUE.compassionTakeIn, 'taking in raises compassion');
+  assert(s.rescue === null, 'the rescue is cleared after taking it in');
+  ok(`rescue: took in "Lost One" → joins, compassion ${s.compassion}`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

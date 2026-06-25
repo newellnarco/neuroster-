@@ -74,6 +74,11 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] Balance pass: tune drains/yields once conveyors & more buildings land.
 
 ### ➕ Add
+- [x] **Compassion & rescue (kindness as a mechanic)** — a colony **Compassion** stat (💗) rises
+      with care, generosity (gifts), healing raiders & burials, and falls with bloodshed; high
+      compassion **calms predators** and **draws joiners**. **Lost/hurt animals** wander to your
+      edge — **click to take them in** (they join, grateful) for Compassion & morale. A **Sanctuary**
+      building speeds arrivals & raises Compassion. Milestones: Open Heart, Boundless Kindness.
 - [x] **Names, families & inheritance** — every rodent has a name + **family surname**;
       offspring are born to **two specific parents** and inherit a parent's surname, a **hint of
       coat colour**, **blended traits** and a **head-start in the family's strongest skill**.

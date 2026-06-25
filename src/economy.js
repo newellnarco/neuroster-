@@ -1,9 +1,9 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW } from './config.js';
-import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit } from './state.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
+import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion } from './state.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
-import { makeRodent, stepRodent, breedChild, gainXp } from './entities.js';
+import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods } from './environment.js';
@@ -90,6 +90,9 @@ export function stepEconomy(state, dt) {
   updateLoyalty(state, dt);
   stepEvents(state, dt);
   stepFactions(state, dt);
+  stepRescues(state, dt);
+  // Compassion drifts gently toward 50; a Sanctuary's daily care keeps it high.
+  { const c = state.compassion ?? 50; state.compassion = Math.max(0, Math.min(100, c + (50 - c) * 0.002 * dt + (state._sanctuary || 0) * 0.03 * dt)); }
 
   // 9) Milestones (throttled) — concrete goals + reward drip.
   state._mileT = (state._mileT || 0) + dt;
@@ -156,7 +159,7 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0;
+  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
@@ -177,7 +180,9 @@ function recomputeBuildings(state) {
     waterers += def.waterer || 0;
     caretakers += def.caretaker || 0;
     vets += def.vet || 0;
+    if (def.sanctuary) sanctuaries++;
   }
+  state._sanctuary = sanctuaries;
   state._vets = vets;
   // Caretaker huts auto-tend energy, fun & health — easing larger settlements.
   fun += caretakers * 4; health += caretakers * 4;
@@ -458,6 +463,7 @@ function updateMorale(state, dt) {
       state._buryT = 0;
       const b = bodies.shift();
       state.morale = Math.min(100, state.morale + bestRestore);
+      addCompassion(state, 1); // honouring the fallen is an act of love
       addFx(state, b.x, b.y, '🕊️', 2);
       logMsg(state, `🕊️ A fallen rodent was laid to rest (+${bestRestore} morale). The colony grieves but heals.`);
     }
@@ -513,6 +519,32 @@ function updateBreeding(state, dt) {
   }
 }
 
+// Lost / hurt animals wander to the colony's edge; the player clicks one to take
+// it in (handled in ui/buildings). One at a time; a Sanctuary speeds arrivals.
+function stepRescues(state, dt) {
+  const lived = state.env?.lived || 0;
+  if (state.rescue) {
+    if (lived - state.rescue.born > RESCUE.life) {
+      logMsg(state, `🐾 The lost ${SPECIES[state.rescue.species]?.name || 'animal'} wandered off before you could help it.`);
+      state.rescue = null;
+    }
+    return;
+  }
+  const interval = RESCUE.baseInterval * ((state._sanctuary || 0) > 0 ? Math.pow(RESCUE.sanctuaryFactor, state._sanctuary) : 1);
+  state._rescueT = (state._rescueT || 0) + dt;
+  if (state._rescueT < Math.max(40, interval)) return;
+  state._rescueT = 0;
+  const sp = state.world.spawn;
+  const ang = Math.random() * Math.PI * 2, dist = 5 + Math.random() * 4;
+  const x = Math.max(1, Math.min(GRID_W - 2, Math.round(sp.x + Math.cos(ang) * dist)));
+  const y = Math.max(1, Math.min(GRID_H - 2, Math.round(sp.y + Math.sin(ang) * dist)));
+  const species = RESCUE.species[Math.floor(Math.random() * RESCUE.species.length)];
+  state.rescue = { species, x, y, born: lived, name: randomGivenName() };
+  reveal(state.world, x, y, 2);
+  addFx(state, x, y, '💗', 2.2);
+  logMsg(state, `🐾 A lost ${SPECIES[species]?.name || 'animal'} appeared nearby — click it to take it in and give it a home.`);
+}
+
 function updateLoyalty(state, dt) {
   // Bond (affection from hands-on care) makes rodents more loyal.
   const avgBond = state.units.length ? state.units.reduce((a, u) => a + (u.bond ?? 45), 0) / state.units.length : 45;
@@ -530,7 +562,8 @@ function updateLoyalty(state, dt) {
     state._unrest = Math.max(0, (state._unrest || 0) - dt * 0.5);
   }
   if (wb > 0.95 && population(state) < state.popCap && (state.res.food || 0) > 30) {
-    state._join = (state._join || 0) + dt * 0.02;
+    const harmony = 1 + Math.max(0, (state.compassion ?? 50) - 60) / 40; // kindness draws wanderers (1×..2×)
+    state._join = (state._join || 0) + dt * 0.02 * harmony;
     if (state._join >= 1) {
       state._join = 0;
       const unlocked = Object.keys(SPECIES).filter(s => state.unlockedSpecies[s]);

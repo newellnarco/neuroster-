@@ -1,6 +1,6 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
 import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
-import { logMsg, population, addRes, addFx } from './state.js';
+import { logMsg, population, addRes, addFx, addCompassion } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan } from './factions.js';
 
@@ -13,6 +13,7 @@ function handleRepel(state, what, factionId = null) {
   const vets = state.buildings.reduce((s, b) => s + (BUILDINGS[b.type]?.vet || 0), 0);
   if (vets > 0) {
     state.morale = Math.min(100, (state.morale ?? 100) + 3);
+    addCompassion(state, 2); // mercy & healing
     let joined = false;
     if (factionId) {
       state.factions[factionId].standing = Math.min(100, state.factions[factionId].standing + 6);
@@ -21,6 +22,7 @@ function handleRepel(state, what, factionId = null) {
     logMsg(state, `🕊️ Your vets healed the injured ${what} instead of killing — morale rises${joined ? ', and a grateful newcomer joined the colony!' : '.'}`);
   } else if ((totalOffense(state) || 0) > 0) {
     state.morale = Math.max(0, (state.morale ?? 100) - MORALE.violenceCost);
+    addCompassion(state, -1); // bloodshed weighs on the colony's conscience
     logMsg(state, `⚖️ Your defenders drove off the ${what}, but the bloodshed weighs on morale.`);
   }
 }
@@ -137,7 +139,8 @@ function fireDisaster(state, key, d, elapsed) {
   const envMul = 1 + (state._envMods?.hazardMul?.[key] || 0);
   const breedDiff = BREEDS[state.founder?.breed]?.difficulty ?? 1; // founder breed sets the stakes
   const gameDiff = DIFFICULTIES[state.difficulty]?.disasterMul ?? 1; // chosen difficulty
-  const severity = d.baseSeverity * grow * biomeMul * Math.max(0.2, envMul) * breedDiff * gameDiff;
+  let severity = d.baseSeverity * grow * biomeMul * Math.max(0.2, envMul) * breedDiff * gameDiff;
+  if (d.kind === 'predator') severity *= (1 - Math.min(0.2, Math.max(0, (state.compassion ?? 50) - 50) / 250)); // a gentle, kind colony unsettles predators less
   const offenseBonus = (d.kind === 'predator') ? totalOffense(state) : 0;
   const protect = protectionAgainst(state, key) + offenseBonus;
   const net = severity - protect;

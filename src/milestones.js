@@ -24,6 +24,8 @@ export const MILESTONES = [
   { id: 'allSpecies',  name: "Noah's Burrow",     icon: '🐾', desc: 'Unlock every rodent species.',             reward: 50, check: (s) => Object.keys(SPECIES).every(sp => s.unlockedSpecies?.[sp]) },
   { id: 'mausoleum',   name: 'Respect the Fallen',icon: '🏛️', desc: 'Build a Grand Mausoleum.',                 reward: 20, check: (s) => s.buildings.some(b => b.type === 'mausoleum') },
   { id: 'megaproject', name: 'Wonder of the Warren', icon: '🏛️', desc: 'Complete your first Megaproject.',       reward: 80, check: (s) => Object.values(s.megaprojects || {}).some(m => m.done) },
+  { id: 'rescue',      name: 'Open Heart',        icon: '💗', desc: 'Take in a lost or hurt animal.',             reward: 20, check: (s) => s.units.some(u => u.rescued) },
+  { id: 'compassion',  name: 'Boundless Kindness',icon: '🕊️', desc: 'Reach 90 colony Compassion.',                reward: 40, check: (s) => (s.compassion || 0) >= 90 },
 ];
 
 // Check milestones (throttled by the caller). Returns newly-achieved entries.

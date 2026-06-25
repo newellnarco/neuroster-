@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
 import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, xpForLevel } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -39,6 +39,7 @@ export function createUI(state, ctx) {
       `<span class="env" title="Population / cap">👥 ${population(state)}/${state.popCap}</span>` +
       `<span class="env" title="Overall wellbeing multiplier">😊 ×${wellbeingMul(state).toFixed(2)}</span>` +
       `<span class="env" title="Colony morale — falls from unburied dead, injuries & violence; bury & heal to restore it">${moraleIcon(state.morale)} Morale ${Math.round(state.morale ?? 100)}${(state.bodies?.length) ? ` · ⚰️${state.bodies.length} unburied` : ''}</span>` +
+      `<span class="env" title="Compassion — kindness, generosity & care raise it; cruelty & neglect lower it. A kind colony calms predators and draws joiners.">💗 ${Math.round(state.compassion ?? 50)}</span>` +
       `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
       `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>` +
       (megaCount(state) ? `<span class="env" title="Megaprojects completed — permanent colony-wide wonders">🏛️ ${megaCount(state)}</span>` : '');
@@ -495,6 +496,10 @@ export function createUI(state, ctx) {
       // select a rodent under the cursor
       const px = (e.offsetX) / c.getBoundingClientRect().width * c.width / TILE;
       const py = (e.offsetY) / c.getBoundingClientRect().height * c.height / TILE;
+      if (state.rescue && Math.hypot(state.rescue.x - px, state.rescue.y - py) < 0.85) {
+        const r = takeInRescue(state); if (r.ok) sfx('care'); else flash(r.reason || '');
+        renderResbar(); renderRodents(); return;
+      }
       const u = state.units.find(u => Math.hypot(u.x - px, u.y - py) < 0.6);
       if (u) { view.selUnit = u.id; document.querySelector('[data-tab="rodents"]').click(); renderRodents(); return; }
       const b = state.buildings.find(b => b.x === t.x && b.y === t.y);

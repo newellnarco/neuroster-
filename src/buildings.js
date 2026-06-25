@@ -1,12 +1,12 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS, RESCUE } from './config.js';
 
 // Labour-time for a project, from the total resources it costs (bigger = longer).
 export function buildTimeFor(cost) {
   const sum = Object.values(cost || {}).reduce((a, b) => a + b, 0);
   return Math.max(CONSTRUCTION.minTime, sum * CONSTRUCTION.timePerCost);
 }
-import { canAfford, spend, logMsg, addFx } from './state.js';
+import { canAfford, spend, logMsg, addFx, addCompassion } from './state.js';
 import { getTile, TERRAIN, inBounds, wasteAt } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
 import { spawnCaravan } from './factions.js';
@@ -25,8 +25,28 @@ export function careFor(state, unit, kind) {
   unit.bond = Math.min(100, (unit.bond ?? 45) + c.bond);
   gainXp(state, unit, c.xp);
   unit.careCd = unit.careCd || {}; unit.careCd[kind] = now + c.cd;
+  addCompassion(state, 0.4); // hands-on care is kindness
   addFx(state, unit.x, unit.y, c.fx, 1.4);
   return { ok: true };
+}
+
+// Take in the lost/hurt animal currently waiting at the colony's edge.
+export function takeInRescue(state) {
+  const r = state.rescue;
+  if (!r) return { ok: false, reason: 'No stray to take in right now' };
+  state.rescue = null;
+  addCompassion(state, RESCUE.compassionTakeIn);
+  state.morale = Math.min(100, (state.morale ?? 100) + RESCUE.moraleTakeIn);
+  addFx(state, r.x, r.y, '💗', 2.4);
+  if (state.units.length < state.popCap) {
+    const u = makeRodent(state, r.species, state.world.spawn.x, state.world.spawn.y);
+    u.name = r.name || u.name; u.bond = 65; u.rescued = true;
+    state.units.push(u);
+    logMsg(state, `💗 You took in ${u.name} the ${SPECIES[r.species]?.name || 'stray'} — they join your colony, grateful and bonded.`);
+    return { ok: true, joined: true };
+  }
+  logMsg(state, `💗 You sheltered a lost ${SPECIES[r.species]?.name || 'animal'} until it was well — it went on its way, grateful. (Build housing so strays can stay.)`);
+  return { ok: true, joined: false };
 }
 
 // The "main hamster" / player level = the highest level any rodent has reached.
@@ -134,6 +154,7 @@ export function giftFaction(state, id) {
   if (!res) return { ok: false, reason: `Need ${TRADE.giftAmount} of ${f.covets.join('/')}` };
   state.res[res] -= TRADE.giftAmount;
   state.factions[id].standing = clampStanding(state.factions[id].standing + TRADE.giftStanding);
+  addCompassion(state, 1); // generosity
   spawnCaravan(state, id, 'trade');
   logMsg(state, `${f.icon} Gifted ${TRADE.giftAmount} ${res} to the ${f.name} (+alliance).`);
   return { ok: true };
