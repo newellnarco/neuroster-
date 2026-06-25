@@ -63,6 +63,7 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 19b | 👪 Family lineage & names | ✅ Shipped | Every rodent has a **given name + family surname**; `breedChild` inherits the family line, **coat colour** (blended), **traits** (averaged) & a **best-skill head-start**; births logged by name with parent links; rename in the Rodents panel. |
 | 19c | 🌸 Seasons & festivals | ✅ Shipped | Spring→Summer→Autumn→Winter shift food/needs/breeding; each new season opens with a **festival** (morale + compassion lift; Harvest gifts food). Per-season visuals (Arc 18). |
 | 19d | ⚖️ Justice/Order + moral Decrees | ✅ Shipped | A second virtue, **Justice/Order** (deters raids), the counterweight to Compassion. Periodic **Decree dilemmas** — famine triage, a captured raider, a starving neighbour, a lost predator cub — where **every choice spends one virtue (or food/comfort) to buy another**; dithering auto-resolves and costs morale. New civics: **⚖️ Courthouse** (unlocks merciful verdicts, raises Order), **🎖️ Hall of Heroes** (remembers the fallen by name, steady morale), **🍞 Almshouse** (shares surplus food → Compassion + raid goodwill). |
+| 19e | 🐾 NPC animal events + 🦁 Valor | ✅ Shipped | **Branching, delayed-consequence** NPC encounters (`pendingFates` in `decrees.js`): a **raised predator cub** ripens into a loyal **guardian**, **slips back to its pack**, or was a **Trojan horse** that lures a raid — weighted by Compassion. A **migrating herd** you shelter repays you with a gift/joiner later — but its **big predators may follow** and force a fight. An **emissary** can **broker a 🕊️ truce** (spend Compassion → raids/predators hold off). New morally-**neutral** third virtue **🦁 Valor** (martial pride): rises by standing & winning fights (beast attacks, lethal repels); a high-Valor colony grows **fierce, proud & happy in its strength** (the Spartan path) with a quiet morale/spark lift — no Compassion required. |
 
 ---
 
@@ -221,11 +222,15 @@ ignoring it (`life` runs out) auto-resolves the `default` choice and dims morale
 food→Compassion, Hall of Heroes records the fallen by name (`state.honored`) + steady morale.
 A raised predator cub (`state.guardian`) adds predator defense. 38 smoke checks pass.
 
-**Next ideas in this vein (not yet built):** a founder **Leadership skill tree**
-(Just/Compassionate/Provider/Protector/Diplomat) gated by virtue thresholds; more NPC
-animal events (wandering merchant, migrating herd, predator parley); a **Bell Tower**
-rally that spends morale for a temporary work surge; heroic-sacrifice events that feed
-the Hall of Heroes.
+**Next ideas in this vein (not yet built):** **Doctrine / skill trees branching off the
+three virtues** — 🦁 Valor → **war strategy, negotiation, stoicism & sacrifice** lines
+(per the player's ask); 💗 Compassion → healer/sanctuary/diplomat; ⚖️ Justice →
+order/law/rehabilitation. A founder **Leadership tree** gated by virtue thresholds; a
+**Bell Tower** rally that spends morale for a temporary work surge; heroic-sacrifice events
+that feed the Hall of Heroes. **Production/pollution chain** (furnace, forge, mason, statues,
+plant-trees/oaks→squirrels), **power variety w/ tradeoffs** (electric/coal/hydro/solar +
+pollution, hydro-vs-fish/upstream, too-many-beavers), and **hamster balls** (free-roam
+transport w/ heat death & rising anxiety) — all requested, queued.
 
 **Shipped earlier:** the live **alert bar** (Arc 17, `src/alerts.js` — purely derived,
 nothing persisted), **megaprojects** (Arc 16, `src/megaprojects.js` + `MEGAPROJECTS` in

@@ -119,6 +119,14 @@ export function stepEconomy(state, dt) {
   }
   // A Hall of Heroes lends steady morale recovery — the honoured dead inspire.
   if ((state._memorial || 0) > 0) state.morale = Math.min(100, (state.morale ?? 100) + (state._memorial) * 0.05 * dt);
+  // Valor (martial pride) ebbs toward a low baseline; a proud, battle-hardened
+  // colony (high Valor) takes a quiet, morally-neutral lift to spirits & spark.
+  { const v = state.valor ?? 20; state.valor = Math.max(0, Math.min(100, v + (20 - v) * 0.0015 * dt)); }
+  if ((state.valor ?? 20) > 65) {
+    const pride = Math.min(0.18, ((state.valor - 65) / 35) * 0.18);
+    state.morale = Math.min(100, (state.morale ?? 100) + pride * dt);
+    for (const u of state.units) u.needs.fun = Math.min(100, u.needs.fun + pride * 0.5 * dt);
+  }
 
   // 9) Milestones (throttled) — concrete goals + reward drip.
   state._mileT = (state._mileT || 0) + dt;

@@ -1,6 +1,6 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
 import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE } from './config.js';
-import { logMsg, population, addRes, addFx, addCompassion } from './state.js';
+import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan } from './factions.js';
 
@@ -23,7 +23,8 @@ function handleRepel(state, what, factionId = null) {
   } else if ((totalOffense(state) || 0) > 0) {
     state.morale = Math.max(0, (state.morale ?? 100) - MORALE.violenceCost);
     addCompassion(state, -1); // bloodshed weighs on the colony's conscience
-    logMsg(state, `⚖️ Your defenders drove off the ${what}, but the bloodshed weighs on morale.`);
+    addValor(state, 3);       // …but victory in battle stokes martial pride (morally neutral)
+    logMsg(state, `⚖️ Your defenders drove off the ${what} — bloodshed weighs on the conscience, but the colony takes fierce pride in the victory.`);
   }
 }
 function recruitMercy(state) {
@@ -126,6 +127,9 @@ export function stepEvents(state, dt) {
     // Reschedule next occurrence; they grow slightly more frequent over time.
     const ramp = Math.max(0.55, 1 - elapsed / 6000);
     ev.timer = d.interval * ramp * (0.7 + 0.6 * hash(key + elapsed));
+
+    // A brokered truce holds predators (not natural disasters) at bay for a while.
+    if (d.kind === 'predator' && (state.truceUntil || 0) > elapsed) continue;
 
     fireDisaster(state, key, d, elapsed);
   }
@@ -238,6 +242,7 @@ export function stepFactions(state, dt) {
     if (st.raidTimer <= 0) {
       st.raidTimer = 150 + 120 * hash(id + Math.floor(lived));
       if (lived < GRACE_SECONDS || state.disasters === false) continue; // peaceful mode: no raids
+      if ((state.truceUntil || 0) > lived) continue; // a brokered truce stays the raiders' paws
       const pressure = Math.max(0, -st.standing) + Math.min(45, hoard * 0.12);
       if (pressure > 14) fireFactionRaid(state, id, f, pressure);
     }
