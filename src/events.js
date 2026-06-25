@@ -51,6 +51,7 @@ export function protectionAgainst(state, key) {
   let p = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
+    if (b.underConstruction) continue;
     if (def?.protect?.[key]) p += def.protect[key];
     // Tunnels bar other animals from crossing — protection scales with tier & HP.
     if (def?.tunnel) {
@@ -69,7 +70,7 @@ export function protectionAgainst(state, key) {
 
 export function totalOffense(state) {
   let o = 0;
-  for (const b of state.buildings) o += BUILDINGS[b.type]?.offense || 0;
+  for (const b of state.buildings) if (!b.underConstruction) o += BUILDINGS[b.type]?.offense || 0;
   for (const u of state.units) o += SPECIES[u.species]?.atk || 0; // soldiers (guinea pigs)
   return o;
 }

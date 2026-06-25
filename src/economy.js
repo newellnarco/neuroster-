@@ -2,7 +2,7 @@
 // breeding, loyalty, exploration, and threats.
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit } from './state.js';
-import { MORALE, TOWNHALL_TIERS } from './config.js';
+import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION } from './config.js';
 import { makeRodent, stepRodent, combineRodents, gainXp } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
@@ -18,7 +18,8 @@ export function stepEconomy(state, dt) {
   // 1) Rodent AI (gather/haul/sleep).
   for (const u of state.units) stepRodent(state, u, dt);
 
-  // 2) Derived stats from buildings + the leader's influence.
+  // 2) Construction labour (sets _laborFactor), derived stats, leadership.
+  updateConstruction(state, dt);
   recomputeBuildings(state);
   updateLeadership(state, dt);
 
@@ -32,11 +33,11 @@ export function stepEconomy(state, dt) {
   if (env.waterGain) addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4));
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
-    if (!def || b.active === false) continue;
+    if (!def || b.active === false || b.underConstruction) continue;
     if (def.mine) { runMine(state, b, def, dt, wb); continue; }
     if (def.belt) { runBelt(state, b, def, dt, wb); continue; }
 
-    let rate = dt * wb * powerMul * (1 + (state._leadership || 0)); // the leader inspires output
+    let rate = dt * wb * powerMul * (1 + (state._leadership || 0)) * (state._laborFactor ?? 1); // leader inspires; builders divert labour
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
       let bonus = state.mods.foodMul + env.foodMul;
@@ -101,11 +102,56 @@ export function stepEconomy(state, dt) {
   }
 }
 
+// Rodents build placed structures & upgrades over time. More awake builders =
+// faster; builders tied up on jobs mean fewer hands gathering (other work slows).
+function updateConstruction(state, dt) {
+  const C = CONSTRUCTION;
+  const jobs = [];
+  for (const b of state.buildings) {
+    if (b.underConstruction) jobs.push(b);
+    else if (b.upgrading) jobs.push(b);
+  }
+  if (!jobs.length) { state._laborFactor = 1; state._jobs = 0; return; }
+  // workforce: awake rodents weighted by build skill (beavers/gophers excel)
+  let W = 0;
+  for (const u of state.units) {
+    if (u.phase === 'sleep') continue;
+    const sp = SPECIES[u.species];
+    W += (sp.build || 1) * (1 + evoBonus(state, u.species, 'build')) * (1 + (u.traits?.strength || 0) * 0.15);
+  }
+  W = Math.max(0.4, W);
+  const perJob = Math.min(C.maxWorkersPerJob, W / jobs.length);
+  for (const b of jobs) {
+    const inc = perJob * C.buildRate * dt;
+    if (b.underConstruction) {
+      b.progress = (b.progress || 0) + inc;
+      if (b.progress >= b.buildTime) {
+        b.underConstruction = false; b.progress = b.buildTime;
+        addFx(state, b.x, b.y, '✅', 1.8);
+        logMsg(state, `${BUILDINGS[b.type].icon} ${BUILDINGS[b.type].name} construction complete!`);
+      }
+    } else if (b.upgrading) {
+      b.upgrading.progress += inc;
+      if (b.upgrading.progress >= b.upgrading.time) {
+        b.tier = b.upgrading.toTier;
+        if (BUILDINGS[b.type].tunnel) b.hp = TUNNEL_TIERS[b.tier].hp;
+        delete b.upgrading;
+        addFx(state, b.x, b.y, '⬆️', 1.8);
+        logMsg(state, `⬆️ ${BUILDINGS[b.type].name} upgrade complete!`);
+      }
+    }
+  }
+  // labour diverted from gathering/production
+  const laborUsed = Math.min(W, jobs.length * C.idealWorkers);
+  state._laborFactor = Math.max(C.minGatherFactor, (W - laborUsed) / W);
+  state._jobs = jobs.length;
+}
+
 function recomputeBuildings(state) {
   let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
-    if (!def) continue;
+    if (!def || b.underConstruction) continue;
     popCap += def.popCap || 0;
     storage += def.storage || 0;
     defense += def.defense || 0;
@@ -266,7 +312,7 @@ function updateWaste(state, dt) {
   // composters convert nearby droppings into fertilizer
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
-    if (!def?.composter) continue;
+    if (!def?.composter || b.underConstruction) continue;
     const r = def.radius || 5;
     let want = WASTE.composterRate * dt;
     for (let dy = -r; dy <= r && want > 0; dy++) for (let dx = -r; dx <= r && want > 0; dx++) {
@@ -333,7 +379,7 @@ function updateDisease(state, dt) {
 // resentment that erodes morale, fun and the very boost it was meant to give.
 function updateLeadership(state, dt) {
   let tier = -1;
-  for (const b of state.buildings) if (BUILDINGS[b.type]?.townhall) tier = Math.max(tier, b.tier || 0);
+  for (const b of state.buildings) if (BUILDINGS[b.type]?.townhall && !b.underConstruction) tier = Math.max(tier, b.tier || 0);
   if (tier < 0) { state._leadership = 0; state._leadBreed = 0; state._resent = 0; return; }
   const T = TOWNHALL_TIERS[tier];
   // amenities for everyone else = housing (burrows) + wellbeing buildings
@@ -393,7 +439,7 @@ function updateMorale(state, dt) {
 }
 
 function updateBreeding(state, dt) {
-  const burrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed).length;
+  const burrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed && !b.underConstruction).length;
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;

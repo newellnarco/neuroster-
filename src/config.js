@@ -359,6 +359,19 @@ export const BOND_DECAY = 0.04;   // per second; gentle, so daily care keeps it 
 // Flooded mines must be repaired (materials + time) before they work again.
 export const MINE_REPAIR = { cost: { planks: 15, wood: 15 }, seconds: 35 };
 
+// Construction & labour: buildings and upgrades take TIME, worked by your awake
+// rodents (beavers/gophers build faster). More builders finish sooner, but
+// builders pulled onto jobs mean fewer hands gathering — other work slows.
+// Bigger/higher-tier projects cost more labour and take longer.
+export const CONSTRUCTION = {
+  timePerCost: 0.5,      // seconds of labour per unit of resource cost
+  minTime: 4,            // floor on build time
+  buildRate: 1.0,        // labour applied per worker per second
+  maxWorkersPerJob: 4,   // diminishing returns past this many on one job
+  idealWorkers: 3,       // workers a job ties up (for the gather penalty)
+  minGatherFactor: 0.25, // gathering/production never fully stops
+};
+
 // Sanitation: healthy rodents poop/pee. Droppings pile up, spoil food, block
 // building, and — near burrows/food — risk WET TAIL, which kills if untreated.
 // Composters turn droppings into fertilizer; Vet Clinics cure & prevent deaths.

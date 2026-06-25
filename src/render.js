@@ -240,6 +240,7 @@ export function createRenderer(canvas, state, getView) {
       if (!isSeen(state.world, b.x, b.y)) continue;
       const cx = b.x * TILE + TILE / 2, cy = b.y * TILE + TILE / 2;
       ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(cx, cy + TILE * 0.30, 11, 4.5, 0, 0, 7); ctx.fill();
+      if (b.underConstruction) { drawSite(cx, cy, b, t); continue; }
       if (b.type === 'wheel') { drawWheel(cx, cy - 3, t, b); continue; }
       if (b.type === 'conveyor' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }
@@ -272,6 +273,7 @@ export function createRenderer(canvas, state, getView) {
 
   // Covered tunnel section: colour by tier (wood/iron/steel) with an HP bar.
   function drawTunnel(cx, cy, b) {
+    drawUpgradeBar(b);
     const tier = TUNNEL_TIERS[b.tier || 0];
     drawConnectors(cx, cy, b, shade(tier.color, -0.05), (nb) => isTunnel(nb) || isFacility(nb));
     const w = TILE - 4, h = TILE * 0.5, x0 = cx - w / 2, y0 = cy - h / 2;
@@ -288,8 +290,30 @@ export function createRenderer(canvas, state, getView) {
     }
   }
 
+  // A building under construction: scaffolding, a hammer, and a progress bar.
+  function drawSite(cx, cy, b, t) {
+    const x0 = b.x * TILE + 5, y0 = b.y * TILE + 7, w = TILE - 10, h = TILE - 12;
+    ctx.fillStyle = 'rgba(180,160,120,0.35)'; roundRect(x0, y0, w, h, 4); ctx.fill();
+    ctx.strokeStyle = 'rgba(120,90,50,0.8)'; ctx.lineWidth = 1.5;          // scaffold
+    ctx.strokeRect(x0, y0, w, h);
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + w, y0 + h); ctx.moveTo(x0 + w, y0); ctx.lineTo(x0, y0 + h); ctx.stroke();
+    const bob = Math.sin(t * 6 + b.id) * 2;
+    glyph('🔨', cx, cy - 2 + bob, 13);
+    const frac = Math.min(1, (b.progress || 0) / b.buildTime);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(b.x * TILE + 4, b.y * TILE + TILE - 5, TILE - 8, 3);
+    ctx.fillStyle = '#f0c454'; ctx.fillRect(b.x * TILE + 4, b.y * TILE + TILE - 5, (TILE - 8) * frac, 3);
+  }
+  // Progress bar for an in-progress upgrade (drawn over a working building).
+  function drawUpgradeBar(b) {
+    if (!b.upgrading) return;
+    const frac = Math.min(1, b.upgrading.progress / b.upgrading.time);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(b.x * TILE + 4, b.y * TILE + 2, TILE - 8, 3);
+    ctx.fillStyle = '#7e9cff'; ctx.fillRect(b.x * TILE + 4, b.y * TILE + 2, (TILE - 8) * frac, 3);
+  }
+
   // Town Hall: a civic building that grows grander (and more gilded) by tier.
   function drawTownhall(cx, cy, b) {
+    drawUpgradeBar(b);
     const tier = b.tier || 0;
     const w = TILE - 4, x0 = cx - w / 2, y0 = cy - TILE * 0.32;
     ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(x0, y0 + TILE * 0.4, w, TILE * 0.28, 4); ctx.fill();

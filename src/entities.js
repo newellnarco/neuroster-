@@ -65,7 +65,8 @@ export function carryOf(state, u) {
 }
 export function mineOf(state, u) {
   return SPECIES[u.species].mine * traitMul(u, 'mine') * (1 + state.mods.mineMul + envMine(state))
-    * (1 + evoBonus(state, u.species, 'mine')) * levelMul(u) * productivity(state, u) * activityMul(state, u);
+    * (1 + evoBonus(state, u.species, 'mine')) * levelMul(u) * productivity(state, u) * activityMul(state, u)
+    * (state._laborFactor ?? 1); // fewer hands gather when builders are busy
 }
 // environment hooks (filled by economy via state._env cache to avoid import cycle churn)
 const envSpeed = (state) => state._envMods?.speedMul || 0;

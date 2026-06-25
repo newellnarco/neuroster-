@@ -1,5 +1,11 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, TOWNHALL_TIERS, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+
+// Labour-time for a project, from the total resources it costs (bigger = longer).
+export function buildTimeFor(cost) {
+  const sum = Object.values(cost || {}).reduce((a, b) => a + b, 0);
+  return Math.max(CONSTRUCTION.minTime, sum * CONSTRUCTION.timePerCost);
+}
 import { canAfford, spend, logMsg, addFx } from './state.js';
 import { getTile, TERRAIN, inBounds, wasteAt } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
@@ -92,8 +98,10 @@ export function placeBuilding(state, type, x, y) {
   const b = { id: state.nextId++, type, x, y, active: true };
   if (def.tunnel) { b.tier = 0; b.hp = TUNNEL_TIERS[0].hp; } // tunnels start at wood
   if (def.townhall) b.tier = 0;
+  // Start as a construction site; rodents build it over time before it works.
+  b.underConstruction = true; b.progress = 0; b.buildTime = buildTimeFor(def.cost);
   state.buildings.push(b);
-  logMsg(state, `${def.icon} Built a ${def.name}.`);
+  logMsg(state, `${def.icon} ${def.name} foundation laid — builders are on it (~${Math.round(b.buildTime)}s).`);
   return { ok: true };
 }
 
@@ -112,7 +120,7 @@ export function repairMine(state, b) {
 }
 
 // ---- Diplomacy / trade (needs a Trading Hut) ---------------------------
-export const hasTradingHut = (state) => state.buildings.some(b => BUILDINGS[b.type]?.trading);
+export const hasTradingHut = (state) => state.buildings.some(b => BUILDINGS[b.type]?.trading && !b.underConstruction);
 const clampStanding = (v) => Math.max(-100, Math.min(100, v));
 
 // Gift a coveted resource to strengthen the alliance.
@@ -160,12 +168,14 @@ export function upgradeTunnel(state, b) {
     logMsg(state, `🛠️ Repaired a ${tier.name} tunnel section.`);
     return { ok: true };
   }
+  if (b.underConstruction) return { ok: false, reason: 'Still under construction' };
+  if (b.upgrading) return { ok: false, reason: 'Already upgrading' };
   const next = TUNNEL_TIERS[(b.tier || 0) + 1];
   if (!next) return { ok: false, reason: 'Already steel (max tier)' };
   if (!canAfford(state, next.upgradeCost)) return { ok: false, reason: `Upgrade needs ${costText(next.upgradeCost)}` };
   spend(state, next.upgradeCost);
-  b.tier = (b.tier || 0) + 1; b.hp = next.hp;
-  logMsg(state, `⬆️ Upgraded a tunnel section to ${next.name}!`);
+  b.upgrading = { toTier: (b.tier || 0) + 1, progress: 0, time: buildTimeFor(next.upgradeCost) };
+  logMsg(state, `🔧 Upgrading a tunnel section to ${next.name} (~${Math.round(b.upgrading.time)}s)…`);
   return { ok: true };
 }
 const costText = (c) => Object.entries(c).map(([k, v]) => `${k} ${v}`).join(', ');
@@ -173,12 +183,14 @@ const costText = (c) => Object.entries(c).map(([k, v]) => `${k} ${v}`).join(', '
 // Click the Town Hall to upgrade the leader's seat to the next tier.
 export function upgradeTownhall(state, b) {
   if (!BUILDINGS[b.type]?.townhall) return { ok: false };
+  if (b.underConstruction) return { ok: false, reason: 'Still under construction' };
+  if (b.upgrading) return { ok: false, reason: 'Already upgrading' };
   const next = TOWNHALL_TIERS[(b.tier || 0) + 1];
   if (!next) return { ok: false, reason: 'Already the Grand Hall (max)' };
   if (!canAfford(state, next.upgradeCost)) return { ok: false, reason: `Upgrade needs ${costText(next.upgradeCost)}` };
   spend(state, next.upgradeCost);
-  b.tier = (b.tier || 0) + 1;
-  logMsg(state, `⬆️ The leader's seat is now a ${next.name}! (Keep everyone's comforts up to avoid resentment.)`);
+  b.upgrading = { toTier: (b.tier || 0) + 1, progress: 0, time: buildTimeFor(next.upgradeCost) };
+  logMsg(state, `🔧 Upgrading the leader's seat to ${next.name} (~${Math.round(b.upgrading.time)}s)…`);
   return { ok: true };
 }
 
