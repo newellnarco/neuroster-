@@ -49,8 +49,10 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
 
   for (let i = 0; i < STARTING.hamsters; i++) {
     const u = makeRodent(state, 'hamster', world.spawn.x, world.spawn.y);
-    if (i === 0) { // the founder, with breed traits & name
+    if (i === 0) { // the founder, with breed traits, chosen name & coat
       u.founder = true; u.name = name; u.breed = breedKey;
+      u.coat = state.founder.coat; // the player's chosen colour & pattern
+      state.founder.family = u.family; // the founding family line
       for (const [t, lvl] of Object.entries(breed.startTraits || {})) u.traits[t] = lvl;
     }
     state.units.push(u);

@@ -224,4 +224,30 @@ console.log('Creation options:');
   ok('coat & peaceful mode survive a save roundtrip');
 }
 
+// 10) Names, family lineage & inheritance (love/attachment system).
+console.log('Family & inheritance:');
+{
+  const { makeRodent, breedChild } = await import('../src/entities.js');
+  const { COAT_COLORS } = await import('../src/config.js');
+  const s = newGame(50, 'woodland', 'syrian', 'Mama', {});
+  // every rodent has a name & family
+  assert(s.units.every(u => u.name && u.family), 'all rodents have a name & family');
+  // founder wears the chosen coat
+  assert(s.units[0].coat && s.units[0].coat.color, 'founder has a coat');
+  ok('every rodent has a name + family; founder wears its coat');
+
+  // a child of two parents inherits family, coat (hamster), and parent links
+  const a = s.units[0], b = s.units[1];
+  a.family = 'Whiskerton'; b.family = 'Nibbleby';
+  a.traits.strength = 4; b.traits.strength = 2; // a strong family gift
+  a.coat = { color: 'chocolate', pattern: 'classic' }; b.coat = { color: 'cream', pattern: 'solid' };
+  const child = breedChild(s, a, b);
+  assert(child.parents && child.parents[0] === a.id && child.parents[1] === b.id, 'child records its parents');
+  assert([a.family, b.family].includes(child.family), 'child inherits a parent family name');
+  assert(child.species === 'hamster' ? [a.coat.color, b.coat.color].includes(child.coat.color) : true, 'child inherits a parent coat colour');
+  assert((child.traits.strength || 0) >= 2, `child inherits the family's strength (got ${child.traits.strength})`);
+  assert(child.name && child.parentNames && child.parentNames.length === 2, 'child has a name & known parents');
+  ok(`child "${child.name} ${child.family}" inherits coat & traits from ${a.name} & ${b.name}`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

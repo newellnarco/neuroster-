@@ -1,6 +1,6 @@
 // entities.js — rodent units: stats, per-creature needs, sleep, levels, AI,
 // and trait combination (breeding).
-import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H } from './config.js';
+import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H, HAMSTER_NAMES, FAMILY_NAMES, COAT_COLORS, COAT_PATTERNS } from './config.js';
 import { traitMul, wellbeingMul, addRes, evoBonus, addFx } from './state.js';
 import { isNight } from './environment.js';
 
@@ -10,11 +10,17 @@ const PREF_ORDER = ['trees', 'rock', 'trees', 'bush', 'rock', 'trees', 'orevein'
 const NODE_RES = Object.fromEntries(Object.entries(NODE_TYPES).map(([k, v]) => [k, v.resource]));
 const nodeRes = (n) => NODE_RES[n.kind];
 
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+export const randomGivenName = () => pick(HAMSTER_NAMES);
+export const randomFamily = () => pick(FAMILY_NAMES);
+
 export function makeRodent(state, species, x, y) {
   const count = state ? state.units.length : 0;
-  return {
+  const u = {
     id: state ? state.nextId++ : _id++,
     species,
+    name: randomGivenName(),       // every rodent has a name…
+    family: randomFamily(),        // …and a family line
     x: x + (Math.random() - 0.5),
     y: y + (Math.random() - 0.5),
     job: 'gather',
@@ -33,6 +39,8 @@ export function makeRodent(state, species, x, y) {
     traits: {},
     prefKind: PREF_ORDER[count % PREF_ORDER.length],
   };
+  if (species === 'hamster') u.coat = { color: pick(Object.keys(COAT_COLORS)), pattern: pick(Object.keys(COAT_PATTERNS)) };
+  return u;
 }
 
 // ---- Effective stats (species × traits × tech × evolution × productivity) --
@@ -194,5 +202,45 @@ export function combineRodents(state, a, b) {
     child.traits[tid] = Math.min(6, lvl + (Math.random() < 0.15 && lvl > 0 ? 1 : 0));
   }
   child.hybridOf = [a.species, b.species];
+  return child;
+}
+
+// Blend two coats: the child mostly takes a parent's colour & pattern (a clear
+// inherited "hint"), with a small chance of the other parent's.
+function blendCoat(ca, cb) {
+  const a = ca || { color: 'golden', pattern: 'classic' };
+  const b = cb || { color: 'golden', pattern: 'classic' };
+  return { color: Math.random() < 0.5 ? a.color : b.color, pattern: Math.random() < 0.5 ? a.pattern : b.pattern };
+}
+// The strongest shared trait across the two parents (for a skill head-start).
+function bestTrait(a, b) {
+  let best = null, bv = 0;
+  for (const t of Object.keys(TRAITS)) { const v = (a.traits[t] || 0) + (b.traits[t] || 0); if (v > bv) { bv = v; best = t; } }
+  return best;
+}
+
+// A child born of two specific parents: inherits a family name, a hint of coat
+// colour, blended traits, and a head-start in the family's strongest skill.
+export function breedChild(state, a, b) {
+  const sp = state.world.spawn;
+  const hybrid = a.species !== b.species && Math.random() < 0.6;
+  let child;
+  if (hybrid) {
+    child = combineRodents(state, a, b); // blends traits + sets hybridOf
+  } else {
+    child = makeRodent(state, a.species, sp.x, sp.y);
+    for (const tid of Object.keys(TRAITS)) {
+      const avg = ((a.traits[tid] || 0) + (b.traits[tid] || 0)) / 2;
+      child.traits[tid] = Math.min(6, Math.round(avg) + (Math.random() < 0.12 && avg > 0 ? 1 : 0));
+    }
+  }
+  child.x = sp.x + (Math.random() - 0.5); child.y = sp.y + (Math.random() - 0.5);
+  child.parents = [a.id, b.id];
+  child.parentNames = [a.name, b.name];
+  child.family = (Math.random() < 0.5 ? a.family : b.family) || a.family || b.family || randomFamily();
+  child.name = randomGivenName();
+  if (child.species === 'hamster') child.coat = blendCoat(a.coat, b.coat);
+  const best = bestTrait(a, b); // a little of the family's gift passes on
+  if (best) child.traits[best] = Math.min(6, (child.traits[best] || 0) + 1);
   return child;
 }

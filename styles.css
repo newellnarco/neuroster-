@@ -189,6 +189,11 @@ body {
 .uhead { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 5px; }
 .uhead .lvl { color: var(--accent); }
 .uhead .sub { color: var(--muted); font-size: 10px; margin-left: auto; }
+.uhead .fam { color: var(--muted); font-weight: 400; font-size: 11px; }
+.rename { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 11px; opacity: .55; padding: 0 2px; }
+.rename:hover { opacity: 1; }
+.kinrow { margin: 1px 0 4px; }
+.kin { font-size: 10px; color: var(--muted); }
 .xpbar { width: 60px; height: 5px; background: #3a352e; border-radius: 4px; overflow: hidden; }
 .xpbar span { display: block; height: 100%; background: #7e9cff; }
 .traits { display: flex; gap: 4px; flex-wrap: wrap; }

@@ -3,7 +3,7 @@
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit } from './state.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
-import { makeRodent, stepRodent, combineRodents, gainXp } from './entities.js';
+import { makeRodent, stepRodent, breedChild, gainXp } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods } from './environment.js';
@@ -493,17 +493,23 @@ function updateBreeding(state, dt) {
     state._breed = 0;
     state.res.food -= 5;
     const sp = state.world.spawn;
-    const species = [...new Set(state.units.map(u => u.species))];
     let child;
-    if (species.length >= 2 && Math.random() < 0.5) {
-      const a = state.units.find(u => u.species === species[0]);
-      const b = state.units.find(u => u.species === species[1]);
-      if (a && b) { child = combineRodents(state, a, b); child.x = sp.x; child.y = sp.y; }
+    if (state.units.length >= 2) {
+      // Two specific parents — the child inherits their family, coat & traits.
+      const a = state.units[Math.floor(Math.random() * state.units.length)];
+      let b = a, guard = 0;
+      while (b === a && guard++ < 6) b = state.units[Math.floor(Math.random() * state.units.length)];
+      child = breedChild(state, a, b);
+    } else {
+      child = makeRodent(state, 'hamster', sp.x, sp.y);
     }
-    if (!child) child = makeRodent(state, 'hamster', sp.x, sp.y);
     state.units.push(child);
     addFx(state, child.x, child.y, '🐣', 2);
-    logMsg(state, child.hybridOf ? `✨ A hybrid ${SPECIES[child.species].name} was born (blended traits)!` : '🐹 A new hamster was born!');
+    const fam = child.family ? ` ${child.family}` : '';
+    const par = child.parentNames ? ` to ${child.parentNames[0]} & ${child.parentNames[1]}` : '';
+    logMsg(state, child.hybridOf
+      ? `✨ ${child.name}${fam} — a hybrid ${SPECIES[child.species].name} — was born${par}!`
+      : `🐣 ${child.name}${fam} was born${par}!`);
   }
 }
 
