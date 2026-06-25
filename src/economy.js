@@ -7,6 +7,7 @@ import { makeRodent, stepRodent, combineRodents, gainXp } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods } from './environment.js';
+import { megaBonuses } from './megaprojects.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
 
 // Run one simulation tick. dt is seconds per tick.
@@ -14,6 +15,9 @@ export function stepEconomy(state, dt) {
   // 0) Environment first; cache its modifiers for the rest of the tick.
   stepEnvironment(state, dt);
   const env = state._envMods = envMods(state);
+  // Completed megaprojects grant permanent, colony-wide bonuses (cached per tick).
+  const mega = state._mega = megaBonuses(state);
+  if (mega.power) addRes(state, 'power', mega.power * dt);
 
   // 1) Rodent AI (gather/haul/sleep).
   for (const u of state.units) stepRodent(state, u, dt);
@@ -38,16 +42,16 @@ export function stepEconomy(state, dt) {
     if (def.mine) { runMine(state, b, def, dt, wb); continue; }
     if (def.belt) { runBelt(state, b, def, dt, wb); continue; }
 
-    let rate = dt * wb * powerMul * (1 + (state._leadership || 0)) * (state._laborFactor ?? 1); // leader inspires; builders divert labour
+    let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1); // leader inspires; builders divert labour
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
-      let bonus = state.mods.foodMul + env.foodMul;
+      let bonus = state.mods.foodMul + env.foodMul + (mega.foodMul || 0);
       if ((state.fertileUntil || 0) > (state.env.lived || 0)) bonus += 0.6;
       if (def.fertileBonus && isFertile(state.world, b.x, b.y)) bonus += 0.8;
       if ((state.res.fertilizer || 0) > 0) { bonus += FERTILIZER_BOOST; state.res.fertilizer = Math.max(0, state.res.fertilizer - 0.05 * dt); }
       rate *= (1 + bonus);
     }
-    if (def.category === 'Production') rate *= (1 + state.mods.prodMul);
+    if (def.category === 'Production') rate *= (1 + state.mods.prodMul + (mega.prodMul || 0));
     if (def.produces?.power) rate *= (1 + env.powerGain);
     if (def.produces?.research) rate *= (1 + (state.mods.researchMul || 0) + evoBonus(state, 'all', 'research'));
 
@@ -167,7 +171,8 @@ function recomputeBuildings(state) {
   state._vets = vets;
   // Caretaker huts auto-tend energy, fun & health — easing larger settlements.
   fun += caretakers * 4; health += caretakers * 4;
-  defense = Math.round(defense * (1 + evoBonus(state, 'all', 'defense')));
+  defense = Math.round(defense * (1 + evoBonus(state, 'all', 'defense'))) + (state._mega?.defense || 0);
+  storage += state._mega?.storage || 0; // Great Granary expands the vaults
   state.popCap = popCap; state.storageCap = storage; state.defense = defense;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
   state._waterers = waterers; state._caretakers = caretakers; state._hygiene = hygiene;
@@ -208,7 +213,7 @@ function runMine(state, b, def, dt, wb) {
   }
   const n = state.world.nodes.find(o => o.id === b.nodeId);
   if (!n || n.amount <= 0) { collapseMine(state, b, n); return; }
-  const got = Math.min(n.amount, (def.rate || 1.2) * dt * wb * (1 + state.mods.mineMul));
+  const got = Math.min(n.amount, (def.rate || 1.2) * dt * wb * (1 + state.mods.mineMul + (state._mega?.mineMul || 0)));
   n.amount -= got;
   b._remaining = Math.ceil(n.amount);
   addRes(state, NODE_TYPES[n.kind].resource, got);
@@ -447,8 +452,9 @@ function updateMorale(state, dt) {
 
   const injured = state.units.filter(u => u.sick || u.needs.health < 25).length;
   let drain = bodies.length * MORALE.bodyDrain + injured * MORALE.injuredDrain;
-  if (drain > 0) state.morale = Math.max(0, state.morale - drain * dt);
-  else state.morale = Math.min(100, state.morale + MORALE.recover * dt);
+  const moraleRecover = MORALE.recover + (state._mega?.moraleRecover || 0); // Monument lifts spirits
+  if (drain > 0) state.morale = Math.max(0, state.morale - drain * dt + (state._mega?.moraleRecover || 0) * dt);
+  else state.morale = Math.min(100, state.morale + moraleRecover * dt);
 
   // Low morale drips away everyone's Fun (sad colony).
   if (state.morale < 60) {
@@ -462,7 +468,7 @@ function updateBreeding(state, dt) {
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0));
+  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
     state.res.food -= 5;

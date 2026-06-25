@@ -13,12 +13,16 @@
     <div class="spacer"></div>
     <div class="controls">
       <button id="btn-save" title="Save now">💾 Save</button>
+      <button id="btn-export" title="Download your colony as a save file">⬆️ Export</button>
+      <button id="btn-import" title="Load a colony from a save file">⬇️ Import</button>
       <button id="btn-new" title="New colony">🆕 New</button>
+      <input id="import-file" type="file" accept=".json,application/json" hidden />
     </div>
   </header>
 
   <div id="envbar" class="envbar"></div>
   <div id="needsbar" class="needsbar"></div>
+  <div id="alertbar" class="alertbar hidden"></div>
 
   <main id="stage">
     <div id="board">
@@ -35,6 +39,7 @@
         <button class="tabbtn" data-tab="rodents">🐹 Rodents</button>
         <button class="tabbtn" data-tab="threats">🛡️ Threats</button>
         <button class="tabbtn" data-tab="trade">🤝 Trade</button>
+        <button class="tabbtn" data-tab="mega">🏛️ Mega</button>
       </nav>
       <div class="panes">
         <section id="tab-build" class="tabpane active"></section>
@@ -43,6 +48,7 @@
         <section id="tab-rodents" class="tabpane"></section>
         <section id="tab-threats" class="tabpane"></section>
         <section id="tab-trade" class="tabpane"></section>
+        <section id="tab-mega" class="tabpane"></section>
       </div>
       <div id="log" class="log"></div>
     </aside>
