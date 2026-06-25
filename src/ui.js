@@ -333,6 +333,10 @@ export function createUI(state, ctx) {
     });
     el('btn-new').onclick = showCharacterCreation;
     el('btn-save').onclick = () => { ctx.onSave(); flash('Saved!'); };
+    if (el('btn-saveas')) el('btn-saveas').onclick = () => {
+      const n = prompt('Save as a new hamster — name this copy:', state.founder?.name || 'Colony');
+      if (n != null && n.trim()) ctx.onSaveAs?.(n.trim().slice(0, 16));
+    };
     if (el('btn-export')) el('btn-export').onclick = () => ctx.onExport?.();
     if (el('btn-import')) el('btn-import').onclick = () => ctx.onImport?.();
     if (el('btn-help')) el('btn-help').onclick = showHelp;

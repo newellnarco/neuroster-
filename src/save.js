@@ -1,17 +1,72 @@
-// save.js — localStorage persistence. Time only advances while you're playing:
-// there is NO offline progress — the world is exactly as you left it.
-const KEY = 'neuroster.save.v2';
+// save.js — multi-slot persistence: one slot per hamster colony. The ACTIVE
+// slot is what the running game autosaves to; the start screen lists all slots
+// so you can keep several hamsters and jump back into any one's latest autosave.
+// Time only advances while playing — there is NO offline progress.
+const PREFIX = 'neuroster.';
+const INDEX_KEY = PREFIX + 'slots';          // [{id,name,breed,biome,day,savedAt,version}]
+const ACTIVE_KEY = PREFIX + 'activeSlot';    // id of the slot the game writes to
+const SLOT_KEY = (id) => PREFIX + 'slot.' + id;
+const LEGACY_KEY = PREFIX + 'save.v2';       // pre-slots single save (migrated once)
 
+function readIndex() { try { return JSON.parse(localStorage.getItem(INDEX_KEY)) || []; } catch { return []; } }
+function writeIndex(list) { try { localStorage.setItem(INDEX_KEY, JSON.stringify(list)); } catch {} }
+export function getActiveSlot() { try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
+export function selectSlot(id) { try { localStorage.setItem(ACTIVE_KEY, id); } catch {} return id; }
+function genId() { return 'h' + Date.now().toString(36) + Math.floor(Math.random() * 1e5).toString(36); }
+
+function slotMeta(id, state) {
+  return {
+    id,
+    name: state?.founder?.name || 'Colony',
+    breed: state?.founder?.breed || 'syrian',
+    biome: state?.biome || 'woodland',
+    day: Math.floor((state?.env?.dayTime || 0) / 900) + 1,
+    savedAt: Date.now(),
+    version: state?.version,
+  };
+}
+
+// Fold a pre-slots single save into a slot the first time we see it.
+function migrateLegacy() {
+  try {
+    const raw = localStorage.getItem(LEGACY_KEY);
+    if (!raw || readIndex().length) return;
+    const id = genId();
+    localStorage.setItem(SLOT_KEY(id), raw);
+    writeIndex([slotMeta(id, JSON.parse(raw))]);
+    selectSlot(id);
+    localStorage.removeItem(LEGACY_KEY);
+  } catch {}
+}
+
+// ---- Public API ----
+export function listSlots() { migrateLegacy(); return readIndex().slice().sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0)); }
+export function hasSave() { migrateLegacy(); return readIndex().length > 0; }
+
+// Save the running state to the active slot (creating one if needed).
 export function saveGame(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ ...state, savedAt: Date.now() }));
+    let id = getActiveSlot();
+    if (!id) { id = selectSlot(genId()); }
+    localStorage.setItem(SLOT_KEY(id), JSON.stringify({ ...state, savedAt: Date.now() }));
+    const list = readIndex().filter(s => s.id !== id);
+    list.push(slotMeta(id, state));
+    writeIndex(list);
     return true;
   } catch (e) { console.warn('save failed', e); return false; }
 }
 
+// Load the active slot's state (or null).
 export function loadGame() {
+  migrateLegacy();
+  return loadSlotState(getActiveSlot());
+}
+// Make a slot active and load it.
+export function loadSlot(id) { selectSlot(id); return loadSlotState(id); }
+function loadSlotState(id) {
+  if (!id) return null;
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(SLOT_KEY(id));
     if (!raw) return null;
     const state = JSON.parse(raw);
     reattachTyped(state);
@@ -19,19 +74,28 @@ export function loadGame() {
   } catch (e) { console.warn('load failed', e); return null; }
 }
 
-export function clearSave() { localStorage.removeItem(KEY); }
+// Begin a brand-new slot for a freshly-created colony, and persist it.
+export function startNewSlot(state) { selectSlot(genId()); return saveGame(state); }
 
-// Is there a saved colony to resume? (Used by the start screen.)
-export function hasSave() { try { return !!localStorage.getItem(KEY); } catch { return false; } }
+// Fork the current colony into a NEW named slot (Save As), and make it active.
+export function saveAsNewSlot(state, name) {
+  selectSlot(genId());
+  const s = name ? { ...state, founder: { ...(state.founder || {}), name: String(name).slice(0, 16) } } : state;
+  return saveGame(s);
+}
 
-// ---- Export / import -------------------------------------------------------
-// Lets players back up or move a colony (and hand a save to a tester). Export
-// returns a portable JSON string; import validates it, persists it as the live
-// save, and returns the parsed state (caller typically reloads to start it).
+export function deleteSlot(id) {
+  try {
+    localStorage.removeItem(SLOT_KEY(id));
+    writeIndex(readIndex().filter(s => s.id !== id));
+    if (getActiveSlot() === id) localStorage.removeItem(ACTIVE_KEY);
+  } catch {}
+}
+
+// ---- Export / import (portable single-colony JSON) ----
 export function exportSave(state) {
   return JSON.stringify({ ...state, savedAt: Date.now(), _neuroster: 'save-v1' });
 }
-
 export function importSaveString(raw) {
   let state;
   try { state = JSON.parse(raw); }
@@ -39,8 +103,7 @@ export function importSaveString(raw) {
   if (!state || !state.world || !Array.isArray(state.units))
     return { ok: false, reason: 'This file is not a Neuroster colony save.' };
   reattachTyped(state);
-  try { localStorage.setItem(KEY, JSON.stringify(state)); }
-  catch (e) { return { ok: false, reason: 'Could not store the imported save.' }; }
+  startNewSlot(state); // import lands as a new hamster slot, made active
   return { ok: true, state };
 }
 
