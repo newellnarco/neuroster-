@@ -148,6 +148,15 @@ export const BUILDINGS = {
     cost: { wood: 20, stone: 30 }, category: 'Defense', defense: 8,
     protect: { wolf: 3, hawk: 4, raid: 4 },
   },
+  tunnel: {
+    name: 'Tunnel', icon: '🛤️', desc: 'Above-ground covered run: rodents move protected; shields against predators.',
+    cost: { wood: 15, planks: 8 }, category: 'Defense', defense: 3, protect: { wolf: 3, hawk: 3 },
+  },
+  dam: {
+    name: 'Beaver Dam', icon: '🦫', desc: 'Beavers dam the water to collect & hold it: lots of Water + strong flood protection (cuts flow upstream).',
+    cost: { wood: 50, stone: 20 }, category: 'Defense', produces: { water: 1.0 }, needsWater: true, radius: 2,
+    protect: { flood: 9 }, requiresSpecies: 'beaver', upstreamPenalty: true,
+  },
   barracks: {
     name: 'Barracks', icon: '⚔️', desc: 'Trains defenders. Offensive + defensive power.',
     cost: { planks: 40, iron: 20 }, category: 'Defense', defense: 12, offense: 8,
@@ -170,7 +179,9 @@ export const SPECIES = {
   hamster:   { name: 'Hamster',   icon: '🐹', speed: 1.0, carry: 5,  mine: 1.0, locked: false,
                role: 'All-round worker' },
   guineapig: { name: 'Guinea Pig',icon: '🐹', speed: 0.8, carry: 4,  mine: 0.6, power: 2.0, locked: true,
-               role: 'Runs wheels → Power', protect: { flood: 0 } },
+               def: 3, atk: 3, role: 'Burly guard/soldier — runs wheels & fights off raiders' },
+  gopher:    { name: 'Gopher',    icon: '🦡', speed: 1.0, carry: 6,  mine: 1.3, build: 1.6, repair: 2.0, locked: true,
+               role: 'Tunnels underground to repair & dig fast' },
   gerbil:    { name: 'Gerbil',    icon: '🐭', speed: 1.6, carry: 8,  mine: 0.8, locked: true,
                role: 'Fast hauler; speeds conveyors' },
   mouse:     { name: 'Mouse',     icon: '🐁', speed: 1.4, carry: 3,  mine: 0.7, research: 1.5, locked: true,
@@ -202,7 +213,9 @@ export const TECH = {
   unlockMouse:  { name: 'Recruit Mice', icon: '🐁', cost: { research: 60, food: 120 },
                   desc: 'Unlock Mice (boost research).', effect: { unlock: 'mouse' } },
   unlockBeaver: { name: 'Recruit Beavers', icon: '🦫', cost: { research: 90, planks: 80 },
-                  desc: 'Unlock Beavers (heavy builders).', effect: { unlock: 'beaver' } },
+                  desc: 'Unlock Beavers (heavy builders; build Dams).', effect: { unlock: 'beaver' } },
+  unlockGopher: { name: 'Recruit Gophers', icon: '🦡', cost: { research: 80, stone: 80 },
+                  desc: 'Unlock Gophers (fast underground repairs & digging).', effect: { unlock: 'gopher' } },
 };
 
 // ---- Disasters & predators -------------------------------------------------
@@ -409,6 +422,7 @@ export const SLEEP = {
   mouse:     { phase: 'nocturnal', need: 1.0 },
   rat:       { phase: 'nocturnal', need: 1.0 },
   beaver:    { phase: 'diurnal',   need: 1.2 },
+  gopher:    { phase: 'diurnal',   need: 1.0 },
 };
 
 // ---- Levels ----------------------------------------------------------------

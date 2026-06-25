@@ -13,14 +13,15 @@ export function protectionAgainst(state, key) {
   for (const u of state.units) {
     const sp = SPECIES[u.species];
     if (sp?.protect?.[key]) p += sp.protect[key];
+    if (sp?.def) p += sp.def; // guards (e.g. guinea pigs) defend against everything
   }
-  // Barracks/towers also contribute generic offense to fight predators.
   return p;
 }
 
 export function totalOffense(state) {
   let o = 0;
   for (const b of state.buildings) o += BUILDINGS[b.type]?.offense || 0;
+  for (const u of state.units) o += SPECIES[u.species]?.atk || 0; // soldiers (guinea pigs)
   return o;
 }
 

@@ -1,7 +1,7 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST } from './config.js';
-import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx } from './state.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR } from './config.js';
+import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend } from './state.js';
 import { makeRodent, stepRodent, combineRodents } from './entities.js';
 import { stepEvents } from './events.js';
 import { stepEnvironment, envMods } from './environment.js';
@@ -22,6 +22,9 @@ export function stepEconomy(state, dt) {
   // 3) Building production / refining.
   const wb = wellbeingMul(state);
   const powerMul = powerMultiplier(state);
+  // Dams hold back the river: each one cuts non-dam water sources' flow upstream.
+  const dams = state.buildings.filter(b => BUILDINGS[b.type]?.upstreamPenalty).length;
+  const upstreamMul = Math.max(0.3, 1 - 0.3 * dams);
   // Weather can rain extra water into stores.
   if (env.waterGain) addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4));
   for (const b of state.buildings) {
@@ -48,7 +51,11 @@ export function stepEconomy(state, dt) {
       if (!ok) continue;
       for (const [k, v] of Object.entries(def.consumes)) state.res[k] -= v * rate;
     }
-    if (def.produces) for (const [k, v] of Object.entries(def.produces)) addRes(state, k, v * rate);
+    if (def.produces) for (const [k, v] of Object.entries(def.produces)) {
+      // Non-dam water sources lose flow when dams hold the river upstream.
+      const r = (k === 'water' && !def.upstreamPenalty) ? rate * upstreamMul : rate;
+      addRes(state, k, v * r);
+    }
   }
   // Remove any mines that collapsed this tick (deposit exhausted).
   if (state._collapse && state._collapse.length) {
@@ -106,10 +113,20 @@ function recomputeBuildings(state) {
 function runMine(state, b, def, dt, wb) {
   // Flooded mines are idle until repaired (materials paid + repair time elapses).
   if (b.flooded) {
-    if (b.repairUntil != null && (state.env.lived || 0) >= b.repairUntil) {
+    const lived = state.env.lived || 0;
+    if (b.repairUntil != null && lived >= b.repairUntil) {
       b.flooded = false; b.repairUntil = null;
       addFx(state, b.x, b.y, '🔧', 1.6);
       logMsg(state, '🔧 A flooded mine was repaired and is working again.');
+    } else if (b.repairUntil == null) {
+      // Gophers tunnel in and auto-repair flooded mines (fast), if materials allow.
+      const gophers = state.units.filter(u => u.species === 'gopher').length;
+      if (gophers > 0 && canAfford(state, MINE_REPAIR.cost)) {
+        spend(state, MINE_REPAIR.cost);
+        b.repairUntil = lived + Math.round(MINE_REPAIR.seconds / (1 + 0.5 * gophers));
+        addFx(state, b.x, b.y, '🦡', 1.6);
+        logMsg(state, '🦡 Gophers tunnelled in to auto-repair a flooded mine.');
+      }
     }
     return;
   }

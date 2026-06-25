@@ -11,6 +11,7 @@ const VIS = {
   mouse:     { body: '#bdbdc6', belly: '#e9e9f0', size: 11, ear: 6, tail: 13, tailW: 1.5 },
   rat:       { body: '#9a9098', belly: '#cfc8cf', size: 16, ear: 5, tail: 16, tailW: 2 },
   beaver:    { body: '#6e4b32', belly: '#a98a66', size: 18, ear: 3, tail: 8, tailW: 6 },
+  gopher:    { body: '#a87f4e', belly: '#d8c193', size: 15, ear: 3, tail: 5, tailW: 3 },
 };
 
 export function createRenderer(canvas, state, getView) {

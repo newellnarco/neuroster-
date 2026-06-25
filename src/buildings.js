@@ -65,6 +65,8 @@ export function canPlace(state, type, x, y) {
     return { ok: false, reason: 'Place on an underground iron-ore or coal seam' };
   if (def.needsNode && !surfaceNodeNear(state, x, y, def.radius || 2))
     return { ok: false, reason: 'Place near trees/rocks to feed the belt' };
+  if (def.requiresSpecies && !state.units.some(u => u.species === def.requiresSpecies))
+    return { ok: false, reason: `Needs a ${SPECIES[def.requiresSpecies].name} in the colony to build` };
   if (!canAfford(state, def.cost))
     return { ok: false, reason: 'Not enough resources' };
   return { ok: true };
@@ -98,8 +100,11 @@ export function repairMine(state, b) {
   if (b.repairUntil != null) return { ok: false, reason: 'Already being repaired' };
   if (!canAfford(state, MINE_REPAIR.cost)) return { ok: false, reason: `Repair needs ${Object.entries(MINE_REPAIR.cost).map(([k, v]) => k + ' ' + v).join(', ')}` };
   spend(state, MINE_REPAIR.cost);
-  b.repairUntil = (state.env?.lived || 0) + MINE_REPAIR.seconds;
-  logMsg(state, `🔧 Repairing a flooded mine (~${MINE_REPAIR.seconds}s)…`);
+  // Gophers tunnel in and repair much faster.
+  const gophers = state.units.filter(u => u.species === 'gopher').length;
+  const secs = Math.round(MINE_REPAIR.seconds / (1 + 0.5 * gophers));
+  b.repairUntil = (state.env?.lived || 0) + secs;
+  logMsg(state, `🔧 Repairing a flooded mine (~${secs}s)${gophers ? ' — gophers digging in fast!' : ''}…`);
   return { ok: true };
 }
 

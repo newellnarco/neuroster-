@@ -34,7 +34,7 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 2 | Buildings & power automation | 🟡 Partial | Wheel→Power done; **animated conveyor belts (wood + metal) ship & auto-haul from nodes**; plastic tier + belt networks pending |
 | 2b | Animated, pixel-art top-angle rendering | ✅ Shipped | Animated rodents, wheel, conveyors; **blended/feathered terrain edges** (seamless, no hard squares); soft blur; fertile-soil tint; waste specks; sick markers |
 | 2c | Fertility, food chain & sanitation | ✅ Shipped | **Fertile ground near water** boosts farms; food chain **wheat→grain→pellets** (premium nourishment); **droppings → wet tail disease + Vet Clinic**; **Composter → fertilizer** speeds/upgrades food; waste blocks building |
-| 3 | Rodent species + recruiting + hybrids | ✅ Shipped | 6 species, hybrid breeding blends traits |
+| 3 | Rodent species + recruiting + hybrids | ✅ Shipped | 7 species (+**gopher**), hybrid breeding; **guinea-pig guards/soldiers** (def/atk), **gophers auto-repair mines fast**, **beavers build Dams**; **Tunnels** shield movement |
 | 4 | Per-creature needs (food/water/energy/fun/health) | ✅ Shipped | Drives per-unit productivity & loyalty |
 | 5 | Sleep cycles per species/level | ✅ Shipped | Nocturnal/diurnal/crepuscular phases |
 | 6 | Predators & natural disasters | ✅ Shipped | Wolf/Hawk/Raid/Flood/Quake + counters; **floods are double-edged** (seeds+fertility vs damage/drowned mines, gated by levees) |
@@ -83,6 +83,11 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
       disaster frequency, map size; surfaced in character creation.
 - [ ] **Job assignment UI** — let players assign specific rodents to resources/buildings
       (currently auto by `prefKind`).
+- [ ] **True movement/pathfinding** — so Tunnels can physically gate/route movement and
+      block other animals, and gophers literally travel underground between holes
+      (currently abstracted as protection + faster repairs).
+- [ ] **River geography for dams** — model real upstream tiles so a dam visibly dries the
+      flow above it and irrigates below (currently a global upstream-flow penalty).
 - [ ] **Distraction/entertainment objects** — toys, wheels-for-fun, mazes that trade a
       little productivity for big Fun (boredom relief) — deepen boredom↔curiosity loop.
 - [ ] **Disease/health events** + quarantine; Infirmary becomes essential in marsh.
