@@ -65,6 +65,7 @@ export function protectionAgainst(state, key) {
     if (sp?.protect?.[key]) p += sp.protect[key];
     if (sp?.def) p += sp.def; // guards (e.g. guinea pigs) defend against everything
   }
+  p += state._mega?.protectAll || 0; // the Citadel shields against every threat
   return p;
 }
 

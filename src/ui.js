@@ -5,6 +5,9 @@ import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost,
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight } from './environment.js';
 import { MILESTONES } from './milestones.js';
+import { computeAlerts } from './alerts.js';
+import { MEGAPROJECTS } from './config.js';
+import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount, costText as megaCostText } from './megaprojects.js';
 
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
@@ -35,7 +38,8 @@ export function createUI(state, ctx) {
       `<span class="env" title="Overall wellbeing multiplier">😊 ×${wellbeingMul(state).toFixed(2)}</span>` +
       `<span class="env" title="Colony morale — falls from unburied dead, injuries & violence; bury & heal to restore it">${moraleIcon(state.morale)} Morale ${Math.round(state.morale ?? 100)}${(state.bodies?.length) ? ` · ⚰️${state.bodies.length} unburied` : ''}</span>` +
       `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
-      `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>`;
+      `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>` +
+      (megaCount(state) ? `<span class="env" title="Megaprojects completed — permanent colony-wide wonders">🏛️ ${megaCount(state)}</span>` : '');
   }
   function milestoneTip(state) {
     const done = state.milestones || {};
@@ -217,7 +221,57 @@ export function createUI(state, ctx) {
     });
   }
 
+  // ---- Megaprojects: long-horizon, contribute-over-time goals ----
+  function renderMega() {
+    const done = megaCount(state);
+    el('tab-mega').innerHTML = `<div class="hint">Megaprojects are colony-defining goals built over many sessions. Pour your <b>surplus</b> resources into one a little at a time; when every requirement is met it completes and grants a permanent, powerful boost. ${done}/${Object.keys(MEGAPROJECTS).length} complete.</div>` +
+      Object.entries(MEGAPROJECTS).map(([id, def]) => {
+        const s = state.megaprojects?.[id];
+        const isDone = s?.done;
+        const unlocked = isMegaUnlocked(state, id);
+        const pct = Math.round(megaProgress(state, id) * 100);
+        const remain = remainingCost(state, id);
+        const remainStr = Object.keys(remain).length ? megaCostText(remain) : '—';
+        const cls = isDone ? 'gd' : !unlocked ? 'bd' : '';
+        const canContribute = unlocked && !isDone && Object.keys(remain).some(k => (state.res[k] || 0) > 0);
+        return `<div class="threat mega ${isDone ? 'done' : ''}">
+          <div class="trow"><span>${def.icon} <b>${def.name}</b></span>
+            <span class="${cls}">${isDone ? '✅ Complete' : unlocked ? pct + '%' : `🔒 Lv.${def.reqLevel}`}</span></div>
+          <div class="need ${isDone ? 'ok' : pct >= 50 ? 'mid' : 'low'}"><span class="bar" style="width:100%"><span style="width:${pct}%"></span></span></div>
+          <div class="ds">${def.desc}<br><span class="helpers">🎁 ${def.blurb}</span>${isDone ? '' : `<br>Still needs: ${remainStr}`}</div>
+          ${isDone ? '' : `<div class="care"><button class="carebtn ${canContribute ? '' : 'cd'}" data-mega="${id}" title="Contribute surplus resources toward this project">🤝 Contribute surplus</button></div>`}
+        </div>`;
+      }).join('');
+    bind('[data-mega]', (btn) => { msg(contributeMega(state, btn.dataset.mega)); renderMega(); renderResbar(); });
+  }
+
   function renderLog() { el('log').innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join(''); }
+
+  // ---- Alerts banner — the live "what needs attention now" retention hook ----
+  const MAX_ALERTS = 5;
+  let lastCritical = new Set();
+  function renderAlerts() {
+    const bar = el('alertbar');
+    const alerts = computeAlerts(state);
+    if (!alerts.length) { bar.classList.add('hidden'); bar.innerHTML = ''; lastCritical = new Set(); return; }
+    bar.classList.remove('hidden');
+    const shown = alerts.slice(0, MAX_ALERTS);
+    bar.innerHTML = shown.map(a =>
+      `<span class="alert ${a.sev} ${a.tab ? 'clickable' : ''}" ${a.tab ? `data-goto="${a.tab}"` : ''} title="${a.msg}">
+        <span class="ico">${a.icon}</span><span class="ttl">${a.msg}</span></span>`).join('') +
+      (alerts.length > shown.length ? `<span class="more">+${alerts.length - shown.length} more</span>` : '');
+    bind('#alertbar [data-goto]', (n) => gotoTab(n.dataset.goto));
+    // Ping (flash) the first time a NEW critical alert appears, then remember it.
+    const crit = new Set(alerts.filter(a => a.sev === 'critical').map(a => a.id));
+    for (const a of alerts) {
+      if (a.sev === 'critical' && !lastCritical.has(a.id)) { flash(`${a.icon} ${a.msg}`); break; }
+    }
+    lastCritical = crit;
+  }
+  function gotoTab(tab) {
+    const btn = document.querySelector(`[data-tab="${tab}"]`);
+    if (btn) btn.click();
+  }
 
   // ---- Tabs & controls ----
   function setupTabs() {
@@ -231,12 +285,25 @@ export function createUI(state, ctx) {
     });
     el('btn-new').onclick = showCharacterCreation;
     el('btn-save').onclick = () => { ctx.onSave(); flash('Saved!'); };
+    if (el('btn-export')) el('btn-export').onclick = () => ctx.onExport?.();
+    if (el('btn-import')) el('btn-import').onclick = () => ctx.onImport?.();
+    if (el('btn-help')) el('btn-help').onclick = showHelp;
+    if (el('help-close')) el('help-close').onclick = hideHelp;
+    // Auto-open the guide on a player's very first visit.
+    try { if (!localStorage.getItem('neuroster.seenHelp')) showHelp(); } catch {}
     // Founder rename (delegated click on the env bar chip).
     el('envbar').onclick = (e) => {
       if (!e.target.closest('#founder-chip')) return;
       const n = prompt('Rename your founder hamster (once every 30 days):', state.founder?.name || '');
       if (n != null) msg(renameFounder(state, n));
     };
+  }
+
+  // ---- How-to-Play overlay ----
+  function showHelp() { el('help-modal').classList.remove('hidden'); }
+  function hideHelp() {
+    el('help-modal').classList.add('hidden');
+    try { localStorage.setItem('neuroster.seenHelp', '1'); } catch {}
   }
 
   // ---- Character creation: breed + name + biome ----
@@ -324,18 +391,19 @@ export function createUI(state, ctx) {
     clearTimeout(flashTimer); flashTimer = setTimeout(() => f.classList.remove('show'), 1600);
   }
 
-  function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); }
+  function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); }
 
   let acc = 0;
   function update(dt) {
     renderResbar(); renderEnv(); renderNeeds();
     acc += dt;
     if (acc > 0.5) {
-      acc = 0; renderLog();
+      acc = 0; renderLog(); renderAlerts();
       const active = (tab) => el('tab-' + tab).classList.contains('active');
       if (active('rodents')) renderRodents();
       if (active('threats')) renderThreats();
       if (active('trade')) renderTrade();
+      if (active('mega')) renderMega();
       if (active('evo')) renderEvo();
       if (active('build')) refreshAfford();
     }
@@ -347,7 +415,7 @@ export function createUI(state, ctx) {
   }
 
   return { init, update, flash,
-    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderLog(); } };
+    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderLog(); renderAlerts(); } };
 }
 
 function moraleIcon(m) { m = m ?? 100; return m >= 70 ? '😊' : m >= 45 ? '😐' : m >= 25 ? '😟' : '😢'; }

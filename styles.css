@@ -48,6 +48,31 @@ body {
 .need.low .bar span { background: var(--bad); }
 .need.wb, .need.def { color: var(--muted); }
 
+/* Alerts bar — live "what needs attention now" notifications */
+.alertbar {
+  display: flex; gap: 8px; align-items: center; padding: 6px 12px; flex-wrap: wrap;
+  background: #2a211b; border-bottom: 1px solid var(--line); font-size: 12px;
+}
+.alertbar.hidden { display: none; }
+.alert {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 7px;
+  background: var(--panel2); border: 1px solid var(--line); cursor: default; white-space: nowrap;
+  transition: .12s;
+}
+.alert.clickable { cursor: pointer; }
+.alert.clickable:hover { border-color: var(--accent); }
+.alert .ico { font-size: 14px; }
+.alert.critical { background: #43211d; border-color: #b14b43; color: #ffd9d2; }
+.alert.warning  { background: #3d3320; border-color: #b08a3a; color: #ffeccb; }
+.alert.info     { background: #20322f; border-color: #3f7b73; color: #d6efe9; }
+.alert.critical { animation: alert-pulse 1.4s ease-in-out infinite; }
+@keyframes alert-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224,107,107,.0); }
+  50%      { box-shadow: 0 0 0 3px rgba(224,107,107,.35); }
+}
+.alert .ttl { color: inherit; }
+.alertbar .more { color: var(--muted); align-self: center; }
+
 /* Stage layout */
 #stage { flex: 1; display: flex; min-height: 0; }
 #board { flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
@@ -116,6 +141,7 @@ body {
 .trow .gd { color: var(--good); } .trow .bd { color: var(--bad); }
 .threat .need { margin: 4px 0; }
 .threat .bar { width: 100%; }
+.threat.mega.done { opacity: .85; border-color: var(--good); }
 .helpers { color: var(--accent); }
 
 /* Log */
@@ -136,6 +162,9 @@ body {
   border: 1px solid var(--line); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 .modal-card .cat { margin-top: 14px; }
 .card.breed.sel, .card.opt.sel { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(230,180,80,.3) inset; }
+ul.help { margin: 6px 0 4px; padding-left: 18px; color: var(--ink); }
+ul.help li { margin: 5px 0; font-size: 13px; line-height: 1.5; }
+ul.help b { color: var(--accent); font-weight: 600; }
 .namerow { display: flex; gap: 8px; }
 .namerow input { flex: 1; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
   border-radius: 8px; padding: 8px 12px; font-size: 15px; }

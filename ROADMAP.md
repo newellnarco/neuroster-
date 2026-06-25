@@ -7,7 +7,7 @@ concrete fix / add / change items; **Recommendations** are ideas to pull from fr
 > Update this file every session: tick off what shipped, append what's new, and
 > leave a "Continue here" note at the bottom so the next session can resume fast.
 
-_Last updated: 2026-06-25 — through the founder/breeds + world-systems expansion._
+_Last updated: 2026-06-25 — added the alert/notification bar (Arc 17), megaprojects (Arc 16) & save export/import._
 
 ---
 
@@ -51,9 +51,9 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 15b | Morale & ethics ("kindness vs preservation") | ✅ Shipped | Unburied dead & untreated injuries crush **morale**; **lethal defenses cost morale** — but a **Vet Clinic lets you heal repelled raiders** (morale up, they may **join you**, faction warms); **tiered burials** (Dirt→Crypts→Mausoleum) restore morale by respect |
 | 15c | Upgradeable tunnels + steel | ✅ Shipped | Tunnels protect travel & bar other animals; have **HP**, take damage from attacks/raids/disasters, and **upgrade wood→iron→steel** (new **Steel** from a **Steelworks**); click to upgrade/repair |
 | 15d | Leader / Town Hall (equity) | ✅ Shipped | The leader rules by example — Town Hall (Meeting Burrow→Town Hall→Grand Hall) gives a colony-wide **leadership** boost (output, teaching XP, breeding), but a hall too lavish for everyone's **amenities breeds resentment** (morale/fun/output fall). Tunnels & conveyors now **visually connect** into networks (with a gap for the traveling hamster). |
-| 16 | Megaprojects & long-horizon goals | 🔴 Planned | Grand Wheel, Citadel; retention anchors |
+| 16 | Megaprojects & long-horizon goals | ✅ Shipped | **Contribute-over-many-sessions** wonders: 🎡 Grand Wheel (+50% production & free power), 🏰 Citadel (+90 defense, +45 protection vs every threat), 🌾 Great Granary (+1800 storage, +60% food), 🗿 Eternal Monument (leadership, faster breeding, steady morale). Level-gated; pour surplus into them via the **Mega** tab; permanent colony-wide payoff + milestone |
 | 16b | Gamified care + engagement loop | ✅ Shipped | Hands-on Feed/Water/Play/Pet with reward FX, **bond** (affection→productivity+loyalty), caretaker/auto-waterer automation to ease scale |
-| 17 | Quests / achievements / notifications | 🔴 Planned | The "neurotic check-in" hook |
+| 17 | Quests / achievements / notifications | ✅ Shipped | **Live alert bar** (`src/alerts.js`): prioritized, colour-coded HUD banner surfacing critical needs, sickness, unburied dead, degraded burrows, flooded mines, low morale, full housing/storage, **imminent raids & disasters** (defense-aware), desertion risk + engagement nudges (unspent skill points). Click an alert to jump to the right panel; new criticals ping the flash. Pairs with milestones (17c) |
 | 17b | Construction & labour | ✅ Shipped | Buildings & upgrades take **time**, built by awake rodents; more builders = faster, diverting them slows gathering/production; higher tiers take longer; construction-site visuals + progress bars |
 | 17c | Milestones / achievements | ✅ Shipped | 16 goals with reward drip + HUD tracker (retention) |
 | 17d | Sand Bath + burrow upkeep | ✅ Shipped | Sand Bath cleans hamsters (health + anti-wet-tail hygiene); **burrows degrade if not cleaned** (lose housing/breeding) — caretakers auto-clean or click to clean |
@@ -99,8 +99,8 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] **Distraction/entertainment objects** — toys, wheels-for-fun, mazes that trade a
       little productivity for big Fun (boredom relief) — deepen boredom↔curiosity loop.
 - [ ] **Disease/health events** + quarantine; Infirmary becomes essential in marsh.
-- [ ] **Notifications/alerts** when a need bottoms out or a raid looms (retention).
-- [ ] **Save slots / multiple colonies**; export/import save.
+- [x] **Notifications/alerts** when a need bottoms out or a raid looms (retention) — shipped as the live alert bar (`src/alerts.js`).
+- [x] **Export/import save** (file download + file load, with validation & typed-array reattach). Multiple named **save slots** still pending.
 - [ ] **Milestones & achievements** (first hybrid, day 30 survived, apex evolution…).
 
 ### 🔁 Change
@@ -171,17 +171,33 @@ autosave (no offline progress), and a **deployable server (Docker, configurable 
 - Verify every change with: `node --check` all files, a headless `stepEconomy` smoke
   (see scratchpad history), and a Playwright load (zero console errors).
 
+**Shipped this session:** the live **alert bar** (Arc 17, `src/alerts.js` — purely derived,
+nothing persisted), **megaprojects** (Arc 16, `src/megaprojects.js` + `MEGAPROJECTS` in
+config; contribute-over-time, bonuses folded into economy/events/recompute via the
+`state._mega` per-tick cache), **save export/import** (`save.js` + topbar buttons +
+`game.js` download/upload handlers), a first-run **How-to-Play overlay** (`#help-modal`,
+auto-opens once via a `neuroster.seenHelp` flag), and **CI** (`.github/workflows/ci.yml`
+running `npm test` → `test/smoke.mjs`, the committed headless verification).
+
 **Best next steps (highest value first):**
 1. **AI colonies as living neighbours** — the factions are economic only; give them a
    presence on the map (camps, caravans, visible raids) and richer diplomacy. Biggest
    "turns a builder into a world" multiplier.
-2. **Notifications/alerts** — surface critical needs / imminent raids / degraded burrows
-   as a HUD banner (retention; pairs with milestones already shipped).
-3. **Megaprojects** — multi-session goals (Grand Wheel powers the whole colony; Citadel =
-   ultimate defense) with large cumulative costs.
-4. **True pathfinding** (bigger refactor) — makes tunnels physically gate movement,
+2. **True pathfinding** (bigger refactor) — makes tunnels physically gate movement,
    gophers travel underground, and dams use real river geography (currently abstracted).
-5. **Audio + tutorial/onboarding**, then **save slots / export-import**.
+3. **Audio + tutorial/onboarding** — once systems settle, polish converts curiosity to
+   retention; an onboarding pass pairs well with the new alert bar.
+4. **Multiple named save slots** — export/import landed; per-slot management is the
+   remaining piece (UI for naming/listing/switching colonies).
+5. **More megaprojects & a megaproject site on the map** — currently abstract (contribute
+   from anywhere); placing a wonder footprint that builds up visually would deepen them.
+
+**Megaproject integration notes (for whoever extends them):**
+- `megaBonuses(state)` is summed each tick into `state._mega`; read it where bonuses apply
+  (economy production/mine/storage/defense/morale/breeding; `protectionAgainst` in events).
+- Effects are additive across completed projects; add a new project by editing
+  `MEGAPROJECTS` in config — only add engine code if it introduces a NEW effect key.
+- Contribution is capped per click (`MAX_PER_CLICK`) so progress always feels deliberate.
 
 **Known abstractions (logged, not bugs):** tunnel movement-gating, gopher underground
 travel, dam upstream geography, and belt "networks" are approximated (no pathfinding).

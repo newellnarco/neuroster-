@@ -4,7 +4,7 @@ import { newGame } from './state.js';
 import { stepEconomy } from './economy.js';
 import { createRenderer } from './render.js';
 import { createUI } from './ui.js';
-import { saveGame, loadGame, clearSave } from './save.js';
+import { saveGame, loadGame, clearSave, exportSave, importSaveString } from './save.js';
 
 const START_KEY = 'neuroster.newstart';
 
@@ -28,6 +28,8 @@ export function startGame(canvas) {
     canvas, view,
     onNewGame: (opt) => { localStorage.setItem(START_KEY, JSON.stringify(opt || {})); location.reload(); },
     onSave: () => saveGame(state),
+    onExport: () => exportColony(state, ui),
+    onImport: () => importColony(ui),
   });
   ui.init();
   ui.renderAll();
@@ -63,4 +65,42 @@ export function startGame(canvas) {
   window.addEventListener('beforeunload', () => saveGame(state));
 
   return { state, view };
+}
+
+// Download the current colony as a timestamped JSON save file.
+function exportColony(state, ui) {
+  saveGame(state); // snapshot the very latest first
+  try {
+    const blob = new Blob([exportSave(state)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const day = Math.floor((state.env?.dayTime || 0) / 900) + 1;
+    const name = (state.founder?.name || 'colony').replace(/[^a-z0-9]/gi, '') || 'colony';
+    const a = document.createElement('a');
+    a.href = url; a.download = `neuroster-${name}-day${day}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    ui.flash('⬆️ Colony exported');
+  } catch (e) { ui.flash('Export failed'); }
+}
+
+// Pick a save file, validate & load it, then restart the loop on it.
+function importColony(ui) {
+  const input = document.getElementById('import-file');
+  if (!input) return;
+  input.value = '';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = importSaveString(String(reader.result || ''));
+      if (!r.ok) { ui.flash(r.reason || 'Import failed'); return; }
+      ui.flash('⬇️ Colony imported — loading…');
+      localStorage.removeItem(START_KEY); // don't override the import with a pending new game
+      setTimeout(() => location.reload(), 500);
+    };
+    reader.onerror = () => ui.flash('Could not read that file');
+    reader.readAsText(file);
+  };
+  input.click();
 }

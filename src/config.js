@@ -605,3 +605,45 @@ export const STARTING = {
   hamsters: 5,
   storageCap: 300,
 };
+
+// ---- Megaprojects ----------------------------------------------------------
+// The long-horizon, multi-session carrots (Arc 16). Unlike normal buildings you
+// don't pay their cost up front: you CONTRIBUTE surplus toward each project's
+// running tally over many sessions. When every resource requirement is met the
+// project completes and grants a powerful, permanent, colony-wide effect.
+//   effect keys (summed across completed projects in megaBonuses):
+//     prodMul/foodMul/mineMul → production multipliers (added to state.mods-style)
+//     storage   → flat storage cap bonus       defense → flat defense bonus
+//     protectAll→ protection vs EVERY disaster  power  → passive power per second
+//     leadership→ colony-wide output boost      breed  → faster breeding
+//     moraleRecover → extra morale regen per second
+export const MEGAPROJECTS = {
+  grandWheel: {
+    name: 'Grand Wheel', icon: '🎡', reqLevel: 8,
+    desc: 'A colossal communal wheel that powers the whole colony — a permanent surge of productivity and power.',
+    cost: { planks: 400, iron: 220, steel: 80, power: 200, research: 150 },
+    effect: { prodMul: 0.5, power: 2.0 },
+    blurb: '+50% production · steady free power',
+  },
+  citadel: {
+    name: 'The Citadel', icon: '🏰', reqLevel: 10,
+    desc: 'An impregnable fortress-burrow. Towers, walls and steel gates make the colony a stronghold against any threat.',
+    cost: { stone: 600, planks: 300, steel: 160, iron: 200, research: 180 },
+    effect: { defense: 90, protectAll: 45 },
+    blurb: '+90 defense · +45 protection vs every threat',
+  },
+  greatGranary: {
+    name: 'Great Granary', icon: '🌾', reqLevel: 6,
+    desc: 'A vast vaulted store. Food never spoils and the colony can hoard far more of everything.',
+    cost: { planks: 350, stone: 300, pellets: 120, grain: 150, research: 120 },
+    effect: { storage: 1800, foodMul: 0.6 },
+    blurb: '+1800 storage · +60% food output',
+  },
+  monument: {
+    name: 'Eternal Monument', icon: '🗿', reqLevel: 12,
+    desc: 'A towering monument to the colony\'s legend. It inspires unity, lifts spirits, and quickens new generations.',
+    cost: { stone: 700, steel: 200, plastic: 150, pellets: 150, research: 220 },
+    effect: { leadership: 0.4, breed: 0.6, moraleRecover: 0.4 },
+    blurb: '+leadership · faster breeding · steady morale',
+  },
+};

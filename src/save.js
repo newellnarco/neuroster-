@@ -21,6 +21,26 @@ export function loadGame() {
 
 export function clearSave() { localStorage.removeItem(KEY); }
 
+// ---- Export / import -------------------------------------------------------
+// Lets players back up or move a colony (and hand a save to a tester). Export
+// returns a portable JSON string; import validates it, persists it as the live
+// save, and returns the parsed state (caller typically reloads to start it).
+export function exportSave(state) {
+  return JSON.stringify({ ...state, savedAt: Date.now(), _neuroster: 'save-v1' });
+}
+
+export function importSaveString(raw) {
+  let state;
+  try { state = JSON.parse(raw); }
+  catch { return { ok: false, reason: 'Not valid save data (could not parse).' }; }
+  if (!state || !state.world || !Array.isArray(state.units))
+    return { ok: false, reason: 'This file is not a Neuroster colony save.' };
+  reattachTyped(state);
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch (e) { return { ok: false, reason: 'Could not store the imported save.' }; }
+  return { ok: true, state };
+}
+
 // JSON loses typed-array typing; restore terrain/fog/fertile (Uint8) & waste (Float32).
 function reattachTyped(state) {
   if (!state.world) return;

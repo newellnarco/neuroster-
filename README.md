@@ -115,6 +115,20 @@ docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neurost
   you **upgrade each section wood → iron → steel** (steel is forged from iron at a
   **Steelworks**) — click a tunnel to upgrade or repair it.
 - **Loyalty**: a thriving, well-bonded colony attracts wild joiners; a neglected one loses rodents.
+- **Live alert bar**: a prioritized, colour-coded HUD banner that surfaces *what needs
+  attention now* — starving/parched rodents, sickness, unburied dead, degraded burrows,
+  flooded mines, low morale, full housing/storage, and **imminent raids & disasters**
+  (defense-aware), plus nudges like unspent skill points. **Click an alert** to jump to the
+  relevant panel; a new critical alert pings.
+- **Megaprojects**: colony-defining **multi-session wonders** you build by **contributing
+  surplus over time** (no up-front cost) — 🎡 **Grand Wheel** (+50% production & free power),
+  🏰 **The Citadel** (+90 defense & +45 protection vs every threat), 🌾 **Great Granary**
+  (+1800 storage & +60% food), 🗿 **Eternal Monument** (leadership, faster breeding, steady
+  morale). Level-gated; each grants a permanent, colony-wide payoff. See the **Mega** tab.
+- **Export / import saves**: back up or hand off a colony as a `.json` file (**⬆️ Export** /
+  **⬇️ Import** in the top bar) — handy for moving between machines or sharing a test colony.
+- **Built-in How-to-Play guide**: a concise onboarding overlay opens on your first visit
+  (and any time from the **❓ Help** button) so new players know the loop at a glance.
 - **Persistent, login-gated time**: autosaves; there is **no offline progress** — the
   world is exactly as you left it.
 
@@ -132,11 +146,24 @@ src/
   economy.js     # per-tick simulation (production, needs, breeding, loyalty, exploration)
   events.js      # predators & natural disasters
   buildings.js   # placement, costs, skill/evolution trees, traits, founder rename
+  alerts.js      # live, derived HUD notifications ("what needs attention now")
+  megaprojects.js# long-horizon wonders: contribute-over-time + permanent bonuses
+  milestones.js  # achievements / goals with a reward drip
   render.js      # canvas rendering (fog, day/night, weather, sleep)
-  ui.js          # HUD, character creation, build/skill/evolve/rodent/threat panels
-  save.js        # localStorage save/load (no offline progress)
+  ui.js          # HUD, character creation, build/skill/evolve/rodent/threat/mega panels
+  save.js        # localStorage save/load + export/import (no offline progress)
   game.js        # main loop (fixed-timestep sim + rAF render)
 ```
 
 The engine is **data-driven**: most new content (a building, resource, species, tech,
 or disaster) is added by editing `src/config.js`, not the engine code.
+
+### Tests / CI
+
+```bash
+npm test          # syntax-checks every module + runs the headless smoke suite
+```
+
+`test/smoke.mjs` drives the simulation across all 7 biomes and verifies alerts,
+megaprojects and save export/import — no browser needed. GitHub Actions
+(`.github/workflows/ci.yml`) runs it on every push and pull request.
