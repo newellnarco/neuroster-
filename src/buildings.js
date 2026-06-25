@@ -9,6 +9,7 @@ export function buildTimeFor(cost) {
 import { canAfford, spend, logMsg, addFx } from './state.js';
 import { getTile, TERRAIN, inBounds, wasteAt } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
+import { spawnCaravan } from './factions.js';
 
 // Hands-on care: tend a single rodent for an instant need boost + bond + XP.
 // Cooldowns reward periodic check-ins (not frantic clicking). Returns ok/reason.
@@ -130,6 +131,7 @@ export function giftFaction(state, id) {
   if (!res) return { ok: false, reason: `Need ${TRADE.giftAmount} of ${f.covets.join('/')}` };
   state.res[res] -= TRADE.giftAmount;
   state.factions[id].standing = clampStanding(state.factions[id].standing + TRADE.giftStanding);
+  spawnCaravan(state, id, 'trade');
   logMsg(state, `${f.icon} Gifted ${TRADE.giftAmount} ${res} to the ${f.name} (+alliance).`);
   return { ok: true };
 }
@@ -141,6 +143,7 @@ export function barterFaction(state, id) {
   state.res[res] -= TRADE.barterGive;
   state.res[f.offers] = (state.res[f.offers] || 0) + TRADE.barterGet;
   state.factions[id].standing = clampStanding(state.factions[id].standing + TRADE.barterStanding);
+  spawnCaravan(state, id, 'trade');
   logMsg(state, `${f.icon} Traded ${TRADE.barterGive} ${res} → ${TRADE.barterGet} ${f.offers} with the ${f.name}.`);
   return { ok: true };
 }
@@ -152,6 +155,7 @@ export function requestAid(state, id) {
   state.factions[id].standing = clampStanding(st - TRADE.aidCost);
   state.res.food = (state.res.food || 0) + 40; state.res.water = (state.res.water || 0) + 40;
   state.res[f.offers] = (state.res[f.offers] || 0) + 25;
+  spawnCaravan(state, id, 'aid');
   logMsg(state, `${f.icon} The ${f.name} sent aid! (+food, +water, +${f.offers})`);
   return { ok: true };
 }

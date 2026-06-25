@@ -1,6 +1,6 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, FACTIONS, TRADE } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather } from './environment.js';
 
@@ -42,9 +42,11 @@ export function createRenderer(canvas, state, getView) {
     bmap.clear();
     for (const b of state.buildings) bmap.set(b.x + ',' + b.y, b);
     drawNodes(t);
+    drawCamps(t);
     drawBuildings(t);
     drawBodies();
     drawRodents(t);
+    drawCaravans();
     drawFx();
     drawHover(getView());
     drawDayNight();
@@ -447,6 +449,64 @@ export function createRenderer(canvas, state, getView) {
     ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
     for (let sx = x0 + 4 - gap; sx < x0 + w; sx += gap) { const ax = sx + off; ctx.beginPath(); ctx.moveTo(ax, cy - 3); ctx.lineTo(ax + 3, cy); ctx.lineTo(ax, cy + 3); ctx.stroke(); }
     if (b._flow) { const p = (t * 0.5) % 1; dot(x0 + 4 + p * (w - 8), cy - h / 2 - 2, 2.5, roller); }
+  }
+
+  // ---------- Neighbouring factions: camps + caravans ----------
+  // Each faction has a camp at the map's edge. Colour reflects standing
+  // (allied → green, hostile → red, else neutral) so the world reads at a glance.
+  function drawCamps(t) {
+    const facs = state.factions || {};
+    for (const [id, fs] of Object.entries(facs)) {
+      const camp = fs.camp; if (!camp || !isSeen(state.world, camp.x, camp.y)) continue;
+      const def = FACTIONS[id]; if (!def) continue;
+      const cx = camp.x * TILE + TILE / 2, cy = camp.y * TILE + TILE / 2;
+      const st = fs.standing || 0;
+      const tone = st >= TRADE.aidStanding ? '#7cdc6a' : st <= -30 ? '#e06b6b' : '#d9b46a';
+      // ground + two little tents
+      ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(cx, cy + TILE * 0.30, 12, 5, 0, 0, 7); ctx.fill();
+      drawTent(cx - 6, cy + 3, 9, shade(tone, -0.1));
+      drawTent(cx + 6, cy + 4, 7, shade(tone, -0.2));
+      // a tiny campfire flicker between them
+      const fl = 0.5 + 0.5 * Math.sin(t * 6 + camp.x);
+      ctx.fillStyle = `rgba(255,${150 + fl * 60 | 0},40,0.9)`;
+      ctx.beginPath(); ctx.arc(cx, cy + 6, 1.6 + fl, 0, 7); ctx.fill();
+      // faction banner: icon on a standing-coloured pennant
+      ctx.fillStyle = tone; roundRect(cx - 9, cy - TILE * 0.42, 18, 11, 3); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; roundRect(cx - 9, cy - TILE * 0.42 + 8, 18, 3, 2); ctx.fill();
+      glyph(def.icon, cx, cy - TILE * 0.42 + 5, 12);
+      // hoard-envy spark / raid mood
+      if ((fs.hoard || 0) > 0) { glyph('💢', cx + 11, cy - TILE * 0.40, 11); }
+    }
+  }
+  function drawTent(x, y, r, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x, y - r * 1.4); ctx.lineTo(x + r, y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.moveTo(x, y - r * 1.4); ctx.lineTo(x + r, y); ctx.lineTo(x + r * 0.4, y); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(40,30,20,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - r * 1.4); ctx.lineTo(x, y); ctx.stroke();
+  }
+
+  // Caravans visibly travel camp → colony: friendly deliveries (🎁) and raid
+  // war parties (the faction icon, tinted red). They interpolate by age.
+  function drawCaravans() {
+    const now = state.env?.lived || 0;
+    for (const c of state.caravans || []) {
+      const p = Math.max(0, Math.min(1, (now - c.born) / c.life));
+      const x = c.fromX + (c.toX - c.fromX) * p, y = c.fromY + (c.toY - c.fromY) * p;
+      if (!isSeen(state.world, Math.round(x), Math.round(y))) continue;
+      const px = x * TILE + TILE / 2, py = y * TILE + TILE / 2;
+      // dotted trail back toward the camp
+      ctx.fillStyle = c.kind === 'raid' ? 'rgba(224,107,107,0.35)' : 'rgba(230,200,120,0.4)';
+      for (let i = 1; i <= 3; i++) {
+        const tp = Math.max(0, p - i * 0.05);
+        ctx.beginPath(); ctx.arc(c.fromX * TILE + TILE / 2 + (c.toX - c.fromX) * TILE * tp,
+          c.fromY * TILE + TILE / 2 + (c.toY - c.fromY) * TILE * tp, 1.6, 0, 7); ctx.fill();
+      }
+      const bob = Math.sin(now * 6 + c.id) * 1.4;
+      ctx.fillStyle = c.kind === 'raid' ? 'rgba(150,30,30,0.55)' : 'rgba(120,90,40,0.5)';
+      ctx.beginPath(); ctx.ellipse(px, py + 6, 8, 3, 0, 0, 7); ctx.fill();
+      glyph(FACTIONS[c.fac]?.icon || '🐾', px, py - 1 + bob, 14);
+      glyph(c.kind === 'raid' ? '⚔️' : c.kind === 'aid' ? '🆘' : '🎁', px + 9, py - 6 + bob, 11);
+    }
   }
 
   // Unburied dead — a sombre marker until a Graveyard lays them to rest.
