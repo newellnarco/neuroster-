@@ -68,7 +68,9 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] Conveyors exist only as concept — no placeable belt or logistics speed-up yet.
 - [ ] `BREEDS.*.difficulty` now scales disasters ✅ — extend it to resource yields & breeding too.
 - [ ] Workers path in straight lines (no obstacle/water avoidance) — acceptable, revisit if it reads odd.
-- [ ] Long unit lists capped at 40 in the Rodents panel — add scrolling/grouping for big colonies.
+- [~] Long unit lists still cap at 40 (perf), but the Rodents panel now shows a **per-species
+      count summary** (+ sleeping/sick) and a "showing top 40 of N" note, so big colonies read
+      at a glance. Full per-species grouping/scrolling still optional.
 - [ ] Balance pass: tune drains/yields once conveyors & more buildings land.
 
 ### ➕ Add

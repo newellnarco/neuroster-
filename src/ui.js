@@ -118,8 +118,18 @@ export function createUI(state, ctx) {
         <div class="ico">${SPECIES[s].icon}</div><div class="nm">${SPECIES[s].name}</div>
         <div class="cost">🌾25 🔬10</div><div class="ds">${SPECIES[s].role || ''}</div></button>`).join('')}</div>` : '';
 
+    // Species summary so big colonies read at a glance even when the list is capped.
+    const counts = {};
+    for (const u of state.units) counts[u.species] = (counts[u.species] || 0) + 1;
+    const sickN = state.units.filter(u => u.sick).length;
+    const asleepN = state.units.filter(u => u.phase === 'sleep').length;
+    const summary = `<div class="species">${Object.entries(counts).sort((a, b) => b[1] - a[1])
+      .map(([s, n]) => `<span class="spc" title="${SPECIES[s]?.name || s}">${SPECIES[s]?.icon || '🐾'} ${n}</span>`).join('')}` +
+      `<span class="spc" title="Sleeping">💤 ${asleepN}</span>${sickN ? `<span class="spc bad" title="Sick (wet tail)">🤢 ${sickN}</span>` : ''}</div>`;
+
+    const CAP = 40;
     const units = [...state.units].sort((a, b) => (view.selUnit === a.id ? -1 : 0) - (view.selUnit === b.id ? -1 : 0) || b.level - a.level);
-    const list = units.slice(0, 40).map(u => {
+    const list = units.slice(0, CAP).map(u => {
       const sp = SPECIES[u.species];
       const sel = view.selUnit === u.id ? 'sel' : '';
       const phase = u.phase === 'sleep' ? '💤' : '';
@@ -151,10 +161,12 @@ export function createUI(state, ctx) {
         <div class="traits">${traits}</div>${care}</div>`;
     }).join('');
 
+    const more = state.units.length > CAP ? `<div class="hint">Showing the top ${CAP} of ${population(state)} by level (select one to pin it to the top).</div>` : '';
     el('tab-rodents').innerHTML = recruitHtml +
       `<div class="cat">Colony (${population(state)}) — levels, sleep & traits</div>
+       ${summary}
        <div class="hint">Rodents earn XP from work and level up, granting ⭐ skill points to spend on traits for free. Each gathers, eats, drinks and sleeps on its own — keep stores full and build enrichment. Hamsters are nocturnal; beavers & guinea pigs are diurnal.</div>
-       <div class="units">${list}</div>`;
+       ${more}<div class="units">${list}</div>`;
     bind('[data-recruit]', (btn) => { msg(recruit(state, btn.dataset.recruit)); renderRodents(); });
     bind('[data-trait]', (btn) => {
       const u = state.units.find(x => x.id == btn.dataset.unit);

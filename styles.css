@@ -127,6 +127,10 @@ body {
 .card .ds { font-size: 11px; color: var(--muted); }
 
 /* Rodents */
+.species { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 2px 8px; }
+.species .spc { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px;
+  padding: 2px 7px; font-size: 12px; }
+.species .spc.bad { border-color: var(--bad); color: var(--bad); }
 .units { display: flex; flex-direction: column; gap: 6px; }
 .unit { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
   padding: 6px 8px; cursor: pointer; }
