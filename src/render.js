@@ -1,6 +1,6 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, FACTIONS, TRADE } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, FACTIONS, TRADE } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather } from './environment.js';
 
@@ -271,6 +271,7 @@ export function createRenderer(canvas, state, getView) {
       if (b.type === 'wheel') { drawWheel(cx, cy - 3, t, b); continue; }
       if (b.type === 'conveyor' || b.type === 'conveyorPlastic' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }
+      if (b.type === 'bridge') { drawBridge(cx, cy, b); continue; }
       if (BUILDINGS[b.type].tunnel) { drawTunnel(cx, cy, b); continue; }
       if (BUILDINGS[b.type].townhall) { drawTownhall(cx, cy, b); continue; }
       ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(b.x * TILE + 4, b.y * TILE + 10, TILE - 8, TILE - 11, 6); ctx.fill();
@@ -323,6 +324,26 @@ export function createRenderer(canvas, state, getView) {
     if (frac < 1) {
       ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x0, y0 - 5, w, 3);
       ctx.fillStyle = frac > 0.5 ? '#7cdc6a' : frac > 0.25 ? '#e6c34d' : '#e06b6b'; ctx.fillRect(x0, y0 - 5, w * frac, 3);
+    }
+  }
+
+  // A bridge deck spanning the tile (planks + rails), tier-coloured, with an HP bar.
+  function drawBridge(cx, cy, b) {
+    drawUpgradeBar(b);
+    const tier = BRIDGE_TIERS[b.tier || 0];
+    drawConnectors(cx, cy, b, shade(tier.color, -0.05), (nb) => isTunnel(nb) || isBelt(nb) || isFacility(nb) || nb.type === 'bridge');
+    const w = TILE - 4, x0 = cx - w / 2, y0 = cy - 5;
+    ctx.fillStyle = shade(tier.color, -0.18); roundRect(x0, y0 + 6, w, 7, 2); ctx.fill(); // under-beam shadow
+    ctx.fillStyle = tier.color; roundRect(x0, y0, w, 10, 3); ctx.fill();                   // deck
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;                               // planks
+    for (let i = 1; i < 6; i++) { const px = x0 + (w / 6) * i; ctx.beginPath(); ctx.moveTo(px, y0 + 1); ctx.lineTo(px, y0 + 9); ctx.stroke(); }
+    ctx.strokeStyle = shade(tier.color, 0.18); ctx.lineWidth = 2;                          // hand-rail + posts
+    ctx.beginPath(); ctx.moveTo(x0, y0 - 2); ctx.lineTo(x0 + w, y0 - 2); ctx.stroke();
+    for (let i = 0; i <= 4; i++) { const px = x0 + (w / 4) * i; ctx.beginPath(); ctx.moveTo(px, y0 - 2); ctx.lineTo(px, y0 + 2); ctx.stroke(); }
+    const frac = Math.max(0, (b.hp ?? tier.hp) / tier.hp);
+    if (frac < 1) {
+      ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x0, y0 - 7, w, 3);
+      ctx.fillStyle = frac > 0.5 ? '#7cdc6a' : frac > 0.25 ? '#e6c34d' : '#e06b6b'; ctx.fillRect(x0, y0 - 7, w * frac, 3);
     }
   }
 

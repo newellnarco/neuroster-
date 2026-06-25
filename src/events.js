@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
 import { logMsg, population, addRes, addFx } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan } from './factions.js';
@@ -46,6 +46,23 @@ function damageTunnels(state, amount) {
   }
 }
 
+// Floods wash bridges away; wildfire burns wooden ones. Damages a random
+// bridge (wood-only when burning); destroys it if HP runs out.
+function damageBridges(state, amount, burning = false) {
+  const bridges = state.buildings.filter(b => BUILDINGS[b.type]?.bridge && (!burning || (b.tier || 0) === 0));
+  if (!bridges.length || amount <= 0) return;
+  const hit = bridges[Math.floor(rand(state) * bridges.length)];
+  const tier = BRIDGE_TIERS[hit.tier || 0];
+  hit.hp = (hit.hp ?? tier.hp) - amount;
+  if (hit.hp <= 0) {
+    state.buildings.splice(state.buildings.indexOf(hit), 1);
+    addFx(state, hit.x, hit.y, burning ? '🔥' : '🌊', 1.8);
+    logMsg(state, burning
+      ? '🔥 A wooden bridge burned down — rebuild and upgrade to stone/steel!'
+      : '🌊 A bridge was washed away — upgrade to stone/steel to withstand floods!');
+  }
+}
+
 // Total protection the colony currently has against a given disaster key.
 // Sums building `protect` values + per-species `protect` (scaled by count).
 export function protectionAgainst(state, key) {
@@ -54,9 +71,11 @@ export function protectionAgainst(state, key) {
     const def = BUILDINGS[b.type];
     if (b.underConstruction) continue;
     if (def?.protect?.[key]) p += def.protect[key];
-    // Tunnels bar other animals from crossing — protection scales with tier & HP.
-    if (def?.tunnel) {
-      const tier = TUNNEL_TIERS[b.tier || 0];
+    // Tiered forts (tunnels bar crossings; bridges hold floods) — protection
+    // scales with tier & remaining HP.
+    const ft = fortTiers(b.type);
+    if (ft) {
+      const tier = ft[b.tier || 0];
       const frac = (b.hp ?? tier.hp) / tier.hp;
       if (tier.protect[key]) p += tier.protect[key] * frac;
     }
@@ -159,6 +178,7 @@ function fireDisaster(state, key, d, elapsed) {
       state._fireUntil = (state.env?.lived || 0) + 18; // crackling fire ambience for a while
       const gone = destroyRandomBuilding(state, Math.max(1, Math.round(sev / 14)));
       damageTunnels(state, sev);
+      damageBridges(state, sev, true); // wildfire burns wooden bridges
       // wildfire also scorches nearby forests/bushes
       let burned = 0;
       for (const n of state.world.nodes) {
@@ -263,6 +283,7 @@ function handleFlood(state, d, net) {
   lootResources(state, net * 2.5);
   hurtHealth(state, 9);
   damageTunnels(state, net);
+  damageBridges(state, net); // floods wash bridges away
   const drowned = floodAMine(state);
   logMsg(state, `${d.icon} Flood broke through! Stores damaged${drowned ? ', a mine flooded' : ''} — but it left fertile soil (+${d.seeds || 40} seeds). Build Levees/Irrigation.`);
 }

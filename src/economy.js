@@ -2,7 +2,7 @@
 // breeding, loyalty, exploration, and threats.
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit } from './state.js';
-import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION } from './config.js';
+import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
 import { makeRodent, stepRodent, combineRodents, gainXp } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
@@ -142,7 +142,7 @@ function updateConstruction(state, dt) {
       b.upgrading.progress += inc;
       if (b.upgrading.progress >= b.upgrading.time) {
         b.tier = b.upgrading.toTier;
-        if (BUILDINGS[b.type].tunnel) b.hp = TUNNEL_TIERS[b.tier].hp;
+        const ft = fortTiers(b.type); if (ft) b.hp = ft[b.tier].hp;
         delete b.upgrading;
         addFx(state, b.x, b.y, '⬆️', 1.8);
         logMsg(state, `⬆️ ${BUILDINGS[b.type].name} upgrade complete!`);
