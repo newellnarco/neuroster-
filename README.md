@@ -6,9 +6,25 @@ them, build an ever-larger settlement, automate the toil, recruit other rodents,
 your colony fed, watered, curious and healthy, and defend it against predators and
 natural disasters. It's a persistent world you keep building and maintaining.
 
-> Full vision: see [`DESIGN.md`](./DESIGN.md). Living arcs, backlog & recommendations: [`ROADMAP.md`](./ROADMAP.md).
+> **Docs index:** [`DESIGN.md`](./DESIGN.md) (vision & systems) ·
+> [`ARCHITECTURE.md`](./ARCHITECTURE.md) (code map & sim order) ·
+> [`LAYOUT.md`](./LAYOUT.md) (UI structure) ·
+> [`DECISIONS.md`](./DECISIONS.md) (why it's built this way) ·
+> [`TODO.md`](./TODO.md) (backlog) · [`ROADMAP.md`](./ROADMAP.md) (arcs & history).
 
-## Play it
+## 🏠 LAN deployment (current)
+
+The colony runs on the home NAS — open it from any device on the network:
+
+### **`http://192.168.1.90:8080`**
+
+It's served by a Docker container (`node:*-alpine` running `node /app/server.js`)
+on a Synology **DS1517+** (DSM 7.1.1, legacy Docker package — see the NAS section
+below for the exact, no-compose setup). The container bind-mounts the repo source
+read-only and serves it live, so a **browser refresh** — or the in-game **🔄 Update**
+button — shows the newest committed code after the source syncs.
+
+## Play it (locally, for development)
 
 No build step, no dependencies — just serve the folder and open it in a browser:
 
@@ -102,21 +118,28 @@ becomes live on the next browser refresh.
   repo root). *(Alternatively you can share the parent `C:\github` and point at the
   `neuroster-` subfolder — same result.)*
 
-**3. Run it in Container Manager (live bind-mount, no build).**
-- **Container Manager → Project → Create.**
-  - **Path:** the mounted share folder (the one containing `docker-compose.nas.yml`).
-  - **Compose:** select / paste **`docker-compose.nas.yml`**.
-    ⚠️ Use *this* file, **not** the build `docker-compose.yml` — building an image over a
-    network share is slow and flaky; the NAS file just runs `node:20-alpine` and serves.
-  - Build & run. The NAS pulls `node:20-alpine` and starts the container; nothing compiles.
-- If port **8080** is busy on the NAS, edit `docker-compose.nas.yml` and change the **left**
-  number of the ports line — `"8888:8080"` — then browse that port. (Container Manager's
-  validator rejects `${VAR}` env defaults with *"the format … is invalid"*, so the port is
-  set directly in the file rather than via a `.env`.)
-- **If Container Manager still says the compose format is invalid:** it's usually CRLF line
-  endings from the Windows checkout. Easiest fix — in *Create Project* choose **paste** and
-  paste the file contents into the web editor (it saves as LF), or re-pull after this update
-  (a `.gitattributes` now forces these files to LF).
+**3. Run it as a container.** Two paths depending on your DSM:
+
+**3a. Legacy "Docker" package (DSM ≤ 7.1, e.g. DS1517+) — no compose support.**
+This is the **verified** setup for the current deployment. The package's
+*Container → Add → File* imports a settings export, **not** compose, so you build
+the container by hand (Neuroster is a single container):
+- **Registry** → search **`node`** (the official image) → **Download** → pick any
+  **`*-alpine`** tag (e.g. `lts-alpine`; the exact Node version doesn't matter).
+- **Image** → select it → **Launch** → name it `neuroster` → **Advanced Settings**:
+  - **Volume → Add Folder:** your mounted share → **Mount path** `/app`, **Read-Only**.
+  - **Port Settings:** Local `8080` → Container `8080` (change the *left* number if busy).
+  - **Environment → Command:** `node /app/server.js` *(essential — the image's default
+    just opens a REPL; the server reads files relative to its own location, so no
+    working-dir is needed).* Env vars are optional (defaults are `0.0.0.0:8080`).
+  - Enable **auto-restart**. Apply → run.
+
+**3b. Container Manager (DSM 7.2+) — compose works.**
+- **Project → Create → "Create docker-compose.yml" → paste** `docker-compose.nas.yml`
+  (pasting avoids the non-standard filename *and* CRLF issues). Set the Path to the
+  mounted share. Change the **left** port number to rebind. The file deliberately uses
+  a plain `8080:8080` (no `${VAR}` — Synology's validator rejects shell-style defaults),
+  and `.gitattributes` forces LF so the Windows checkout stays valid.
 
 **4. Open it on the network.**
 - From any device on your LAN: **`http://<NAS-IP>:8080`** (or whatever host port you set).

@@ -7,7 +7,15 @@ concrete fix / add / change items; **Recommendations** are ideas to pull from fr
 > Update this file every session: tick off what shipped, append what's new, and
 > leave a "Continue here" note at the bottom so the next session can resume fast.
 
-_Last updated: 2026-06-25 — **Justice/Order virtue + moral Decrees** (Courthouse, Hall of Heroes, Almshouse): hard dilemmas that spend one virtue to buy another. Earlier this session: Compassion + Rescue/Sanctuary, family lineage & names, seasons/festivals + seasonal visuals._
+_Last updated: 2026-06-25 (v0.3.9) — a long live-playtest session: the full **morality
+system** (💗 Compassion · ⚖️ Justice · 🦁 Valor + **Decrees** + civic buildings),
+**Doctrines** (virtue skill trees), **NPC fates** (cub/herd), **Power variety +
+Pollution**, plant-trees + statues; a complete **graphics overhaul** (plush HiDPI
+creatures + **64-colour palette & procedural textures** across terrain/objects/
+structures); a large **UX pass** (zoom + right-drag pan, resizable/collapsible
+panels, ☰ menu, expandable alert bar, label toggle, pin tooltips, in-game updater,
+favicon); **onboarding & pacing** tuning; and **Synology LAN deployment**
+(`http://192.168.1.90:8080`). See `DECISIONS.md`, `ARCHITECTURE.md`, `TODO.md`._
 
 ---
 
@@ -191,7 +199,21 @@ The game should **reward interaction without punishing absence-for-a-few-minutes
 
 ## Continue here (next session)
 
-**Current state (all verified, on branch `claude/hamster-game-design-jz3j0f`, PR #1):**
+**▶ Fresh-start brief (read this first):**
+- **Version `v0.3.9`**, all merged to `main`. Live on the NAS at
+  **`http://192.168.1.90:8080`** (refresh or the in-game 🔄 Update to get latest).
+- **Docs:** `ARCHITECTURE.md` (code map + sim order), `LAYOUT.md` (UI),
+  `DECISIONS.md` (rationale), `TODO.md` (backlog/next), `DESIGN.md` (vision).
+- **Workflow:** one branch → `npm run check` + `npm test` + Playwright (zero console
+  errors) → PR → CI green → **squash-merge** → reset branch to `main`, force-push.
+- **Next up (from `TODO.md`, highest value first):** oak→squirrel/nut economy;
+  hamster balls; furnace/forge/mason + brick/armour; scout-waypoint exploration.
+- **It's an auto-sim, not an RTS** — players shape the colony, they don't command
+  units (see `DECISIONS.md`).
+
+---
+
+**Older snapshot (kept for context):**
 The game is a deep, fully-playable colony sim. End-to-end loop:
 character creation (breed + name + **difficulty** + **density** + biome) → fog-revealed,
 biome-shaped world → rodents gather **surface** resources (receding 2.5D trees/rocks/
