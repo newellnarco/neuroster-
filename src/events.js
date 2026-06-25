@@ -86,7 +86,9 @@ export function stepEvents(state, dt) {
   const elapsed = state.env?.lived || 0; // seconds actually played
   if (elapsed < GRACE_SECONDS) return; // peaceful early game
 
+  const biome = state.world?.biome;
   for (const [key, d] of Object.entries(DISASTERS)) {
+    if (d.biomes && !d.biomes.includes(biome)) continue; // biome-specific events
     // First scheduled occurrence is offset past the grace period.
     const ev = state.events[key] || (state.events[key] = { timer: d.interval * (0.6 + 0.8 * hash(key)) });
     ev.timer -= dt;
@@ -148,6 +150,34 @@ function fireDisaster(state, key, d, elapsed) {
       damageTunnels(state, sev);
       logMsg(state, `${d.icon} ${d.name}! ${gone} structure(s) collapsed. Build Quake Shelters.`);
       hurtHealth(state, 6);
+      break;
+    }
+    case 'burn': {
+      const gone = destroyRandomBuilding(state, Math.max(1, Math.round(sev / 14)));
+      damageTunnels(state, sev);
+      // wildfire also scorches nearby forests/bushes
+      let burned = 0;
+      for (const n of state.world.nodes) {
+        if ((n.kind === 'trees' || n.kind === 'bush') && n.amount > 0 && rand(state) < 0.4) { n.amount = Math.max(0, n.amount - sev * 4); burned++; }
+      }
+      hurtHealth(state, 8);
+      logMsg(state, `${d.icon} ${d.name}! ${gone} structure(s) burned, ${burned} groves scorched. Walls & water help.`);
+      break;
+    }
+    case 'blight': {
+      lootResources(state, sev * 1.5); // spoils food/stores
+      hurtHealth(state, 6);
+      // sickens some rodents (wet tail) unless vets/hygiene resist
+      const vets = state.buildings.reduce((s, b) => s + (BUILDINGS[b.type]?.vet || 0), 0);
+      const n = Math.max(1, Math.round(sev / 12));
+      let infected = 0;
+      const healthy = state.units.filter(u => !u.sick);
+      for (let i = 0; i < n && healthy.length; i++) {
+        if (vets > 0 && rand(state) < 0.5) continue;
+        const u = healthy[Math.floor(rand(state) * healthy.length)];
+        if (!u.sick) { u.sick = true; u.sickT = 0; infected++; }
+      }
+      logMsg(state, `${d.icon} ${d.name}! Food spoiled${infected ? ` and ${infected} rodent(s) fell ill` : ''}. Build Vet Clinics, Sand Baths & drain the filth.`);
       break;
     }
   }

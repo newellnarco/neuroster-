@@ -297,6 +297,28 @@ export const DISASTERS = {
     name: 'Earthquake', icon: '🌋', kind: 'disaster', baseSeverity: 16, interval: 200,
     desc: 'The ground shakes; structures collapse.', effect: 'destroy',
   },
+  // ---- Biome-specific disasters (only fire in their listed biomes) ----
+  tsunami: {
+    name: 'Tsunami', icon: '🌊', kind: 'disaster', baseSeverity: 20, interval: 200,
+    desc: 'A giant wave floods the coast — fertile silt, but devastating unchecked.',
+    effect: 'flood', seeds: 60, fertileSeconds: 180, biomes: ['beach', 'lakes'],
+  },
+  avalanche: {
+    name: 'Avalanche', icon: '🏔️', kind: 'disaster', baseSeverity: 19, interval: 220,
+    desc: 'Snow & rock thunder down, crushing structures.', effect: 'destroy', biomes: ['mountains'],
+  },
+  blight: {
+    name: 'Marsh Blight', icon: '🦠', kind: 'disaster', baseSeverity: 14, interval: 160,
+    desc: 'Wetland rot sickens rodents and spoils food.', effect: 'blight', biomes: ['marsh', 'rivers'],
+  },
+  sandstorm: {
+    name: 'Sandstorm', icon: '🌪️', kind: 'disaster', baseSeverity: 13, interval: 150,
+    desc: 'Stinging sand buries supplies and blinds the colony.', effect: 'loot', biomes: ['beach', 'prairie'],
+  },
+  wildfire: {
+    name: 'Wildfire', icon: '🔥', kind: 'disaster', baseSeverity: 17, interval: 190,
+    desc: 'Flames sweep the dry land, burning structures & forests.', effect: 'burn', biomes: ['woodland', 'prairie'],
+  },
 };
 
 // ---- Factions / alliances --------------------------------------------------
