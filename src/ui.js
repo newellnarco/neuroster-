@@ -6,8 +6,9 @@ import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
 import { computeAlerts } from './alerts.js';
-import { MEGAPROJECTS } from './config.js';
+import { MEGAPROJECTS, DECREES } from './config.js';
 import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount, costText as megaCostText } from './megaprojects.js';
+import { resolveDecree, choiceAllowed } from './decrees.js';
 
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
@@ -41,6 +42,7 @@ export function createUI(state, ctx) {
       `<span class="env" title="Overall wellbeing multiplier">😊 ×${wellbeingMul(state).toFixed(2)}</span>` +
       `<span class="env" title="Colony morale — falls from unburied dead, injuries & violence; bury & heal to restore it">${moraleIcon(state.morale)} Morale ${Math.round(state.morale ?? 100)}${(state.bodies?.length) ? ` · ⚰️${state.bodies.length} unburied` : ''}</span>` +
       `<span class="env" title="Compassion — kindness, generosity & care raise it; cruelty & neglect lower it. A kind colony calms predators and draws joiners.">💗 ${Math.round(state.compassion ?? 50)}</span>` +
+      `<span class="env${state.decree ? ' decree-due' : ''}" title="Justice / Order — fair, firm rule raises it; wrongs left unanswered lower it. High Justice deters raiders. Decrees trade Justice against Compassion.">⚖️ ${Math.round(state.justice ?? 50)}</span>` +
       `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
       `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>` +
       (megaCount(state) ? `<span class="env" title="Megaprojects completed — permanent colony-wide wonders">🏛️ ${megaCount(state)}</span>` : '');
@@ -400,6 +402,38 @@ export function createUI(state, ctx) {
     card.querySelector('#set-close').onclick = () => el('settings-modal').classList.add('hidden');
   }
 
+  // ---- Decree: a moral dilemma the player must judge ----
+  let decreeOpen = false;
+  function showDecree() {
+    const dec = state.decree; if (!dec) return;
+    const d = DECREES[dec.id]; if (!d) { state.decree = null; return; }
+    const m = el('decree-modal'); if (!m) return;
+    const card = m.querySelector('.modal-card');
+    const fac = dec.faction && FACTIONS[dec.faction] ? `${FACTIONS[dec.faction].icon} ${FACTIONS[dec.faction].name}` : '';
+    const tone = { kind: 'tone-kind', just: 'tone-just', hard: 'tone-hard' };
+    const choices = d.choices.map((c, i) => {
+      const locked = !choiceAllowed(state, c);
+      return `<button class="card opt decree-choice ${tone[c.tone] || ''} ${locked ? 'locked' : ''}" data-choice="${i}" ${locked ? 'disabled' : ''}>
+        <div class="nm">${c.fx || ''} ${escHtml(c.label)}${locked ? ' 🔒' : ''}</div>
+        <div class="ds">${escHtml(c.desc)}${locked ? ' <i>(build a Courthouse to unlock)</i>' : ''}</div></button>`;
+    }).join('');
+    card.innerHTML = `
+      <h2>${d.icon} ${escHtml(d.title)}</h2>
+      ${fac ? `<div class="hint">Concerning the ${fac}.</div>` : ''}
+      <p>${escHtml(d.prompt.replace('the neighbour', fac || 'a neighbour'))}</p>
+      <div class="cat">Your judgement — there is no free answer</div>
+      <div class="grid decree-grid">${choices}</div>
+      <div class="hint">⚖️ Justice ${Math.round(state.justice ?? 50)} · 💗 Compassion ${Math.round(state.compassion ?? 50)} — if you do not decide, the colony will, and dithering costs morale.</div>`;
+    m.classList.remove('hidden');
+    decreeOpen = true;
+    card.querySelectorAll('[data-choice]').forEach(b => b.onclick = () => {
+      if (resolveDecree(state, +b.dataset.choice)) {
+        sfx('care'); m.classList.add('hidden'); decreeOpen = false;
+        renderEnv(); renderResbar(); renderRodents(); renderLog();
+      }
+    });
+  }
+
   // ---- How-to-Play overlay ----
   function showHelp() { el('help-modal').classList.remove('hidden'); }
   function hideHelp() {
@@ -549,6 +583,9 @@ export function createUI(state, ctx) {
   function update(dt) {
     renderResbar(); renderEnv(); renderNeeds();
     audioCues();
+    // A pending decree pops the dilemma modal; if it auto-resolved, close it.
+    if (state.decree && !decreeOpen) { sfx('milestone'); showDecree(); }
+    else if (!state.decree && decreeOpen) { el('decree-modal')?.classList.add('hidden'); decreeOpen = false; }
     acc += dt;
     if (acc > 0.5) {
       acc = 0; renderLog(); renderAlerts(); renderGuide();

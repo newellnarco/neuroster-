@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.2.0';
+export const VERSION = 'v0.2.1';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
@@ -131,6 +131,18 @@ export const BUILDINGS = {
   sanctuary: {
     name: 'Sanctuary', icon: '🏡', desc: 'A refuge for lost & hurt animals. Stray creatures arrive more often to be taken in, and caring for them steadily raises colony Compassion.',
     cost: { wood: 30, planks: 15, seeds: 10 }, category: 'Wellbeing', sanctuary: true, health: 3,
+  },
+  courthouse: {
+    name: 'Courthouse', icon: '⚖️', desc: 'Where the colony weighs justice against mercy. Unlocks merciful verdicts in hard decisions and lends a steady sense of fair Order (Justice).',
+    cost: { planks: 30, stone: 25 }, category: 'Wellbeing', court: true,
+  },
+  hallofheroes: {
+    name: 'Hall of Heroes', icon: '🎖️', desc: 'Honours the hamsters who gave themselves for the colony. The fallen are remembered by name with dignity — a lasting lift to morale.',
+    cost: { stone: 50, planks: 25, iron: 10 }, category: 'Wellbeing', graveyard: 1, buryRestore: 18, buryInterval: 5, memorial: true,
+  },
+  almshouse: {
+    name: 'Almshouse', icon: '🍞', desc: 'Shares surplus food with the needy. Steadily turns spare Food into Compassion, and that generosity buys goodwill that softens raids.',
+    cost: { wood: 25, planks: 12, seeds: 10 }, category: 'Wellbeing', almshouse: true,
   },
   autowater: {
     name: 'Auto-Waterer', icon: '🚰', desc: 'Pipes water to rodents; slows the Water need drain.',
@@ -744,5 +756,98 @@ export const MEGAPROJECTS = {
     cost: { stone: 700, steel: 200, plastic: 150, pellets: 150, research: 220 },
     effect: { leadership: 0.4, breed: 0.6, moraleRecover: 0.4 },
     blurb: '+leadership · faster breeding · steady morale',
+  },
+};
+
+// ---- Justice & Decrees (the moral counterweight to Compassion) --------------
+// A second colony virtue, Justice/Order (0..100), rises with fair, firm rule and
+// falls when wrongs go unanswered. High Justice deters raids; high Compassion
+// converts foes. Periodically a DECREE falls to the player: a hard dilemma with
+// no free answer — each choice SPENDS one virtue (or resources, or rodents'
+// comfort) to buy another. This is "spend morale on purpose for the group."
+// A Courthouse unlocks the merciful verdicts (choices marked requires:'court').
+export const JUSTICE = {
+  start: 50,
+  driftTarget: 50,      // drifts back toward the middle without decrees
+  courtNudge: 0.02,     // Courthouse steadily lifts Order
+  raidDeter: 0.2,       // raid severity reduced per point of Justice over 50
+  decreeFirst: 360,     // seconds before the first decree can fall
+  decreeEvery: [200, 140], // base + jittered seconds between decrees
+};
+
+// Each decree: an eligibility test, a prompt, and 2–3 choices. A choice carries
+// a declarative `effect` (deltas to morale / compassion / justice / res, an
+// optional `recruit`, and `standing` toward the decree's chosen faction). One
+// choice may be flagged `default:true` (auto-picked, with a small unease
+// penalty, if the player lets the moment pass). `requires:'court'` choices need
+// a Courthouse built. `faction:true` decrees pick a neighbouring group to target.
+export const DECREES = {
+  triage: {
+    id: 'triage', icon: '🤒', title: 'Triage in hard times',
+    prompt: 'Sickness and short stores press the colony. The weak and ill cannot keep up. Do you drive everyone to labour through it, or let the frail rest and shoulder the loss?',
+    eligible: (s) => (s.res?.food ?? 0) < 90 || s._seasonKey === 'winter' || s.units?.some(u => u.sick),
+    choices: [
+      { label: 'Let the frail rest', desc: 'Kind, but food keeps draining with fewer hands. +Compassion, +Morale, −Food, −Justice.', tone: 'kind', fx: '💗',
+        result: 'You let the frail rest and be cared for — a tender choice that costs the stores.',
+        effect: { compassion: 8, morale: 6, justice: -3, res: { food: -25 } } },
+      { label: 'All must labour', desc: 'Order and output now, but it is harsh on the suffering. +Food, +Justice, −Compassion, −Morale.', tone: 'hard', fx: '⚒️', default: true,
+        result: 'You set every paw to work — the stores hold, but the suffering are not forgotten.',
+        effect: { justice: 7, morale: -6, compassion: -6, res: { food: 18 } } },
+    ],
+  },
+  raider: {
+    id: 'raider', icon: '🏴', title: 'A captured raider', faction: true,
+    prompt: 'Your guards drag in a raider caught at the stores. The colony watches to see what kind of place this is. What is their fate?',
+    eligible: (s) => Object.values(s.factions || {}).some(f => (f.standing ?? 0) < 0),
+    choices: [
+      { label: 'Banish them', desc: 'Firm and bloodless. +Justice, a little −Compassion.', tone: 'just', fx: '🚪', default: true,
+        result: 'You banish the raider to the wilds — order is kept, mercy withheld.',
+        effect: { justice: 6, compassion: -3 } },
+      { label: 'Imprison & feed them', desc: 'Just, but another mouth to feed. +Justice, +Morale, −Food.', tone: 'just', fx: '🔒',
+        result: 'You hold the raider fed and fairly — costly, but no blood is spilt.',
+        effect: { justice: 4, morale: 3, res: { food: -15 } } },
+      { label: 'Show mercy — let them join', desc: 'Needs a Courthouse. Turns a foe into a friend. +Compassion, +Morale, +Standing, +1 rodent.', tone: 'kind', fx: '🤝', requires: 'court',
+        result: 'The court hears them out and offers a home — a grateful newcomer joins, and their kin take note.',
+        effect: { compassion: 10, morale: 6, standing: 14, recruit: true } },
+    ],
+  },
+  rationing: {
+    id: 'rationing', icon: '🍲', title: 'How to share the stores',
+    prompt: 'The winter share must be set. Do you ration the food equally so none go without, or reward your hardest workers to spur the colony on?',
+    eligible: (s) => (s.units?.length ?? 0) >= 6,
+    choices: [
+      { label: 'Ration equally', desc: 'Fair to all. +Compassion, +Morale, +Justice, a little −Food (waste in fairness).', tone: 'kind', fx: '⚖️', default: true,
+        result: 'Every rodent gets an equal share — none go hungry, and the colony feels cared for.',
+        effect: { compassion: 6, morale: 5, justice: 4, res: { food: -10 } } },
+      { label: 'Reward the strongest', desc: 'Spurs output, but the weak resent it. +Food, +Research, −Compassion, −Morale.', tone: 'hard', fx: '🏅',
+        result: 'You feed the strongest first — they work harder, but the rest grumble.',
+        effect: { morale: -5, compassion: -5, res: { food: 14, research: 10 } } },
+    ],
+  },
+  neighbor: {
+    id: 'neighbor', icon: '🆘', title: 'A neighbour in need', faction: true,
+    prompt: 'A neighbouring colony is starving and begs your aid. Your own stores are not endless. Do you share what you have, or look to your own first?',
+    eligible: (s) => (s.res?.food ?? 0) > 60 && Object.values(s.factions || {}).some(f => (f.standing ?? 0) > -20),
+    choices: [
+      { label: 'Send food to help', desc: 'Generous and remembered. −Food, +Compassion, +Morale, +Standing.', tone: 'kind', fx: '💝',
+        result: 'You send a caravan of food to the starving neighbour — they will not forget it.',
+        effect: { compassion: 10, morale: 6, standing: 18, res: { food: -30 } } },
+      { label: 'Keep it for our own', desc: 'Safe, but cold. +Food kept, −Compassion, −Standing.', tone: 'hard', fx: '🚫', default: true,
+        result: 'You turn the beggars away to guard your own — the stores hold, but goodwill sours.',
+        effect: { compassion: -6, standing: -12 } },
+    ],
+  },
+  cub: {
+    id: 'cub', icon: '🐾', title: 'A lost predator cub',
+    prompt: 'A whimpering predator cub has strayed to your gates, alone and starving. Its kind has hunted your colony before. Do you take it in, or drive it away?',
+    eligible: (s) => (s.compassion ?? 50) >= 45,
+    choices: [
+      { label: 'Raise it with kindness', desc: 'A gamble of the heart. −Food, +Compassion; raised gently, it may one day guard you.', tone: 'kind', fx: '🐾',
+        result: 'You take the cub in and feed it — a soft heart in a hard world. In time it may repay the kindness.',
+        effect: { compassion: 9, morale: 4, res: { food: -12 }, guardian: true } },
+      { label: 'Drive it off', desc: 'Cautious and firm. +Justice, −Compassion.', tone: 'just', fx: '🚪', default: true,
+        result: 'You drive the cub back to the wilds — wise, perhaps, but the colony feels the chill of it.',
+        effect: { justice: 4, compassion: -5 } },
+    ],
   },
 };

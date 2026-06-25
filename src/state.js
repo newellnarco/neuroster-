@@ -32,6 +32,8 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     factions: {},
     morale: 100,
     compassion: 50, // colony virtue: kindness, generosity & care raise it
+    justice: 50,    // colony virtue: fair, firm order — the moral counterweight
+    honored: [],    // names of the fallen, remembered by a Hall of Heroes
     bodies: [],
     log: [],
   };
@@ -140,7 +142,7 @@ export function addFx(state, x, y, text, life = 1.6) {
 export function killUnit(state, unit) {
   const i = state.units.indexOf(unit);
   if (i >= 0) state.units.splice(i, 1);
-  (state.bodies || (state.bodies = [])).push({ x: unit.x, y: unit.y, species: unit.species, born: state.env?.lived || 0 });
+  (state.bodies || (state.bodies = [])).push({ x: unit.x, y: unit.y, species: unit.species, name: unit.name, born: state.env?.lived || 0 });
   addFx(state, unit.x, unit.y, '💀', 2.2);
 }
 
@@ -148,6 +150,13 @@ export function killUnit(state, unit) {
 // with cruelty & neglect. High compassion calms the wild and draws joiners.
 export function addCompassion(state, n) {
   state.compassion = Math.max(0, Math.min(100, (state.compassion ?? 50) + n));
+}
+
+// Colony Justice / Order (0..100): rises with fair, firm rule; the firm hand that
+// deters raids. The dramatic counterweight to Compassion — most Decrees trade one
+// against the other.
+export function addJustice(state, n) {
+  state.justice = Math.max(0, Math.min(100, (state.justice ?? 50) + n));
 }
 
 export function logMsg(state, msg) {
