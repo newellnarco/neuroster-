@@ -186,4 +186,27 @@ console.log('Tower stances:');
   ok('DEFEND stance weighs on morale');
 }
 
+// 8) Upgradable walls: tiered wood→stone→steel; defense & protection scale.
+console.log('Walls:');
+{
+  const { placeBuilding, upgradeTunnel } = await import('../src/buildings.js');
+  const { WALL_TIERS } = await import('../src/config.js');
+  const s = newGame(11, 'prairie', 'syrian', 'Walls', {});
+  const sp = s.world.spawn;
+  for (const k of ['wood', 'planks', 'stone', 'iron', 'steel']) s.res[k] = 999;
+  const r = placeBuilding(s, 'wall', sp.x + 3, sp.y);
+  assert(r.ok, 'wall places: ' + (r.reason || ''));
+  const b = s.buildings.find(x => x.type === 'wall');
+  b.underConstruction = false;
+  stepEconomy(s, 0.1);
+  const defWood = s.defense, protWood = protectionAgainst(s, 'wolf');
+  assert(defWood >= 2 && protWood >= 2, `wood wall gives defense+protection (def ${defWood}, prot ${protWood})`);
+  const up = upgradeTunnel(s, b); // generalised: handles walls too
+  assert(up.ok, 'wall upgrade starts: ' + (up.reason || ''));
+  for (let i = 0; i < 500 && b.upgrading; i++) stepEconomy(s, 0.1);
+  assert((b.tier || 0) === 1 && b.hp === WALL_TIERS[1].hp, `wall upgraded to stone (tier ${b.tier})`);
+  assert(s.defense > defWood && protectionAgainst(s, 'wolf') > protWood, 'stone wall is tougher than wood');
+  ok(`wall upgrades wood→stone, raising defense (${defWood}→${s.defense}) & protection`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

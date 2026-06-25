@@ -165,6 +165,10 @@ function recomputeBuildings(state) {
     storage += def.storage || 0;
     // Towers: WATCH stance is gentler (×0.6 defense, wide vision); DEFEND is full + offense.
     if (def.tower) { const defend = b.mode === 'defend'; defense += Math.round((def.defense || 0) * (defend ? 1 : 0.6)); if (defend) defendTowers++; else watchTowers++; }
+    else if (fortTiers(b.type)) { // tiered forts (walls/bridges): defense from tier, scaled by HP
+      const tier = fortTiers(b.type)[b.tier || 0];
+      defense += Math.round((tier.defense || 0) * Math.max(0, (b.hp ?? tier.hp) / tier.hp));
+    }
     else defense += def.defense || 0;
     fun += def.curiosity || 0;
     distract += def.distract || 0;

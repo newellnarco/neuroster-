@@ -194,8 +194,8 @@ export const BUILDINGS = {
     cost: { wood: 20, planks: 8 }, category: 'Wellbeing', feeder: 0.4,
   },
   wall: {
-    name: 'Wall', icon: '🧱', desc: 'Defensive structure vs ground predators & raids.',
-    cost: { stone: 15 }, category: 'Defense', defense: 2, protect: { wolf: 2, raid: 2 },
+    name: 'Wall (Wood)', icon: '🧱', desc: 'Palisade vs ground predators & raids. Wood can burn / wash away — upgrade wood→stone→steel for more HP & defense (click to upgrade/repair).',
+    cost: { wood: 12 }, category: 'Defense', wall: true,
   },
   watchtower: {
     name: 'Watchtower', icon: '🗼', desc: 'Click to set its stance: 👁️ WATCH (wide vision / early warning, gentle) or 🗡️ DEFEND (stronger defense + offense, but a militarised stance costs morale).',
@@ -248,10 +248,18 @@ export const BRIDGE_TIERS = [
   { name: 'Steel', hp: 150, protect: { flood: 9 }, defense: 3, color: '#aebfd0', upgradeCost: { steel: 25, iron: 10 },   repairCost: { steel: 6 } },
 ];
 
-// The tier ladder for a tiered "fortification" building (tunnel/bridge), or null.
+// Walls: a palisade that tiers up wood → stone → steel (HP + defense + protection).
+export const WALL_TIERS = [
+  { name: 'Wood',  hp: 25,  defense: 2, protect: { wolf: 2, raid: 2 },          color: '#8a6a3a', upgradeCost: null,                     repairCost: { wood: 6 } },
+  { name: 'Stone', hp: 70,  defense: 5, protect: { wolf: 4, raid: 4, hawk: 1 }, color: '#9aa0a6', upgradeCost: { stone: 25, planks: 6 }, repairCost: { stone: 6 } },
+  { name: 'Steel', hp: 140, defense: 9, protect: { wolf: 7, raid: 7, hawk: 3 }, color: '#aebfd0', upgradeCost: { steel: 20, iron: 8 },  repairCost: { steel: 5 } },
+];
+
+// The tier ladder for a tiered "fortification" building (tunnel/bridge/wall), or null.
 export function fortTiers(type) {
   if (BUILDINGS[type]?.tunnel) return TUNNEL_TIERS;
   if (BUILDINGS[type]?.bridge) return BRIDGE_TIERS;
+  if (BUILDINGS[type]?.wall) return WALL_TIERS;
   return null;
 }
 export const TUNNEL_REPAIR = { steel: 0, iron: 0 }; // repair cost is a fraction of upgrade (computed)

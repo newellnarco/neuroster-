@@ -46,20 +46,19 @@ function damageTunnels(state, amount) {
   }
 }
 
-// Floods wash bridges away; wildfire burns wooden ones. Damages a random
-// bridge (wood-only when burning); destroys it if HP runs out.
-function damageBridges(state, amount, burning = false) {
-  const bridges = state.buildings.filter(b => BUILDINGS[b.type]?.bridge && (!burning || (b.tier || 0) === 0));
-  if (!bridges.length || amount <= 0) return;
-  const hit = bridges[Math.floor(rand(state) * bridges.length)];
-  const tier = BRIDGE_TIERS[hit.tier || 0];
+// Floods wash tiered forts away; wildfire burns wooden ones. Damages a random
+// matching structure (wood-only when burning); destroys it if HP runs out.
+function damageFort(state, amount, pred, noun, burning = false) {
+  const list = state.buildings.filter(b => pred(b) && (!burning || (b.tier || 0) === 0));
+  if (!list.length || amount <= 0) return;
+  const hit = list[Math.floor(rand(state) * list.length)];
+  const tiers = fortTiers(hit.type); if (!tiers) return;
+  const tier = tiers[hit.tier || 0];
   hit.hp = (hit.hp ?? tier.hp) - amount;
   if (hit.hp <= 0) {
     state.buildings.splice(state.buildings.indexOf(hit), 1);
     addFx(state, hit.x, hit.y, burning ? '🔥' : '🌊', 1.8);
-    logMsg(state, burning
-      ? '🔥 A wooden bridge burned down — rebuild and upgrade to stone/steel!'
-      : '🌊 A bridge was washed away — upgrade to stone/steel to withstand floods!');
+    logMsg(state, `${burning ? '🔥' : '🌊'} A ${tier.name.toLowerCase()} ${noun} was ${burning ? 'burned down' : 'washed away'} — upgrade to stone/steel to withstand it!`);
   }
 }
 
@@ -184,7 +183,8 @@ function fireDisaster(state, key, d, elapsed) {
       state._fireUntil = (state.env?.lived || 0) + 18; // crackling fire ambience for a while
       const gone = destroyRandomBuilding(state, Math.max(1, Math.round(sev / 14)));
       damageTunnels(state, sev);
-      damageBridges(state, sev, true); // wildfire burns wooden bridges
+      damageFort(state, sev, b => BUILDINGS[b.type]?.bridge, 'bridge', true); // wildfire burns wood
+      damageFort(state, sev, b => BUILDINGS[b.type]?.wall, 'wall', true);
       // wildfire also scorches nearby forests/bushes
       let burned = 0;
       for (const n of state.world.nodes) {
@@ -289,7 +289,8 @@ function handleFlood(state, d, net) {
   lootResources(state, net * 2.5);
   hurtHealth(state, 9);
   damageTunnels(state, net);
-  damageBridges(state, net); // floods wash bridges away
+  damageFort(state, net, b => BUILDINGS[b.type]?.bridge, 'bridge'); // floods wash bridges
+  damageFort(state, net, b => BUILDINGS[b.type]?.wall, 'wall');     // …and wooden walls
   const drowned = floodAMine(state);
   logMsg(state, `${d.icon} Flood broke through! Stores damaged${drowned ? ', a mine flooded' : ''} — but it left fertile soil (+${d.seeds || 40} seeds). Build Levees/Irrigation.`);
 }

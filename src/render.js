@@ -1,6 +1,6 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, FACTIONS, TRADE } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather } from './environment.js';
 
@@ -272,6 +272,7 @@ export function createRenderer(canvas, state, getView) {
       if (b.type === 'conveyor' || b.type === 'conveyorPlastic' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }
       if (b.type === 'bridge') { drawBridge(cx, cy, b); continue; }
+      if (b.type === 'wall') { drawWall(cx, cy, b); continue; }
       if (BUILDINGS[b.type].tunnel) { drawTunnel(cx, cy, b); continue; }
       if (BUILDINGS[b.type].townhall) { drawTownhall(cx, cy, b); continue; }
       ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(b.x * TILE + 4, b.y * TILE + 10, TILE - 8, TILE - 11, 6); ctx.fill();
@@ -325,6 +326,26 @@ export function createRenderer(canvas, state, getView) {
     if (frac < 1) {
       ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x0, y0 - 5, w, 3);
       ctx.fillStyle = frac > 0.5 ? '#7cdc6a' : frac > 0.25 ? '#e6c34d' : '#e06b6b'; ctx.fillRect(x0, y0 - 5, w * frac, 3);
+    }
+  }
+
+  // A crenellated wall block, tier-coloured (wood/stone/steel), with an HP bar.
+  function drawWall(cx, cy, b) {
+    drawUpgradeBar(b);
+    const tier = WALL_TIERS[b.tier || 0];
+    drawConnectors(cx, cy, b, shade(tier.color, -0.08), (nb) => nb.type === 'wall');
+    const w = TILE - 8, h = TILE * 0.6, x0 = cx - w / 2, y0 = cy - h / 2 + 2;
+    ctx.fillStyle = shade(tier.color, -0.2); roundRect(x0, y0 + 3, w, h, 3); ctx.fill();   // shadow
+    ctx.fillStyle = tier.color; roundRect(x0, y0, w, h, 3); ctx.fill();                     // body
+    ctx.fillStyle = shade(tier.color, 0.12);                                                // crenellations
+    const merlons = 3, mw = w / (merlons * 2 - 1);
+    for (let i = 0; i < merlons; i++) ctx.fillRect(x0 + i * mw * 2, y0 - 3, mw, 5);
+    ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 1;                                 // brick lines
+    ctx.beginPath(); ctx.moveTo(x0, y0 + h * 0.5); ctx.lineTo(x0 + w, y0 + h * 0.5); ctx.stroke();
+    const frac = Math.max(0, (b.hp ?? tier.hp) / tier.hp);
+    if (frac < 1) {
+      ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x0, y0 - 8, w, 3);
+      ctx.fillStyle = frac > 0.5 ? '#7cdc6a' : frac > 0.25 ? '#e6c34d' : '#e06b6b'; ctx.fillRect(x0, y0 - 8, w * frac, 3);
     }
   }
 
