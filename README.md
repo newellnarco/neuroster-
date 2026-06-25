@@ -86,21 +86,25 @@ network) **→ any browser on your LAN**. The NAS serves the files straight from
 folder using `docker-compose.nas.yml` (the official Node image — no build), so a new commit
 becomes live on the next browser refresh.
 
-**1. Share the folder on Windows.**
-- File Explorer → right-click `C:\github` → **Properties → Sharing → Advanced Sharing** →
-  tick **Share this folder** → **Permissions** → allow **Read** for the account the NAS
-  will use → OK. Note the path `\\YOUR-PC\github` (PC name = `hostname`).
+**1. Share the repo folder on Windows.**
+- Share the repo folder **directly** so the share *is* the project root. File Explorer →
+  right-click `C:\github\neuroster-` → **Properties → Sharing → Advanced Sharing** → tick
+  **Share this folder**, set the share name (e.g. `neuroster`) → **Permissions** → allow
+  **Read** for the account the NAS will use → OK. This gives a path like
+  **`\\OFFICE\neuroster`** (PC name = `hostname`).
 - Ensure the network profile is **Private** and *File and Printer Sharing* is on.
 
 **2. Mount that share on the Synology.**
 - DSM → **Control Panel → Shared Folder → Create → Mount Remote Folder → SMB**.
-- Remote server = your PC's name/IP, shared folder = `github`, with a Windows account that
-  can read it. In **File Station** you should now see `…/github/neuroster-` containing
-  `server.js`, `index.html`, `src/`, and `docker-compose.nas.yml`.
+- Remote server = your PC's name/IP (e.g. `OFFICE`), shared folder = `neuroster`, with a
+  Windows account that can read it. In **File Station** the mounted folder should now show
+  `server.js`, `index.html`, `src/`, and `docker-compose.nas.yml` directly (it *is* the
+  repo root). *(Alternatively you can share the parent `C:\github` and point at the
+  `neuroster-` subfolder — same result.)*
 
 **3. Run it in Container Manager (live bind-mount, no build).**
 - **Container Manager → Project → Create.**
-  - **Path:** the mounted `…/github/neuroster-` folder.
+  - **Path:** the mounted share folder (the one containing `docker-compose.nas.yml`).
   - **Compose:** select / paste **`docker-compose.nas.yml`**.
     ⚠️ Use *this* file, **not** the build `docker-compose.yml` — building an image over a
     network share is slow and flaky; the NAS file just runs `node:20-alpine` and serves.
