@@ -104,7 +104,10 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
       a little output for fun (capped at −20%). Deepens the boredom↔curiosity loop.
 - [ ] **Disease/health events** + quarantine; Infirmary becomes essential in marsh.
 - [x] **Notifications/alerts** when a need bottoms out or a raid looms (retention) — shipped as the live alert bar (`src/alerts.js`).
-- [x] **Export/import save** (file download + file load, with validation & typed-array reattach). Multiple named **save slots** still pending.
+- [x] **Export/import save** (file download + file load, with validation & typed-array reattach).
+- [x] **Multiple save slots** — one slot per hamster colony; the start screen lists them
+      (📂 Load) and jumps into any one's latest autosave; **Save As** forks a new named
+      hamster; legacy single-save auto-migrates. Plus a versioned start/loading screen.
 - [ ] **Milestones & achievements** (first hybrid, day 30 survived, apex evolution…).
 
 ### 🔁 Change

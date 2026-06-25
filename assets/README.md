@@ -2,12 +2,13 @@
 
 Background art for the startup/loading screen.
 
-**Ships with `splash.svg`** — a hand-drawn golden-hour colony scene used by default. To use
-your own (e.g. an AI-generated photorealistic image):
+**Active background: `splash.jpg`** — a photorealistic golden-hour colony scene. To swap in
+different art, just replace `assets/splash.jpg` (keep the same name and it's picked up with
+no code change). `splash.svg` is a vector fallback you can point `styles.css` at instead.
 
-- Drop your file here as **`splash.jpg`** (or `.png`), then change the single
-  `url('assets/splash.svg')` line in `styles.css` (inside the `.splash` rule) to point at
-  your filename. That's the only edit needed.
+- Recommended size: **1280×720 or larger**, 16:9, landscape.
+- It's darkened by a built-in vignette scrim for legibility, with the title + progress bar
+  centred — keep the focal subject slightly off-centre / lower.
 - Recommended size: **1920×1080** (16:9), landscape.
 - It's darkened by a built-in vignette gradient for legibility, and the title + progress
   bar sit in the centre — keep the focal subject slightly off-centre / lower so the title
