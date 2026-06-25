@@ -93,6 +93,32 @@ export function startGame(canvas) {
   });
   window.addEventListener('beforeunload', () => { if (started) saveGame(state); }); // don't persist a pre-start default as a slot
 
+  // In-game updater: autosave, then reload to pick up the newest served code
+  // (the server serves files live with no-cache, so a reload = latest version).
+  function updateNow() {
+    try { if (started) saveGame(state); } catch {}
+    ui.flash('🔄 Saving & updating…');
+    setTimeout(() => location.reload(), 250);
+  }
+  const btnUpdate = document.getElementById('btn-update');
+  if (btnUpdate) btnUpdate.onclick = updateNow;
+
+  // Quietly poll for a newer VERSION; when one is live, light up the Update button.
+  async function checkForUpdate() {
+    try {
+      const res = await fetch('src/config.js?ts=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+      const m = (await res.text()).match(/VERSION\s*=\s*'([^']+)'/);
+      if (m && m[1] && m[1] !== VERSION && btnUpdate) {
+        btnUpdate.classList.add('update-ready');
+        btnUpdate.textContent = `🔄 Update → ${m[1]}`;
+        btnUpdate.title = `A newer version (${m[1]}) is live — click to save & reload.`;
+      }
+    } catch {}
+  }
+  setTimeout(checkForUpdate, 8000);
+  setInterval(checkForUpdate, 180000); // re-check every 3 minutes
+
   return { state, view };
 }
 

@@ -580,8 +580,14 @@ export function createUI(state, ctx) {
         const r = takeInRescue(state); if (r.ok) sfx('care'); else flash(r.reason || '');
         renderResbar(); renderRodents(); return;
       }
-      const u = state.units.find(u => Math.hypot(u.x - px, u.y - py) < 0.6);
-      if (u) { view.selUnit = u.id; document.querySelector('[data-tab="rodents"]').click(); renderRodents(); return; }
+      // Pick the NEAREST rodent within a generous radius (its drawn position),
+      // so clicking near a moving hamster still selects it.
+      let best = null, bestD = 1.1;
+      for (const u of state.units) {
+        const d = Math.hypot((u._rx ?? u.x) - px, (u._ry ?? u.y) - py);
+        if (d < bestD) { bestD = d; best = u; }
+      }
+      if (best) { view.selUnit = best.id; sfx('click'); document.querySelector('[data-tab="rodents"]').click(); renderRodents(); return; }
       const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
       if (b && b.flooded) { const r = repairMine(state, b); if (!r.ok) flash(r.reason); return; }
       if (b && (BUILDINGS[b.type].tunnel || BUILDINGS[b.type].bridge || BUILDINGS[b.type].wall)) { const r = upgradeTunnel(state, b); flash(r.ok ? '🔧 Improved!' : r.reason || ''); return; }
@@ -591,6 +597,8 @@ export function createUI(state, ctx) {
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
     c.addEventListener('contextmenu', (e) => { e.preventDefault(); view.placing = null; renderBuild(); });
+    // Escape also drops the held building → back to the arrow/select cursor.
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && view.placing) { view.placing = null; renderBuild(); flash('↩︎ Back to select'); } });
   }
 
   // ---- helpers ----
