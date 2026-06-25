@@ -1,0 +1,16 @@
+# Keep web/server/compose/config files LF even when checked out on Windows, so
+# the Synology NAS (and Linux/Docker) parse them cleanly. CRLF in a compose file
+# can make Synology Container Manager report "the format ... is invalid".
+* text=auto eol=lf
+
+# Windows-native helper scripts stay CRLF (cscript/cmd prefer it).
+*.vbs text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary assets — never normalise.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
