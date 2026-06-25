@@ -1,6 +1,6 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR } from './config.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit } from './state.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION } from './config.js';
 import { makeRodent, stepRodent, combineRodents, gainXp } from './entities.js';
@@ -18,8 +18,9 @@ export function stepEconomy(state, dt) {
   // 1) Rodent AI (gather/haul/sleep).
   for (const u of state.units) stepRodent(state, u, dt);
 
-  // 2) Construction labour (sets _laborFactor), derived stats, leadership.
+  // 2) Construction labour (sets _laborFactor), burrow upkeep, derived stats.
   updateConstruction(state, dt);
+  updateBurrows(state, dt); // before recompute so degraded burrows drop popCap now
   recomputeBuildings(state);
   updateLeadership(state, dt);
 
@@ -73,7 +74,7 @@ export function stepEconomy(state, dt) {
   // 5) Exploration: rodents & buildings reveal nearby fog.
   updateExploration(state, env);
 
-  // 5b) Sanitation: droppings, composting, fertilizer, and wet-tail disease.
+  // 5b) Sanitation: droppings, composting, fertilizer & wet-tail disease.
   updateWaste(state, dt);
   updateDisease(state, dt);
 
@@ -148,11 +149,12 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0;
+  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
-    popCap += def.popCap || 0;
+    popCap += (b.degraded ? 0 : def.popCap || 0); // degraded burrows house no one
+    hygiene += def.hygiene || 0;
     storage += def.storage || 0;
     defense += def.defense || 0;
     fun += def.curiosity || 0;
@@ -168,7 +170,7 @@ function recomputeBuildings(state) {
   defense = Math.round(defense * (1 + evoBonus(state, 'all', 'defense')));
   state.popCap = popCap; state.storageCap = storage; state.defense = defense;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
-  state._waterers = waterers; state._caretakers = caretakers;
+  state._waterers = waterers; state._caretakers = caretakers; state._hygiene = hygiene;
 }
 
 // A Mine attaches to one underground deposit, extracts it, and collapses when spent.
@@ -298,6 +300,22 @@ function updateExploration(state, env) {
   for (const b of state.buildings) reveal(state.world, b.x, b.y, 3);
 }
 
+// Burrows accumulate filth; caretakers clean them; neglected ones degrade and
+// stop housing/breeding until cleaned (click a burrow to clean it).
+function updateBurrows(state, dt) {
+  const caretakers = state._caretakers || 0;
+  const occ = Math.max(1, population(state));
+  for (const b of state.buildings) {
+    if (!BUILDINGS[b.type]?.breed || b.underConstruction) continue;
+    b.dirt = (b.dirt || 0) + BURROW.dirtRate * dt * (0.5 + occ * 0.02);
+    if (caretakers > 0) b.dirt = Math.max(0, b.dirt - caretakers * BURROW.cleanRate * dt);
+    if (b.dirt > BURROW.filthAt) addWaste(state.world, b.x, b.y, BURROW.dirtRate * dt * 0.6);
+    const wasDeg = b.degraded;
+    b.degraded = b.dirt >= BURROW.degradeAt;
+    if (b.degraded && !wasDeg) logMsg(state, '🪰 A burrow degraded from filth — clean it (click) or it won\'t house or breed!');
+  }
+}
+
 // Healthy rodents poop; droppings decay slowly; composters turn them to fertilizer.
 function updateWaste(state, dt) {
   const world = state.world;
@@ -343,10 +361,11 @@ function updateDisease(state, dt) {
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) filth += wasteAt(world, b.x + dx, b.y + dy);
   }
   const vets = state._vets || 0;
-  // infection chance scales with filth (vets suppress it)
+  // infection chance scales with filth; vets and sand-bath hygiene suppress it
+  const hygieneMul = 1 / (1 + (state._hygiene || 0) * 0.5);
   const healthy = state.units.filter(u => !u.sick);
   if (healthy.length && filth > 1) {
-    const risk = WETTAIL.riskPerFilth * filth * dt * (vets ? 0.4 : 1);
+    const risk = WETTAIL.riskPerFilth * filth * dt * (vets ? 0.4 : 1) * hygieneMul;
     if (Math.random() < risk) {
       const u = healthy[Math.floor(Math.random() * healthy.length)];
       u.sick = true; u.sickT = 0;
@@ -439,7 +458,7 @@ function updateMorale(state, dt) {
 }
 
 function updateBreeding(state, dt) {
-  const burrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed && !b.underConstruction).length;
+  const burrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed && !b.underConstruction && !b.degraded).length;
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;

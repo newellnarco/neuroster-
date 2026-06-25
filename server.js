@@ -1,16 +1,17 @@
-// server.js — tiny zero-dependency static server for Neuroster.
+// server.js — tiny zero-dependency static server for Neuroster (ES module).
 // Configurable host/IP and port via environment variables so you can serve it
 // on LAN or WAN from a specific address:
 //   HOST=0.0.0.0  PORT=8080  node server.js      (all interfaces — LAN/WAN)
 //   HOST=192.168.1.50 PORT=80 node server.js     (bind to a specific IP)
 // Aliases NEUROSTER_HOST / NEUROSTER_PORT are also honoured.
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.NEUROSTER_HOST || process.env.HOST || '0.0.0.0';
 const PORT = parseInt(process.env.NEUROSTER_PORT || process.env.PORT || '8080', 10);
-const ROOT = __dirname;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -39,7 +40,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
       fs.createReadStream(filePath).pipe(res);
     });
-  } catch (e) {
+  } catch {
     res.writeHead(500, { 'Content-Type': 'text/plain' });
     res.end('Server error');
   }

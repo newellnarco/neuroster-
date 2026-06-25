@@ -108,6 +108,10 @@ export const BUILDINGS = {
     name: 'Infirmary', icon: '🏥', desc: 'Tends sick & injured rodents. Raises Health.',
     cost: { planks: 20, iron: 5 }, category: 'Wellbeing', health: 6,
   },
+  sandbath: {
+    name: 'Sand Bath', icon: '🏖️', desc: 'Hamsters roll in sand to clean themselves — boosts Health and cuts wet-tail risk.',
+    cost: { wood: 12, stone: 18 }, category: 'Wellbeing', health: 5, hygiene: 1,
+  },
   autowater: {
     name: 'Auto-Waterer', icon: '🚰', desc: 'Pipes water to rodents; slows the Water need drain.',
     cost: { planks: 15, iron: 5 }, category: 'Wellbeing', waterer: 0.4,
@@ -389,6 +393,16 @@ export const WETTAIL = {
 };
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
+
+// Burrows get dirty as hamsters live in them. Left uncleaned they leak filth
+// (wet-tail risk) and eventually DEGRADE — losing their housing & breeding value
+// until cleaned. Caretakers clean automatically; click a burrow to clean it.
+export const BURROW = {
+  dirtRate: 0.10,   // dirt gained per second (scaled by occupants)
+  cleanRate: 1.2,   // dirt removed per second per caretaker
+  filthAt: 35,      // above this, a burrow leaks droppings onto its tile
+  degradeAt: 70,    // above this, the burrow degrades (no housing/breeding)
+};
 
 // ---- Morale ----------------------------------------------------------------
 // The colony has a conscience. Unburied dead and untreated injuries crush

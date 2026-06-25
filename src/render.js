@@ -250,6 +250,12 @@ export function createRenderer(canvas, state, getView) {
       ctx.fillStyle = '#bcab8b'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.20)'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, 3, 3); ctx.fill();
       glyph(BUILDINGS[b.type].icon, cx, cy - 3, TILE * 0.78);
+      // dirty / degraded burrow: buzzing flies and a grime tint
+      if (BUILDINGS[b.type].breed && (b.dirt || 0) > 18) {
+        if (b.degraded) { ctx.fillStyle = 'rgba(80,60,20,0.28)'; ctx.fillRect(b.x * TILE + 2, b.y * TILE + 2, TILE - 4, TILE - 4); }
+        ctx.fillStyle = '#2c2418';
+        for (let i = 0; i < 3; i++) { const a = t * 3 + i * 2.1; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * 9, cy - 8 + Math.sin(a * 1.3) * 5, 1.1, 0, 7); ctx.fill(); }
+      }
     }
   }
 

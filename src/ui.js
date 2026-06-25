@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
 import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, TILE, xpForLevel } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, giftFaction, barterFaction, requestAid, hasTradingHut } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -300,6 +300,7 @@ export function createUI(state, ctx) {
       if (b && b.flooded) { const r = repairMine(state, b); if (!r.ok) flash(r.reason); return; }
       if (b && BUILDINGS[b.type].tunnel) { const r = upgradeTunnel(state, b); flash(r.ok ? 'Tunnel improved' : r.reason || ''); return; }
       if (b && BUILDINGS[b.type].townhall) { const r = upgradeTownhall(state, b); flash(r.ok ? 'Town Hall upgraded' : r.reason || ''); return; }
+      if (b && BUILDINGS[b.type].breed && (b.dirt || 0) >= 1) { const r = cleanBurrow(state, b); flash(r.ok ? '🧹 Burrow cleaned' : r.reason || ''); return; }
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
     c.addEventListener('contextmenu', (e) => { e.preventDefault(); view.placing = null; renderBuild(); });

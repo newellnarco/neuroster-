@@ -194,6 +194,16 @@ export function upgradeTownhall(state, b) {
   return { ok: true };
 }
 
+// Clean a dirty burrow (manual upkeep) — resets its filth so it houses & breeds again.
+export function cleanBurrow(state, b) {
+  if (!BUILDINGS[b.type]?.breed) return { ok: false };
+  if ((b.dirt || 0) < 1) return { ok: false, reason: 'Already clean' };
+  b.dirt = 0; b.degraded = false;
+  addFx(state, b.x, b.y, '🧹', 1.4);
+  logMsg(state, '🧹 Cleaned a burrow — fresh bedding all round.');
+  return { ok: true };
+}
+
 export function demolish(state, building) {
   const i = state.buildings.indexOf(building);
   if (i >= 0) {
