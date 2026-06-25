@@ -104,10 +104,17 @@ body {
 
 /* Alerts bar — live "what needs attention now" notifications */
 .alertbar {
-  display: flex; gap: 8px; align-items: center; padding: 6px 12px; flex-wrap: wrap;
+  display: flex; gap: 8px; align-items: center; padding: 6px 12px; flex-wrap: nowrap; overflow: hidden;
   background: #2a211b; border-bottom: 1px solid var(--line); font-size: 12px;
 }
+.alertbar.expanded { flex-wrap: wrap; overflow-y: auto; max-height: 38vh; align-items: flex-start; }
 .alertbar.hidden { display: none; }
+.alertbar .more { cursor: pointer; color: var(--accent); white-space: nowrap; padding: 4px 8px;
+  border: 1px solid var(--line); border-radius: 7px; font-weight: 600; }
+.alertbar .more:hover { border-color: var(--accent); }
+.alert.alert-new { animation: alert-new 0.6s ease-in-out infinite; }
+@keyframes alert-new { 0%, 100% { filter: brightness(1); outline: 0 solid transparent; outline-offset: 1px; }
+  50% { filter: brightness(1.45); outline: 2px solid var(--accent); outline-offset: 1px; } }
 .alert {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 7px;
   background: var(--panel2); border: 1px solid var(--line); cursor: default; white-space: nowrap;

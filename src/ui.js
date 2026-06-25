@@ -350,17 +350,31 @@ export function createUI(state, ctx) {
   // ---- Alerts banner — the live "what needs attention now" retention hook ----
   const MAX_ALERTS = 5;
   let lastCritical = new Set();
+  const alertSeen = new Map(); // alert id -> wall-clock ms first seen (for the new-item blink)
   function renderAlerts() {
     const bar = el('alertbar');
     const alerts = computeAlerts(state);
-    if (!alerts.length) { bar.classList.add('hidden'); bar.innerHTML = ''; lastCritical = new Set(); return; }
+    if (!alerts.length) { bar.classList.add('hidden'); bar.innerHTML = ''; lastCritical = new Set(); alertSeen.clear(); return; }
     bar.classList.remove('hidden');
-    const shown = alerts.slice(0, MAX_ALERTS);
-    bar.innerHTML = shown.map(a =>
-      `<span class="alert ${a.sev} ${a.tab ? 'clickable' : ''}" ${a.tab ? `data-goto="${a.tab}"` : ''} title="${a.msg}">
-        <span class="ico">${a.icon}</span><span class="ttl">${a.msg}</span></span>`).join('') +
-      (alerts.length > shown.length ? `<span class="more">+${alerts.length - shown.length} more</span>` : '');
+    // Track when each alert first appeared (for the ~4s blink) and prune gone ones.
+    const now = performance.now();
+    const ids = new Set(alerts.map(a => a.id));
+    for (const a of alerts) if (!alertSeen.has(a.id)) alertSeen.set(a.id, now);
+    for (const id of [...alertSeen.keys()]) if (!ids.has(id)) alertSeen.delete(id);
+
+    const expanded = !!view.alertsExpanded;
+    bar.classList.toggle('expanded', expanded);
+    const shown = expanded ? alerts : alerts.slice(0, MAX_ALERTS);
+    const chips = shown.map(a => {
+      const fresh = (now - (alertSeen.get(a.id) ?? now)) < 4000 ? ' alert-new' : '';
+      return `<span class="alert ${a.sev} ${a.tab ? 'clickable' : ''}${fresh}" ${a.tab ? `data-goto="${a.tab}"` : ''} title="${escHtml(a.msg)}">
+        <span class="ico">${a.icon}</span><span class="ttl">${escHtml(a.msg)}</span></span>`;
+    }).join('');
+    const moreBtn = (!expanded && alerts.length > shown.length) ? `<span class="more" data-expand>▾ +${alerts.length - shown.length} more</span>`
+      : (expanded && alerts.length > MAX_ALERTS) ? `<span class="more" data-expand>▴ collapse</span>` : '';
+    bar.innerHTML = chips + moreBtn;
     bind('#alertbar [data-goto]', (n) => gotoTab(n.dataset.goto));
+    bind('#alertbar [data-expand]', () => { view.alertsExpanded = !view.alertsExpanded; renderAlerts(); });
     // Ping (flash) the first time a NEW critical alert appears, then remember it.
     const crit = new Set(alerts.filter(a => a.sev === 'critical').map(a => a.id));
     for (const a of alerts) {
@@ -563,7 +577,9 @@ export function createUI(state, ctx) {
     const board = c.parentElement;
     if (view.zoom == null) view.zoom = 1;
     const applyZoom = () => { c.style.width = Math.round(view.zoom * 100) + '%'; };
-    const setZoom = (z) => { view.zoom = Math.max(0.6, Math.min(3.5, z)); applyZoom(); };
+    // Min zoom 1 = the map always at least fills the window width (no empty
+    // margins when zooming out); zoom in up to 3.5×.
+    const setZoom = (z) => { view.zoom = Math.max(1, Math.min(3.5, z)); applyZoom(); };
     applyZoom();
     el('zoom-in') && (el('zoom-in').onclick = () => setZoom(view.zoom + 0.25));
     el('zoom-out') && (el('zoom-out').onclick = () => setZoom(view.zoom - 0.25));
