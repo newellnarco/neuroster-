@@ -29,6 +29,13 @@ body {
 }
 .controls button:hover { border-color: var(--accent); }
 
+/* Environment bar */
+.envbar {
+  display: flex; gap: 14px; align-items: center; padding: 5px 12px; flex-wrap: wrap;
+  background: #262320; border-bottom: 1px solid var(--line); font-size: 13px;
+}
+.env { color: var(--muted); white-space: nowrap; }
+
 /* Needs bar */
 .needsbar {
   display: flex; gap: 14px; align-items: center; padding: 6px 12px;
@@ -81,10 +88,16 @@ body {
 .card .ds { font-size: 11px; color: var(--muted); }
 
 /* Rodents */
-.units { display: flex; flex-direction: column; gap: 5px; }
-.unit { display: flex; align-items: center; gap: 4px; background: var(--panel2);
-  border: 1px solid var(--line); border-radius: 8px; padding: 5px 7px; }
-.uhead { width: 70px; font-size: 12px; }
+.units { display: flex; flex-direction: column; gap: 6px; }
+.unit { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 8px; cursor: pointer; }
+.unit.sel { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(230,180,80,.25) inset; }
+.uhead { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 5px; }
+.uhead .lvl { color: var(--accent); }
+.uhead .sub { color: var(--muted); font-size: 10px; margin-left: auto; }
+.xpbar { width: 60px; height: 5px; background: #3a352e; border-radius: 4px; overflow: hidden; }
+.xpbar span { display: block; height: 100%; background: #7e9cff; }
+.traits { display: flex; gap: 4px; flex-wrap: wrap; }
 .hyb { color: var(--accent); font-size: 10px; }
 .trait { background: #3a352e; border: 1px solid var(--line); color: var(--ink);
   border-radius: 6px; padding: 3px 6px; cursor: pointer; font-size: 12px; }
@@ -104,6 +117,27 @@ body {
 .log { border-top: 1px solid var(--line); padding: 8px 10px; font-size: 12px;
   color: var(--muted); max-height: 130px; overflow-y: auto; }
 .log div { padding: 1px 0; }
+
+/* Biome picker modal */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex;
+  align-items: center; justify-content: center; z-index: 50; }
+.modal.hidden { display: none; }
+.modal-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 22px; max-width: 720px; width: 92%; max-height: 86vh; overflow-y: auto; }
+.modal-card h2 { margin: 0 0 4px; }
+.modal-card p { color: var(--muted); margin: 0 0 14px; }
+.modal-card .grid { grid-template-columns: 1fr 1fr; }
+.modal-cancel { margin-top: 14px; background: var(--panel2); color: var(--ink);
+  border: 1px solid var(--line); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+.modal-card .cat { margin-top: 14px; }
+.card.breed.sel { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(230,180,80,.3) inset; }
+.namerow { display: flex; gap: 8px; }
+.namerow input { flex: 1; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 8px; padding: 8px 12px; font-size: 15px; }
+.namerow button { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  color: var(--ink); padding: 0 14px; cursor: pointer; font-size: 18px; }
+.env.founder { color: var(--accent); cursor: pointer; }
+.env.founder:hover { text-decoration: underline; }
 
 @media (max-width: 820px) {
   #sidebar { width: 280px; }

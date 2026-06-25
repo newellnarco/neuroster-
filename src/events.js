@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, TICKS_PER_SEC } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
 import { logMsg, population } from './state.js';
 
 // Total protection the colony currently has against a given disaster key.
@@ -32,7 +32,7 @@ export function stepEvents(state, dt) {
   if (!state.events) state.events = {};
   const pop = population(state);
   if (pop <= 0) return;
-  const elapsed = state.time / TICKS_PER_SEC;
+  const elapsed = state.env?.lived || 0; // seconds actually played
   if (elapsed < GRACE_SECONDS) return; // peaceful early game
 
   for (const [key, d] of Object.entries(DISASTERS)) {
@@ -43,15 +43,20 @@ export function stepEvents(state, dt) {
 
     // Reschedule next occurrence; they grow slightly more frequent over time.
     const ramp = Math.max(0.55, 1 - elapsed / 6000);
-    ev.timer = d.interval * ramp * (0.7 + 0.6 * hash(key + state.time));
+    ev.timer = d.interval * ramp * (0.7 + 0.6 * hash(key + elapsed));
 
-    fireDisaster(state, key, d);
+    fireDisaster(state, key, d, elapsed);
   }
 }
 
-function fireDisaster(state, key, d) {
-  const grow = 1 + state.time / TICKS_PER_SEC / 3000; // disasters get tougher
-  const severity = d.baseSeverity * grow;
+function fireDisaster(state, key, d, elapsed) {
+  const grow = 1 + elapsed / 3000; // disasters get tougher over time
+  // Biome + weather/night modifiers scale how severe each event is here.
+  const biome = BIOMES[state.world?.biome];
+  const biomeMul = (biome?.hazardMul?.[key]) ?? 1;
+  const envMul = 1 + (state._envMods?.hazardMul?.[key] || 0);
+  const difficulty = BREEDS[state.founder?.breed]?.difficulty ?? 1; // founder breed sets the stakes
+  const severity = d.baseSeverity * grow * biomeMul * Math.max(0.2, envMul) * difficulty;
   const offenseBonus = (d.kind === 'predator') ? totalOffense(state) : 0;
   const protect = protectionAgainst(state, key) + offenseBonus;
   const net = severity - protect;
@@ -65,9 +70,9 @@ function fireDisaster(state, key, d) {
   switch (d.effect) {
     case 'takeUnits': {
       const taken = Math.max(1, Math.round(sev / 14));
-      removeUnits(state, taken);
-      logMsg(state, `${d.icon} ${d.name} struck! Lost ${Math.min(taken, population(state) + taken)} rodent(s). Build defenses!`);
-      state.needs.health = Math.max(0, state.needs.health - 8);
+      const lost = removeUnits(state, taken);
+      logMsg(state, `${d.icon} ${d.name} struck! Lost ${lost} rodent(s). Build defenses & keep guardian species!`);
+      hurtHealth(state, 8);
       break;
     }
     case 'loot': {
@@ -77,26 +82,31 @@ function fireDisaster(state, key, d) {
     }
     case 'damage': {
       lootResources(state, sev * 3);
-      state.needs.health = Math.max(0, state.needs.health - 10);
-      state.needs.water = Math.min(100, state.needs.water); // flood = water, ironically
+      hurtHealth(state, 10);
       logMsg(state, `${d.icon} ${d.name}! Food/stores damaged. Build Levees & Irrigation.`);
       break;
     }
     case 'destroy': {
       const gone = destroyRandomBuilding(state, Math.max(1, Math.round(sev / 12)));
       logMsg(state, `${d.icon} ${d.name}! ${gone} structure(s) collapsed. Build Quake Shelters.`);
-      state.needs.health = Math.max(0, state.needs.health - 6);
+      hurtHealth(state, 6);
       break;
     }
   }
 }
 
+// Reduce every rodent's health (disasters are stressful & injurious).
+function hurtHealth(state, amt) {
+  for (const u of state.units) u.needs.health = Math.max(0, u.needs.health - amt);
+}
+
 function removeUnits(state, n) {
+  let lost = 0;
   for (let i = 0; i < n && state.units.length > 1; i++) {
-    // predators grab the unit farthest from defenses (simplified: a random one)
     const idx = Math.floor(rand(state) * state.units.length);
-    state.units.splice(idx, 1);
+    state.units.splice(idx, 1); lost++;
   }
+  return lost;
 }
 
 function lootResources(state, amount) {

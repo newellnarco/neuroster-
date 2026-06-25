@@ -17,6 +17,7 @@
     </div>
   </header>
 
+  <div id="envbar" class="envbar"></div>
   <div id="needsbar" class="needsbar"></div>
 
   <main id="stage">
@@ -29,19 +30,30 @@
     <aside id="sidebar">
       <nav class="tabs">
         <button class="tabbtn active" data-tab="build">🏗️ Build</button>
-        <button class="tabbtn" data-tab="tech">🔬 Tech</button>
+        <button class="tabbtn" data-tab="tech">🔬 Skills</button>
+        <button class="tabbtn" data-tab="evo">🧬 Evolve</button>
         <button class="tabbtn" data-tab="rodents">🐹 Rodents</button>
         <button class="tabbtn" data-tab="threats">🛡️ Threats</button>
       </nav>
       <div class="panes">
         <section id="tab-build" class="tabpane active"></section>
         <section id="tab-tech" class="tabpane"></section>
+        <section id="tab-evo" class="tabpane"></section>
         <section id="tab-rodents" class="tabpane"></section>
         <section id="tab-threats" class="tabpane"></section>
       </div>
       <div id="log" class="log"></div>
     </aside>
   </main>
+
+  <div id="biome-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2>🐹 Start a New Colony</h2>
+      <p>Choose a biome — each map has its own resources, benefits and challenges.</p>
+      <div id="biome-grid" class="grid"></div>
+      <button id="biome-cancel" class="modal-cancel">Cancel</button>
+    </div>
+  </div>
 
   <script type="module" src="main.js"></script>
 </body>

@@ -1,8 +1,32 @@
-// buildings.js — placement validation, cost handling, tech application.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST } from './config.js';
+// buildings.js — placement validation, cost handling, tech & evolution.
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
 import { canAfford, spend, logMsg } from './state.js';
 import { getTile, TERRAIN, inBounds } from './world.js';
 import { makeRodent } from './entities.js';
+
+// The "main hamster" / player level = the highest level any rodent has reached.
+// It gates access to advanced content, rewarding long-term colony management.
+export function mainLevel(state) {
+  let m = 1;
+  for (const u of state.units) if (u.level > m) m = u.level;
+  return m;
+}
+
+// Rename the founder hamster — allowed once every NAME_CHANGE_DAYS in-game days.
+export function renameFounder(state, newName) {
+  const day = Math.floor((state.env?.dayTime || 0) / DAY_SECONDS) + 1;
+  const last = state.founder?.lastRenameDay || 0;
+  if (day - last < NAME_CHANGE_DAYS && last !== 0 && state.env?.lived > 5)
+    return { ok: false, reason: `Renaming is allowed once every ${NAME_CHANGE_DAYS} days (next on day ${last + NAME_CHANGE_DAYS}).` };
+  const clean = (newName || '').trim().slice(0, 16);
+  if (!clean) return { ok: false, reason: 'Enter a name' };
+  state.founder.name = clean;
+  state.founder.lastRenameDay = day;
+  const f = state.units.find(u => u.founder);
+  if (f) f.name = clean;
+  logMsg(state, `📝 The founder is now named ${clean}.`);
+  return { ok: true };
+}
 
 export function canPlace(state, type, x, y) {
   if (!inBounds(x, y)) return { ok: false, reason: 'Out of bounds' };
@@ -14,9 +38,23 @@ export function canPlace(state, type, x, y) {
     return { ok: false, reason: 'Tile occupied' };
   if (state.world.nodes.some(n => n.x === x && n.y === y && n.amount > 0))
     return { ok: false, reason: 'A resource node is here' };
+  // Wells need water nearby; mines need a depleting node in range.
+  if (def.needsWater && !hasWaterNear(state, x, y, def.radius || 3))
+    return { ok: false, reason: 'Place near water (a pond/river)' };
+  if (def.autoMine && !hasNodeNear(state, x, y, def.radius || 3))
+    return { ok: false, reason: 'Place near ore/coal/stone to mine' };
   if (!canAfford(state, def.cost))
     return { ok: false, reason: 'Not enough resources' };
   return { ok: true };
+}
+
+function hasWaterNear(state, x, y, r) {
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++)
+    if (getTile(state.world.terrain, x + dx, y + dy) === TERRAIN.water) return true;
+  return false;
+}
+function hasNodeNear(state, x, y, r) {
+  return state.world.nodes.some(n => n.amount > 0 && Math.abs(n.x - x) <= r && Math.abs(n.y - y) <= r);
 }
 
 export function placeBuilding(state, type, x, y) {
@@ -40,15 +78,29 @@ export function demolish(state, building) {
   }
 }
 
-// ---- Tech --------------------------------------------------------------
+// ---- Skill tree (colony tech) ------------------------------------------
 export function researchTech(state, id) {
   const t = TECH[id];
   if (!t || state.tech[id]) return { ok: false, reason: 'Unavailable' };
+  if (t.reqLevel && mainLevel(state) < t.reqLevel) return { ok: false, reason: `Needs main hamster Lv.${t.reqLevel}` };
   if (!canAfford(state, t.cost)) return { ok: false, reason: 'Not enough resources' };
   spend(state, t.cost);
   state.tech[id] = true;
   applyTechEffect(state, t.effect);
   logMsg(state, `🔬 Researched ${t.name}.`);
+  return { ok: true };
+}
+
+// ---- Evolution tree (species-wide permanent upgrades) ------------------
+export function evolve(state, id) {
+  const e = EVOLUTIONS[id];
+  if (!e || state.evolutions[id]) return { ok: false, reason: 'Unavailable' };
+  if (e.req && !state.evolutions[e.req]) return { ok: false, reason: `Requires ${EVOLUTIONS[e.req].name}` };
+  if (e.reqLevel && mainLevel(state) < e.reqLevel) return { ok: false, reason: `Needs main hamster Lv.${e.reqLevel}` };
+  if (!canAfford(state, e.cost)) return { ok: false, reason: 'Not enough resources' };
+  spend(state, e.cost);
+  state.evolutions[id] = true;
+  logMsg(state, `🧬 Evolution unlocked: ${e.name}!`);
   return { ok: true };
 }
 
@@ -70,11 +122,17 @@ export function upgradeTrait(state, unit, traitId) {
   if (!TRAITS[traitId]) return { ok: false };
   const lvl = unit.traits[traitId] || 0;
   if (lvl >= 6) return { ok: false, reason: 'Maxed' };
+  // A unit's earned skill points (from leveling) pay for trait upgrades for free.
+  if ((unit.skillPoints || 0) > 0) {
+    unit.skillPoints--;
+    unit.traits[traitId] = lvl + 1;
+    return { ok: true, paidWith: 'skillPoint' };
+  }
   const cost = traitCost(lvl);
-  if (!canAfford(state, cost)) return { ok: false, reason: 'Not enough resources' };
+  if (!canAfford(state, cost)) return { ok: false, reason: 'Need a skill point or resources' };
   spend(state, cost);
   unit.traits[traitId] = lvl + 1;
-  return { ok: true };
+  return { ok: true, paidWith: 'resources' };
 }
 
 // Recruit a new rodent of an unlocked species (costs food + research).

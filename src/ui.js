@@ -1,32 +1,51 @@
-// ui.js — HUD, build menu, tech tree, rodent/trait panel, event log.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS } from './config.js';
-import { totalStored, population, wellbeingMul } from './state.js';
-import { placeBuilding, canPlace, researchTech, upgradeTrait, traitCost, recruit, demolish } from './buildings.js';
+// ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, SLEEP, TILE, xpForLevel } from './config.js';
+import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
+import { dayNumber, clockString, currentWeather, isNight } from './environment.js';
 
 export function createUI(state, ctx) {
-  // ctx: { canvas, view, onNewGame, onSave }
   const el = (id) => document.getElementById(id);
   const view = ctx.view;
 
-  // ---- Resource & needs bar ----
-  function renderTopbar() {
+  // ---- Resource bar ----
+  function renderResbar() {
     const order = ['wood', 'stone', 'ironore', 'coal', 'seeds', 'water', 'food', 'planks', 'iron', 'power', 'research'];
     el('resbar').innerHTML = order.map(k => {
       const r = RESOURCES[k];
       return `<span class="res" title="${r.name}">${r.icon}<b>${fmt(state.res[k] || 0)}</b></span>`;
     }).join('') +
-      `<span class="res storage" title="Storage used / cap">📦<b>${fmt(totalStored(state))}/${state.storageCap}</b></span>` +
-      `<span class="res" title="Population / cap">👥<b>${population(state)}/${state.popCap}</b></span>`;
+      `<span class="res storage" title="Storage used / cap">📦<b>${fmt(totalStored(state))}/${state.storageCap}</b></span>`;
+  }
 
-    el('needsbar').innerHTML = Object.entries(NEEDS).map(([k, def]) => {
-      const v = Math.round(state.needs[k] || 0);
+  // ---- Environment bar (biome, day/clock, weather, level, defense) ----
+  function renderEnv() {
+    const biome = BIOMES[state.world.biome] || BIOMES.woodland;
+    const w = currentWeather(state);
+    const f = state.founder || { name: 'Founder', breed: 'syrian' };
+    el('envbar').innerHTML =
+      `<span class="env founder" id="founder-chip" title="Your founder hamster — click to rename (once every 30 days)">🐹 ${f.name} · ${BREEDS[f.breed]?.name || ''}</span>` +
+      `<span class="env" title="Biome">${biome.icon} ${biome.name}</span>` +
+      `<span class="env" title="In-game day & time (1 day = 15 min)">${isNight(state) ? '🌙' : '☀️'} Day ${dayNumber(state)} · ${clockString(state)}</span>` +
+      `<span class="env" title="${w.name}: ${w.desc}">${w.icon} ${w.name}</span>` +
+      `<span class="env" title="Your highest rodent level — gates advanced content">🎖️ Main Lv.${mainLevel(state)}</span>` +
+      `<span class="env" title="Population / cap">👥 ${population(state)}/${state.popCap}</span>` +
+      `<span class="env" title="Overall wellbeing multiplier">😊 ×${wellbeingMul(state).toFixed(2)}</span>` +
+      `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>`;
+  }
+
+  // ---- Needs bar (colony averages of per-creature needs) ----
+  function renderNeeds() {
+    const c = colonyNeeds(state);
+    el('needsbar').innerHTML = ['food', 'water', 'energy', 'fun', 'health'].map(k => {
+      const def = NEEDS[k];
+      const v = Math.round(c[k] || 0);
       const cls = v < 30 ? 'low' : v < 60 ? 'mid' : 'ok';
       return `<span class="need ${cls}" title="${def.name}: ${def.desc}">${def.icon}
         <span class="bar"><span style="width:${v}%"></span></span></span>`;
     }).join('') +
-      `<span class="need wb" title="Overall wellbeing multiplier">😊 ×${wellbeingMul(state).toFixed(2)}</span>` +
-      `<span class="need def" title="Defense / Offense rating">🛡️${state.defense} ⚔️${totalOffense(state)}</span>`;
+      `<span class="need" title="Sleeping rodents">💤 ${state.units.filter(u => u.phase === 'sleep').length}</span>`;
   }
 
   // ---- Build menu ----
@@ -36,33 +55,45 @@ export function createUI(state, ctx) {
     el('tab-build').innerHTML = Object.entries(cats).map(([cat, items]) => `
       <div class="cat">${cat}</div>
       <div class="grid">${items.map(([id, def]) => {
-        const afford = Object.entries(def.cost).every(([k, v]) => (state.res[k] || 0) >= v);
+        const afford = canAffordCost(def.cost);
         return `<button class="card ${view.placing === id ? 'sel' : ''} ${afford ? '' : 'poor'}" data-build="${id}">
-          <div class="ico">${def.icon}</div>
-          <div class="nm">${def.name}</div>
-          <div class="cost">${costStr(def.cost)}</div>
-          <div class="ds">${def.desc}</div>
+          <div class="ico">${def.icon}</div><div class="nm">${def.name}</div>
+          <div class="cost">${costStr(def.cost)}</div><div class="ds">${def.desc}</div>
         </button>`;
       }).join('')}</div>`).join('');
-    el('tab-build').querySelectorAll('[data-build]').forEach(btn => {
-      btn.onclick = () => { view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build; renderBuild(); };
-    });
+    bind('[data-build]', (btn) => { view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build; renderBuild(); });
   }
 
-  // ---- Tech tree ----
+  // ---- Skill tree (tech) ----
   function renderTech() {
-    el('tab-tech').innerHTML = `<div class="grid">${Object.entries(TECH).map(([id, t]) => {
+    el('tab-tech').innerHTML = `<div class="hint">Colony-wide skills: spend Research to permanently boost the whole settlement and unlock new species.</div>
+      <div class="grid">${Object.entries(TECH).map(([id, t]) => {
       const done = state.tech[id];
-      const afford = Object.entries(t.cost).every(([k, v]) => (state.res[k] || 0) >= v);
-      return `<button class="card tech ${done ? 'done' : ''} ${afford || done ? '' : 'poor'}" data-tech="${id}" ${done ? 'disabled' : ''}>
+      const ok = done || (canAffordCost(t.cost) && (!t.reqLevel || mainLevel(state) >= t.reqLevel));
+      return `<button class="card tech ${done ? 'done' : ''} ${ok ? '' : 'poor'}" data-tech="${id}" ${done ? 'disabled' : ''}>
         <div class="ico">${t.icon}</div><div class="nm">${t.name}</div>
-        <div class="cost">${done ? '✓ Researched' : costStr(t.cost)}</div>
-        <div class="ds">${t.desc}</div>
+        <div class="cost">${done ? '✓ Researched' : costStr(t.cost)}${t.reqLevel ? ` · Lv.${t.reqLevel}` : ''}</div>
+        <div class="ds">${t.desc}</div></button>`;
+    }).join('')}</div>`;
+    bind('[data-tech]', (btn) => { msg(researchTech(state, btn.dataset.tech)); renderTech(); renderRodents(); });
+  }
+
+  // ---- Evolution tree ----
+  function renderEvo() {
+    el('tab-evo').innerHTML = `<div class="hint">Evolution permanently upgrades whole species (unlike per-rodent traits). Some branches need prerequisites or a higher Main Hamster level.</div>
+      <div class="grid">${Object.entries(EVOLUTIONS).map(([id, e]) => {
+      const done = state.evolutions[id];
+      const reqOk = !e.req || state.evolutions[e.req];
+      const lvlOk = !e.reqLevel || mainLevel(state) >= e.reqLevel;
+      const ok = done || (canAffordCost(e.cost) && reqOk && lvlOk);
+      const tag = e.species === 'all' ? 'All rodents' : `${SPECIES[e.species].icon} ${SPECIES[e.species].name}`;
+      return `<button class="card evo ${done ? 'done' : ''} ${ok ? '' : 'poor'}" data-evo="${id}" ${done ? 'disabled' : ''}>
+        <div class="ico">${e.icon}</div><div class="nm">${e.name}</div>
+        <div class="cost">${done ? '✓ Evolved' : costStr(e.cost)}</div>
+        <div class="ds">${e.desc}<br><span class="helpers">${tag}${e.req ? ` · needs ${EVOLUTIONS[e.req].name}` : ''}${e.reqLevel ? ` · Lv.${e.reqLevel}` : ''}</span></div>
       </button>`;
     }).join('')}</div>`;
-    el('tab-tech').querySelectorAll('[data-tech]').forEach(btn => {
-      btn.onclick = () => { researchTech(state, btn.dataset.tech); renderTech(); renderRodents(); };
-    });
+    bind('[data-evo]', (btn) => { msg(evolve(state, btn.dataset.evo)); renderEvo(); });
   }
 
   // ---- Rodents & traits ----
@@ -73,45 +104,51 @@ export function createUI(state, ctx) {
         <div class="ico">${SPECIES[s].icon}</div><div class="nm">${SPECIES[s].name}</div>
         <div class="cost">🌾25 🔬10</div><div class="ds">${SPECIES[s].role || ''}</div></button>`).join('')}</div>` : '';
 
-    // group units by species, show one expandable per unit (cap list length)
-    const list = state.units.slice(0, 40).map(u => {
+    const units = [...state.units].sort((a, b) => (view.selUnit === a.id ? -1 : 0) - (view.selUnit === b.id ? -1 : 0) || b.level - a.level);
+    const list = units.slice(0, 40).map(u => {
       const sp = SPECIES[u.species];
+      const sel = view.selUnit === u.id ? 'sel' : '';
+      const phase = u.phase === 'sleep' ? '💤' : '';
       const hybrid = u.hybridOf ? ` <span class="hyb">hybrid</span>` : '';
+      const sleepInfo = SLEEP[u.species]?.phase || '';
       const traits = Object.entries(TRAITS).map(([tid, td]) => {
         const lvl = u.traits[tid] || 0;
+        const free = (u.skillPoints || 0) > 0;
         const cost = traitCost(lvl);
-        const afford = Object.entries(cost).every(([k, v]) => (state.res[k] || 0) >= v);
-        return `<button class="trait ${afford && lvl < 6 ? '' : 'poor'}" data-unit="${u.id}" data-trait="${tid}"
-          title="${td.name}: ${td.desc}\nNext: ${costStr(cost)}">${td.icon}${'•'.repeat(lvl) || '–'}</button>`;
+        const can = lvl < 6 && (free || canAffordCost(cost));
+        return `<button class="trait ${can ? '' : 'poor'}" data-unit="${u.id}" data-trait="${tid}"
+          title="${td.name}: ${td.desc}\n${free ? 'Free with a skill point' : 'Next: ' + costStr(cost)}">${td.icon}${'•'.repeat(lvl) || '–'}</button>`;
       }).join('');
-      return `<div class="unit"><span class="uhead">${sp.icon} #${u.id}${hybrid}</span>${traits}</div>`;
+      return `<div class="unit ${sel}" data-selunit="${u.id}">
+        <div class="uhead">${sp.icon} #${u.id} ${phase}${hybrid}
+          <span class="lvl">Lv.${u.level}${u.skillPoints ? ` · ⭐${u.skillPoints}` : ''}</span>
+          <span class="xpbar"><span style="width:${Math.min(100, 100 * u.xp / xpForLevel(u.level))}%"></span></span>
+          <span class="sub">${sleepInfo}</span></div>
+        <div class="traits">${traits}</div></div>`;
     }).join('');
 
     el('tab-rodents').innerHTML = recruitHtml +
-      `<div class="cat">Colony (${population(state)}) — upgrade traits</div>
-       <div class="hint">Traits raise a rodent's mining, speed, carry, stamina or wit. New hamsters can be born as hybrids that blend parents' best traits.</div>
+      `<div class="cat">Colony (${population(state)}) — levels, sleep & traits</div>
+       <div class="hint">Rodents earn XP from work and level up, granting ⭐ skill points to spend on traits for free. Each gathers, eats, drinks and sleeps on its own — keep stores full and build enrichment. Hamsters are nocturnal; beavers & guinea pigs are diurnal.</div>
        <div class="units">${list}</div>`;
-
-    el('tab-rodents').querySelectorAll('[data-recruit]').forEach(btn => {
-      btn.onclick = () => { recruit(state, btn.dataset.recruit); renderRodents(); };
+    bind('[data-recruit]', (btn) => { msg(recruit(state, btn.dataset.recruit)); renderRodents(); });
+    bind('[data-trait]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.unit);
+      if (u) msg(upgradeTrait(state, u, btn.dataset.trait));
+      renderRodents();
     });
-    el('tab-rodents').querySelectorAll('[data-trait]').forEach(btn => {
-      btn.onclick = () => {
-        const u = state.units.find(x => x.id == btn.dataset.unit);
-        if (u) upgradeTrait(state, u, btn.dataset.trait);
-        renderRodents();
-      };
-    });
+    bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
   }
 
   // ---- Threats panel ----
   function renderThreats() {
     el('tab-threats').innerHTML =
-      `<div class="hint">Predators snatch rodents; disasters wreck buildings & stores. Raise protection with defensive buildings AND by keeping protective species in your colony. Barracks/Watchtowers also add ⚔️ offense to fight predators.</div>
-       <div class="cat">Current — 🛡️ ${state.defense} defense · ⚔️ ${totalOffense(state)} offense</div>` +
+      `<div class="hint">Predators snatch rodents; disasters wreck buildings & stores. Raise protection with defensive buildings AND protective species. Your biome and the weather/night change how dangerous each threat is.</div>
+       <div class="cat">Now — 🛡️ ${state.defense} defense · ⚔️ ${totalOffense(state)} offense</div>` +
       Object.entries(DISASTERS).map(([key, d]) => {
+        const biomeMul = BIOMES[state.world.biome]?.hazardMul?.[key] ?? 1;
         const prot = protectionAgainst(state, key) + (d.kind === 'predator' ? totalOffense(state) : 0);
-        const sev = Math.round(d.baseSeverity * (1 + state.time / 4 / 3000));
+        const sev = Math.round(d.baseSeverity * (1 + (state.env?.lived || 0) / 3000) * biomeMul);
         const ratio = Math.min(1, prot / Math.max(1, sev));
         const cls = ratio >= 1 ? 'ok' : ratio >= 0.6 ? 'mid' : 'low';
         const helpers = [
@@ -127,12 +164,9 @@ export function createUI(state, ctx) {
       }).join('');
   }
 
-  // ---- Log ----
-  function renderLog() {
-    el('log').innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join('');
-  }
+  function renderLog() { el('log').innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join(''); }
 
-  // ---- Tabs ----
+  // ---- Tabs & controls ----
   function setupTabs() {
     document.querySelectorAll('.tabbtn').forEach(b => {
       b.onclick = () => {
@@ -142,8 +176,46 @@ export function createUI(state, ctx) {
         el('tab-' + b.dataset.tab).classList.add('active');
       };
     });
-    el('btn-new').onclick = () => { if (confirm('Start a new colony? Current progress is lost.')) ctx.onNewGame(); };
+    el('btn-new').onclick = showCharacterCreation;
     el('btn-save').onclick = () => { ctx.onSave(); flash('Saved!'); };
+    // Founder rename (delegated click on the env bar chip).
+    el('envbar').onclick = (e) => {
+      if (!e.target.closest('#founder-chip')) return;
+      const n = prompt('Rename your founder hamster (once every 30 days):', state.founder?.name || '');
+      if (n != null) msg(renameFounder(state, n));
+    };
+  }
+
+  // ---- Character creation: breed + name + biome ----
+  function showCharacterCreation() {
+    const sel = { breed: 'syrian', name: HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)], biome: null };
+    const card = el('biome-modal').querySelector('.modal-card');
+    card.innerHTML = `
+      <h2>🐹 Found a New Colony</h2>
+      <p>Create your founder hamster, then choose a biome. Every choice changes your starting traits, map and challenges.</p>
+      <div class="cat">Breed</div>
+      <div class="grid" id="cc-breeds">${Object.entries(BREEDS).map(([k, b]) =>
+        `<button class="card breed" data-breed="${k}"><div class="ico">${b.icon}</div>
+          <div class="nm">${b.name}</div><div class="ds">${b.desc}</div></button>`).join('')}</div>
+      <div class="cat">Name</div>
+      <div class="namerow"><input id="cc-name" value="${sel.name}" maxlength="16" />
+        <button id="cc-roll" title="Random name">🎲</button></div>
+      <div class="cat">Biome — pick to begin</div>
+      <div class="grid" id="cc-biomes">${Object.entries(BIOMES).map(([k, b]) =>
+        `<button class="card" data-biome="${k}"><div class="ico">${b.icon}</div>
+          <div class="nm">${b.name}</div><div class="ds">${b.desc}</div></button>`).join('')}</div>
+      <button id="cc-cancel" class="modal-cancel">Cancel</button>`;
+    el('biome-modal').classList.remove('hidden');
+
+    const breeds = card.querySelectorAll('[data-breed]');
+    const markBreed = () => breeds.forEach(b => b.classList.toggle('sel', b.dataset.breed === sel.breed));
+    breeds.forEach(b => b.onclick = () => { sel.breed = b.dataset.breed; markBreed(); });
+    markBreed();
+    card.querySelector('#cc-roll').onclick = () => { sel.name = HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)]; card.querySelector('#cc-name').value = sel.name; };
+    card.querySelector('#cc-cancel').onclick = () => el('biome-modal').classList.add('hidden');
+    card.querySelectorAll('[data-biome]').forEach(btn => {
+      btn.onclick = () => ctx.onNewGame({ biome: btn.dataset.biome, breed: sel.breed, name: card.querySelector('#cc-name').value.trim() || sel.name });
+    });
   }
 
   // ---- Canvas interaction ----
@@ -152,11 +224,10 @@ export function createUI(state, ctx) {
     const toTile = (e) => {
       const r = c.getBoundingClientRect();
       const sx = c.width / r.width, sy = c.height / r.height;
-      return { x: Math.floor((e.clientX - r.left) * sx / TILE_), y: Math.floor((e.clientY - r.top) * sy / TILE_) };
+      return { x: Math.floor((e.clientX - r.left) * sx / TILE), y: Math.floor((e.clientY - r.top) * sy / TILE) };
     };
     c.addEventListener('mousemove', (e) => {
-      const t = toTile(e);
-      view.hover = t;
+      const t = toTile(e); view.hover = t;
       if (view.placing) view.canPlace = canPlace(state, view.placing, t.x, t.y).ok;
     });
     c.addEventListener('mouseleave', () => view.hover = null);
@@ -164,53 +235,55 @@ export function createUI(state, ctx) {
       const t = toTile(e);
       if (view.placing) {
         const r = placeBuilding(state, view.placing, t.x, t.y);
-        if (!r.ok) flash(r.reason);
-        else { renderBuild(); renderTopbar(); }
+        if (!r.ok) flash(r.reason); else { renderBuild(); renderResbar(); }
         return;
       }
-      // click an existing building to demolish (with confirm)
+      // select a rodent under the cursor
+      const px = (e.offsetX) / c.getBoundingClientRect().width * c.width / TILE;
+      const py = (e.offsetY) / c.getBoundingClientRect().height * c.height / TILE;
+      const u = state.units.find(u => Math.hypot(u.x - px, u.y - py) < 0.6);
+      if (u) { view.selUnit = u.id; document.querySelector('[data-tab="rodents"]').click(); renderRodents(); return; }
       const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
-    // right-click cancels placement
     c.addEventListener('contextmenu', (e) => { e.preventDefault(); view.placing = null; renderBuild(); });
   }
 
+  // ---- helpers ----
+  function canAffordCost(cost) { return Object.entries(cost || {}).every(([k, v]) => (state.res[k] || 0) >= v); }
+  function bind(sel, fn) { document.querySelectorAll(sel).forEach(n => n.onclick = () => fn(n)); }
+  function msg(r) { if (r && !r.ok && r.reason) flash(r.reason); }
+
   let flashTimer;
-  function flash(msg) {
-    const f = el('flash'); f.textContent = msg; f.classList.add('show');
+  function flash(text) {
+    const f = el('flash'); f.textContent = text; f.classList.add('show');
     clearTimeout(flashTimer); flashTimer = setTimeout(() => f.classList.remove('show'), 1600);
   }
 
-  function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderRodents(); renderThreats(); }
+  function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); }
 
-  // Called every frame (cheap parts) + periodically (expensive panels).
   let acc = 0;
   function update(dt) {
-    renderTopbar();
+    renderResbar(); renderEnv(); renderNeeds();
     acc += dt;
-    if (acc > 0.5) { acc = 0; renderLog();
-      if (el('tab-rodents').classList.contains('active')) renderRodents();
-      if (el('tab-threats').classList.contains('active')) renderThreats();
-      if (el('tab-build').classList.contains('active')) refreshAfford();
+    if (acc > 0.5) {
+      acc = 0; renderLog();
+      const active = (tab) => el('tab-' + tab).classList.contains('active');
+      if (active('rodents')) renderRodents();
+      if (active('threats')) renderThreats();
+      if (active('evo')) renderEvo();
+      if (active('build')) refreshAfford();
     }
   }
   function refreshAfford() {
-    el('tab-build').querySelectorAll('[data-build]').forEach(btn => {
-      const def = BUILDINGS[btn.dataset.build];
-      const afford = Object.entries(def.cost).every(([k, v]) => (state.res[k] || 0) >= v);
-      btn.classList.toggle('poor', !afford);
+    document.querySelectorAll('#tab-build [data-build]').forEach(btn => {
+      btn.classList.toggle('poor', !canAffordCost(BUILDINGS[btn.dataset.build].cost));
     });
   }
 
-  return { init, update, flash, renderAll: () => { renderTopbar(); renderBuild(); renderTech(); renderRodents(); renderThreats(); renderLog(); } };
+  return { init, update, flash,
+    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderLog(); } };
 }
-
-// tile size imported lazily to avoid circular concerns
-import { TILE } from './config.js';
-const TILE_ = TILE;
 
 function fmt(n) { n = Math.floor(n); return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : '' + n; }
-function costStr(cost) {
-  return Object.entries(cost).map(([k, v]) => `${RESOURCES[k]?.icon || k}${v}`).join(' ');
-}
+function costStr(cost) { return Object.entries(cost || {}).map(([k, v]) => `${RESOURCES[k]?.icon || k}${v}`).join(' '); }
