@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.3.0';
+export const VERSION = 'v0.3.1';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
@@ -131,6 +131,14 @@ export const BUILDINGS = {
   sanctuary: {
     name: 'Sanctuary', icon: '🏡', desc: 'A refuge for lost & hurt animals. Stray creatures arrive more often to be taken in, and caring for them steadily raises colony Compassion.',
     cost: { wood: 30, planks: 15, seeds: 10 }, category: 'Wellbeing', sanctuary: true, health: 3,
+  },
+  sapling: {
+    name: 'Plant Tree', icon: '🌳', desc: 'Plant a tree. Growing forests SCRUB pollution from the air and green the colony — replant what industry burns. (Oak groves draw squirrels — coming soon.)',
+    cost: { seeds: 10, water: 6 }, category: 'Wellbeing', tree: true,
+  },
+  statue: {
+    name: 'Statue', icon: '🗿', desc: 'A proud monument. A steady, quiet lift to colony morale — and a focus for its better nature (Compassion).',
+    cost: { stone: 40, planks: 10 }, category: 'Wellbeing', statue: true,
   },
   courthouse: {
     name: 'Courthouse', icon: '⚖️', desc: 'Where the colony weighs justice against mercy. Unlocks merciful verdicts in hard decisions and lends a steady sense of fair Order (Justice).',

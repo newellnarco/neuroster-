@@ -346,6 +346,7 @@ export function createRenderer(canvas, state, getView) {
       const cx = b.x * TILE + TILE / 2, cy = b.y * TILE + TILE / 2;
       ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(cx, cy + TILE * 0.30, 11, 4.5, 0, 0, 7); ctx.fill();
       if (b.underConstruction) { drawSite(cx, cy, b, t); continue; }
+      if (BUILDINGS[b.type].tree) { drawTree(cx, cy - 2, 1); continue; } // planted tree
       if (b.type === 'wheel') { drawWheel(cx, cy - 3, t, b); continue; }
       if (b.type === 'conveyor' || b.type === 'conveyorPlastic' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }

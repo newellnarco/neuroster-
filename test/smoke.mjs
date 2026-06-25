@@ -478,6 +478,23 @@ console.log('Pollution & power:');
   const clean = farmOutput(0), dirty = farmOutput(90);
   assert(dirty < clean, `heavy pollution cuts farm output (${clean.toFixed(1)} → ${dirty.toFixed(1)})`);
   ok(`pollution poisons farms (clean ${clean.toFixed(1)} > dirty ${dirty.toFixed(1)})`);
+
+  // Planting trees scrubs pollution faster.
+  function scrub(saplings) {
+    const g = newGame(97, 'prairie', 'syrian', 'Tree', {}); g.pollution = 50;
+    const f = g.world.spawn;
+    for (let i = 0; i < saplings; i++) g.buildings.push({ type: 'sapling', x: f.x + i, y: f.y + 2 });
+    for (let i = 0; i < 50; i++) stepEconomy(g, 0.2); return g.pollution;
+  }
+  assert(scrub(8) < scrub(0), 'planted trees scrub pollution faster');
+  ok('planting trees (forests) scrub pollution from the air');
+
+  // A statue lifts the colony's spirit & compassion (passive, isolated at 50).
+  const g2 = newGame(98, 'woodland', 'syrian', 'Civic', {});
+  g2.compassion = 50; g2.buildings.push({ type: 'statue', x: g2.world.spawn.x, y: g2.world.spawn.y });
+  for (let i = 0; i < 30; i++) stepEconomy(g2, 0.2);
+  assert(g2._statues === 1 && g2.compassion > 50, `a statue raises Compassion (now ${g2.compassion.toFixed(1)})`);
+  ok('statues lift morale & compassion');
 }
 
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

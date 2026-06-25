@@ -130,6 +130,8 @@ export function stepEconomy(state, dt) {
   }
   // A Hall of Heroes lends steady morale recovery — the honoured dead inspire.
   if ((state._memorial || 0) > 0) state.morale = Math.min(100, (state.morale ?? 100) + (state._memorial) * 0.05 * dt);
+  // Statues are a quiet, steady focus for the colony's spirit & better nature.
+  if ((state._statues || 0) > 0) { state.morale = Math.min(100, (state.morale ?? 100) + state._statues * 0.04 * dt); addCompassion(state, state._statues * 0.012 * dt); }
   // Valor (martial pride) ebbs toward a low baseline; a proud, battle-hardened
   // colony (high Valor) takes a quiet, morally-neutral lift to spirits & spark.
   { const v = state.valor ?? 20; state.valor = Math.max(0, Math.min(100, v + (20 - v) * 0.0015 * dt)); }
@@ -205,7 +207,7 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0;
+  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0, statues = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
@@ -230,11 +232,13 @@ function recomputeBuildings(state) {
     if (def.court) courts++;
     if (def.almshouse) alms++;
     if (def.memorial) memorials++;
+    if (def.statue) statues++;
   }
   state._sanctuary = sanctuaries;
   state._courts = courts;
   state._alms = alms;
   state._memorial = memorials;
+  state._statues = statues;
   state._vets = vets;
   // Caretaker huts auto-tend energy, fun & health — easing larger settlements.
   fun += caretakers * 4; health += caretakers * 4;
@@ -622,6 +626,7 @@ function solarFactor(state) {
 function stepPollution(state, dt) {
   let trees = 0;
   for (const n of state.world.nodes) if (n.kind === 'trees' && n.amount > 0) trees++;
+  for (const b of state.buildings) if (BUILDINGS[b.type]?.tree && !b.underConstruction) trees++; // planted trees scrub too
   const rise = (state._pollSrc || 0) * POLLUTION.rise;
   const fall = trees * POLLUTION.treeScrub + POLLUTION.decay;
   state.pollution = Math.max(0, Math.min(100, (state.pollution || 0) + (rise - fall) * dt));
