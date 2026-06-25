@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#241a3a"/>
+      <stop offset="0.45" stop-color="#5b3b4f"/>
+      <stop offset="0.72" stop-color="#b8693f"/>
+      <stop offset="1" stop-color="#e6a24a"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.62" cy="0.72" r="0.5">
+      <stop offset="0" stop-color="#ffe7a8" stop-opacity="0.95"/>
+      <stop offset="0.25" stop-color="#ffc15e" stop-opacity="0.6"/>
+      <stop offset="0.6" stop-color="#ffb347" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hillBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e5a3a"/><stop offset="1" stop-color="#4a3d2a"/>
+    </linearGradient>
+    <linearGradient id="hillMid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f6b39"/><stop offset="1" stop-color="#33471f"/>
+    </linearGradient>
+    <linearGradient id="hillFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#36502a"/><stop offset="1" stop-color="#1f3016"/>
+    </linearGradient>
+  </defs>
+
+  <!-- sky + sun glow -->
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <circle cx="1190" cy="780" r="900" fill="url(#sun)"/>
+  <circle cx="1190" cy="760" r="120" fill="#ffe9b0" opacity="0.9"/>
+
+  <!-- distant hills -->
+  <path d="M0 640 Q380 540 760 610 T1500 590 T1920 630 V1080 H0 Z" fill="url(#hillBack)" opacity="0.85"/>
+  <path d="M0 740 Q420 650 880 720 T1920 700 V1080 H0 Z" fill="url(#hillMid)"/>
+
+  <!-- a big communal wheel silhouette on the mid hill -->
+  <g transform="translate(430 690)" stroke="#1c2913" stroke-width="7" fill="none" opacity="0.92">
+    <circle cx="0" cy="0" r="92"/>
+    <circle cx="0" cy="0" r="70"/>
+    <g>
+      <line x1="0" y1="-92" x2="0" y2="92"/><line x1="-92" y1="0" x2="92" y2="0"/>
+      <line x1="-65" y1="-65" x2="65" y2="65"/><line x1="65" y1="-65" x2="-65" y2="65"/>
+    </g>
+    <rect x="-96" y="92" width="192" height="16" fill="#1c2913" stroke="none"/>
+  </g>
+
+  <!-- foreground hill with burrows -->
+  <path d="M0 860 Q500 770 1020 840 T1920 820 V1080 H0 Z" fill="url(#hillFront)"/>
+  <!-- burrow entrances -->
+  <g fill="#10180b">
+    <path d="M250 980 a52 52 0 0 1 104 0 Z"/>
+    <path d="M720 1000 a44 44 0 0 1 88 0 Z"/>
+    <path d="M1180 980 a56 56 0 0 1 112 0 Z"/>
+    <path d="M1560 1010 a40 40 0 0 1 80 0 Z"/>
+  </g>
+  <!-- little structures (storehouse + watchtower silhouettes) -->
+  <g fill="#1a2a12">
+    <rect x="900" y="905" width="80" height="60" rx="6"/>
+    <path d="M895 905 L940 875 L985 905 Z"/>
+    <rect x="1395" y="860" width="46" height="110"/>
+    <path d="M1388 860 L1418 832 L1448 860 Z"/>
+  </g>
+
+  <!-- grass blades along the bottom -->
+  <g stroke="#21331a" stroke-width="4" stroke-linecap="round" opacity="0.9">
+    <path d="M60 1080 q6 -40 -4 -64"/><path d="M120 1080 q-6 -46 6 -70"/>
+    <path d="M1840 1080 q6 -44 -6 -70"/><path d="M1770 1080 q-6 -40 8 -62"/>
+  </g>
+
+  <!-- fireflies / pollen motes -->
+  <g fill="#ffe9a8">
+    <circle cx="640" cy="560" r="3" opacity="0.9"/><circle cx="980" cy="500" r="2.4" opacity="0.7"/>
+    <circle cx="1320" cy="600" r="3.2" opacity="0.85"/><circle cx="500" cy="640" r="2" opacity="0.6"/>
+    <circle cx="1500" cy="540" r="2.6" opacity="0.75"/><circle cx="820" cy="430" r="2" opacity="0.5"/>
+  </g>
+</svg>

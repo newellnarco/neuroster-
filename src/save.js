@@ -21,6 +21,9 @@ export function loadGame() {
 
 export function clearSave() { localStorage.removeItem(KEY); }
 
+// Is there a saved colony to resume? (Used by the start screen.)
+export function hasSave() { try { return !!localStorage.getItem(KEY); } catch { return false; } }
+
 // ---- Export / import -------------------------------------------------------
 // Lets players back up or move a colony (and hand a save to a tester). Export
 // returns a portable JSON string; import validates it, persists it as the live

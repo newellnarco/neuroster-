@@ -208,6 +208,10 @@ with `Cache-Control: no-cache`). No rebuild, no restart.
   morale). Level-gated; each grants a permanent, colony-wide payoff. See the **Mega** tab.
 - **Export / import saves**: back up or hand off a colony as a `.json` file (**⬆️ Export** /
   **⬇️ Import** in the top bar) — handy for moving between machines or sharing a test colony.
+- **Start screen**: every launch opens on a cinematic loading screen (with a progress bar
+  and the **version number**) that then offers **▶ Continue** or **🆕 New Colony** — press
+  any key or click to begin. Background art lives in `assets/` (ships with an SVG scene;
+  swap in your own — see [`assets/README.md`](assets/README.md)).
 - **Built-in How-to-Play guide**: a concise onboarding overlay opens on your first visit
   (and any time from the **❓ Help** button) so new players know the loop at a glance.
 - **Getting-started checklist**: a small on-map checklist of first steps (build a burrow,
