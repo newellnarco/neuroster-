@@ -28,6 +28,7 @@ export function stepEconomy(state, dt) {
     const def = BUILDINGS[b.type];
     if (!def || b.active === false) continue;
     if (def.autoMine) { runAutoMine(state, b, def, dt, wb); continue; }
+    if (def.belt) { runBelt(state, b, def, dt, wb); continue; }
 
     let rate = dt * wb * powerMul;
     if (def.category === 'Food') rate *= (1 + state.mods.foodMul + env.foodMul);
@@ -83,6 +84,22 @@ function runAutoMine(state, b, def, dt, wb) {
     addRes(state, NODE_TYPES[n.kind].resource, got);
     break;
   }
+}
+
+// Conveyor belts auto-transport from the nearest in-range node to storage.
+function runBelt(state, b, def, dt, wb) {
+  const r = def.radius || 2;
+  let target = null, bd = Infinity;
+  for (const n of state.world.nodes) {
+    if (n.amount <= 0) continue;
+    const d = Math.abs(n.x - b.x) + Math.abs(n.y - b.y);
+    if (d <= r && d < bd) { bd = d; target = n; }
+  }
+  if (!target) { b._flow = 0; return; }
+  const got = Math.min(target.amount, def.belt.rate * dt * wb);
+  target.amount -= got;
+  addRes(state, NODE_TYPES[target.kind].resource, got);
+  b._flow = 1; // marks the belt as actively moving (for animation)
 }
 
 function powerMultiplier(state) {

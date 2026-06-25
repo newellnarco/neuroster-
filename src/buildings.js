@@ -43,6 +43,8 @@ export function canPlace(state, type, x, y) {
     return { ok: false, reason: 'Place near water (a pond/river)' };
   if (def.autoMine && !hasNodeNear(state, x, y, def.radius || 3))
     return { ok: false, reason: 'Place near ore/coal/stone to mine' };
+  if (def.needsNode && !hasNodeNear(state, x, y, def.radius || 2))
+    return { ok: false, reason: 'Place near a resource node to feed the belt' };
   if (!canAfford(state, def.cost))
     return { ok: false, reason: 'Not enough resources' };
   return { ok: true };

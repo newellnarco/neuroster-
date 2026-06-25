@@ -29,6 +29,10 @@ opening `index.html` directly via `file://` won't work because it uses ES module
 
 ## Features
 
+- **Living, pixel-art 3/4 view**: a textured top-angle map (grass tufts, pebbles,
+  shorelines, mountain peaks, animated water & weather) with **procedurally animated
+  rodents** (walk cycles, facing, sleep curls), a **spinning power wheel** with a running
+  hamster, and **animated conveyor belts** that carry cargo from nodes to storage.
 - **Found your colony**: choose a hamster **breed** (Syrian, Russian Dwarf, Roborovski,
   Chinese) — each predisposes starting traits & a colony knack — and a random,
   renameable **founder** name.

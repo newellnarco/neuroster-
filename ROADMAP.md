@@ -31,7 +31,8 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | # | Arc | Status | Notes |
 |---|-----|--------|-------|
 | 1 | Core loop: gather → store → refine → build | ✅ Shipped | Workers auto-gather/haul; refining via Sawmill/Smelter |
-| 2 | Buildings & power automation | 🟡 Partial | Wheel→Power done; **conveyor belt tiers not yet placeable** |
+| 2 | Buildings & power automation | 🟡 Partial | Wheel→Power done; **animated conveyor belts (wood + metal) ship & auto-haul from nodes**; plastic tier + belt networks pending |
+| 2b | Animated, pixel-art top-angle rendering | ✅ Shipped | Procedural animated rodents (walk cycle, facing, sleep), spinning wheel + runner, scrolling conveyors, textured 3/4 terrain w/ depth, weather particles |
 | 3 | Rodent species + recruiting + hybrids | ✅ Shipped | 6 species, hybrid breeding blends traits |
 | 4 | Per-creature needs (food/water/energy/fun/health) | ✅ Shipped | Drives per-unit productivity & loyalty |
 | 5 | Sleep cycles per species/level | ✅ Shipped | Nocturnal/diurnal/crepuscular phases |
@@ -61,8 +62,14 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] Balance pass: tune drains/yields once conveyors & more buildings land.
 
 ### ➕ Add
-- [ ] **Conveyor belt tiers** (rolling logs → wood → plastic → metal) that actually
-      auto-move resources from node/mine to storage, raising throughput per tier.
+- [x] **Conveyor belts** (wood + metal tiers) auto-move resources from nearby nodes to
+      storage, animated. ↳ still to add: **plastic tier** + **multi-segment belt networks**
+      (chain belts node→belt→belt→storage with direction).
+- [ ] **True isometric/dimetric camera** — current view is a faux-3D 3/4 angle (depth via
+      tile bevels, shadows & raised objects) that keeps the grid 1:1 for exact clicking.
+      A real iso projection (+ inverse picking) would deepen the WC2/WC3 feel; larger refactor.
+- [ ] **Hand-drawn pixel sprite sheets** to replace the procedural vector creatures/tiles
+      once the style is locked (keep the smooth animation, swap the art).
 - [ ] **Plastics & advanced refining** (Refinery: coal/oil → plastic) feeding belts & T3 buildings.
 - [ ] **Tunnels / underground levels** — dig burrow networks; vertical expansion.
 - [ ] **Biome-unique disasters** — beach tsunami, mountain avalanche, marsh disease

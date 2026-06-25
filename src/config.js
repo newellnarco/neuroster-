@@ -80,6 +80,14 @@ export const BUILDINGS = {
     cost: { wood: 35, planks: 5 }, category: 'Automation',
     produces: { power: 0.6 }, consumes: { food: 0.4 },
   },
+  conveyor: {
+    name: 'Conveyor (Wood)', icon: '🛞', desc: 'Animated belt: auto-moves a nearby node\'s output to storage.',
+    cost: { wood: 30, planks: 10 }, category: 'Automation', belt: { rate: 1.0, tier: 1 }, radius: 2, needsNode: true,
+  },
+  conveyorMetal: {
+    name: 'Conveyor (Metal)', icon: '⚙️', desc: 'Faster metal belt: higher throughput from nearby nodes.',
+    cost: { planks: 20, iron: 20 }, category: 'Automation', belt: { rate: 2.2, tier: 3 }, radius: 3, needsNode: true,
+  },
   lab: {
     name: 'Research Lab', icon: '🔬', desc: 'Generates Research points.',
     cost: { planks: 30, iron: 10 }, category: 'Production', produces: { research: 0.3 },

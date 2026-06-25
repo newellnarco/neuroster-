@@ -48,7 +48,7 @@ export function startGame(canvas) {
       saveAcc += frameDt;
       if (saveAcc >= AUTOSAVE_SEC) { saveAcc = 0; saveGame(state); }
     }
-    renderer.draw();
+    renderer.draw(now);
     ui.update(frameDt);
     requestAnimationFrame(loop);
   }
