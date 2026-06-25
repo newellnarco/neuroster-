@@ -1,5 +1,5 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, xpForLevel } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
 import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
@@ -545,9 +545,10 @@ export function createUI(state, ctx) {
   function setupCanvas() {
     const c = ctx.canvas;
     const toTile = (e) => {
+      // Map screen → tile via the LOGICAL world grid, independent of the canvas'
+      // HiDPI backing resolution (c.width is devicePixelRatio-scaled).
       const r = c.getBoundingClientRect();
-      const sx = c.width / r.width, sy = c.height / r.height;
-      return { x: Math.floor((e.clientX - r.left) * sx / TILE), y: Math.floor((e.clientY - r.top) * sy / TILE) };
+      return { x: Math.floor((e.clientX - r.left) / r.width * GRID_W), y: Math.floor((e.clientY - r.top) / r.height * GRID_H) };
     };
     c.addEventListener('mousemove', (e) => {
       const t = toTile(e); view.hover = t;
@@ -562,8 +563,8 @@ export function createUI(state, ctx) {
         return;
       }
       // select a rodent under the cursor
-      const px = (e.offsetX) / c.getBoundingClientRect().width * c.width / TILE;
-      const py = (e.offsetY) / c.getBoundingClientRect().height * c.height / TILE;
+      const px = (e.offsetX) / c.getBoundingClientRect().width * GRID_W;
+      const py = (e.offsetY) / c.getBoundingClientRect().height * GRID_H;
       if (state.rescue && Math.hypot(state.rescue.x - px, state.rescue.y - py) < 0.85) {
         const r = takeInRescue(state); if (r.ok) sfx('care'); else flash(r.reason || '');
         renderResbar(); renderRodents(); return;
