@@ -54,7 +54,11 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 16 | Megaprojects & long-horizon goals | 🔴 Planned | Grand Wheel, Citadel; retention anchors |
 | 16b | Gamified care + engagement loop | ✅ Shipped | Hands-on Feed/Water/Play/Pet with reward FX, **bond** (affection→productivity+loyalty), caretaker/auto-waterer automation to ease scale |
 | 17 | Quests / achievements / notifications | 🔴 Planned | The "neurotic check-in" hook |
-| 18 | Art, audio & tutorial polish | 🔴 Planned | Sprites, SFX, onboarding |
+| 17b | Construction & labour | ✅ Shipped | Buildings & upgrades take **time**, built by awake rodents; more builders = faster, diverting them slows gathering/production; higher tiers take longer; construction-site visuals + progress bars |
+| 17c | Milestones / achievements | ✅ Shipped | 16 goals with reward drip + HUD tracker (retention) |
+| 17d | Sand Bath + burrow upkeep | ✅ Shipped | Sand Bath cleans hamsters (health + anti-wet-tail hygiene); **burrows degrade if not cleaned** (lose housing/breeding) — caretakers auto-clean or click to clean |
+| 17e | Deployment | ✅ Shipped | Zero-dep configurable server (HOST/IP/PORT), Docker + compose, /healthz |
+| 18 | Animation & realism polish | 🟡 Ongoing | Swaying trees/crops, chimney smoke, water droplets, lab glow, fireflies/pollen, rodent ear-twitch/sniff. More to add (audio, more building anims). |
 
 ---
 

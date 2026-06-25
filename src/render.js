@@ -27,9 +27,10 @@ export function createRenderer(canvas, state, getView) {
   let g = ctx;            // current drawing target for helpers
   let bakedSeen = -1;
   let bmap = new Map();   // "x,y" -> building, rebuilt each frame for adjacency
+  let animT = 0;          // shared animation clock (seconds)
 
   function draw(now = 0) {
-    const t = now / 1000;
+    const t = now / 1000; animT = t;
     const seenCount = countSeen();
     if (seenCount !== bakedSeen) { bakeTerrain(); bakedSeen = seenCount; }
 
@@ -48,6 +49,28 @@ export function createRenderer(canvas, state, getView) {
     drawHover(getView());
     drawDayNight();
     drawWeather(t);
+    drawAmbient(t);
+  }
+
+  // Drifting fireflies at night; soft pollen motes by day.
+  function drawAmbient(t) {
+    const f = dayFraction(state);
+    const night = f < 0.25 || f > 0.75;
+    const n = 22;
+    for (let i = 0; i < n; i++) {
+      const bx = (i * 137.5) % canvas.width;
+      const by = (i * 89.3) % canvas.height;
+      const dx = Math.sin(t * 0.6 + i) * 14, dy = Math.cos(t * 0.5 + i * 1.3) * 10;
+      const px = (bx + dx + canvas.width) % canvas.width, py = (by + dy + canvas.height) % canvas.height;
+      if (night) {
+        const glow = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 3 + i));
+        ctx.fillStyle = `rgba(190,230,120,${glow * 0.5})`;
+        ctx.beginPath(); ctx.arc(px, py, 1.6, 0, 7); ctx.fill();
+      } else if (i % 2 === 0) {
+        ctx.fillStyle = 'rgba(255,250,200,0.18)';
+        ctx.beginPath(); ctx.arc(px, py, 1.1, 0, 7); ctx.fill();
+      }
+    }
   }
 
   function countSeen() { let c = 0; const s = state.world.seen; for (let i = 0; i < s.length; i++) c += s[i]; return c; }
@@ -201,11 +224,12 @@ export function createRenderer(canvas, state, getView) {
   }
 
   function drawTree(x, y, sc) {
+    const sway = Math.sin(animT * 1.1 + x * 0.12 + y * 0.05) * 1.3 * sc; // wind sway (canopy only)
     ctx.fillStyle = '#7a5230'; ctx.fillRect(x - 1.5 * sc, y, 3 * sc, 8 * sc);          // trunk
-    const r = 7 * sc;
-    ctx.fillStyle = '#2f6d2f'; ball(x, y - 2 * sc, r); ball(x - r * 0.6, y + 1 * sc, r * 0.8); ball(x + r * 0.6, y + 1 * sc, r * 0.8);
-    ctx.fillStyle = 'rgba(150,210,120,0.55)'; ball(x - r * 0.3, y - r * 0.5, r * 0.5);  // top-left highlight
-    ctx.fillStyle = 'rgba(0,40,0,0.18)'; ball(x + r * 0.4, y + r * 0.3, r * 0.5);       // bottom-right shade
+    const r = 7 * sc, cxp = x + sway, cyp = y - 2 * sc;
+    ctx.fillStyle = '#2f6d2f'; ball(cxp, cyp, r); ball(cxp - r * 0.6, cyp + 3 * sc, r * 0.8); ball(cxp + r * 0.6, cyp + 3 * sc, r * 0.8);
+    ctx.fillStyle = 'rgba(150,210,120,0.55)'; ball(cxp - r * 0.3, cyp - r * 0.5, r * 0.5);  // top-left highlight
+    ctx.fillStyle = 'rgba(0,40,0,0.18)'; ball(cxp + r * 0.4, cyp + r * 0.3, r * 0.5);       // bottom-right shade
   }
   function drawBoulder(x, y, sc) {
     const r = 7 * sc;
@@ -214,7 +238,8 @@ export function createRenderer(canvas, state, getView) {
     ctx.fillStyle = 'rgba(0,0,0,0.22)'; ball(x + r * 0.35, y + r * 0.3, r * 0.45);
   }
   function drawBush(x, y, sc) {
-    const r = 6 * sc;
+    const sway = Math.sin(animT * 1.4 + x * 0.2) * 0.8 * sc;
+    const r = 6 * sc; x += sway;
     ctx.fillStyle = '#4e8a3a'; ball(x, y, r); ball(x - r * 0.6, y + 1, r * 0.7); ball(x + r * 0.6, y + 1, r * 0.7);
     ctx.fillStyle = 'rgba(180,220,120,0.5)'; ball(x - r * 0.2, y - r * 0.4, r * 0.4);
     ctx.fillStyle = '#caa33a'; dot(x + 1, y + 1, 1.4, '#caa33a'); // seeds
@@ -250,6 +275,7 @@ export function createRenderer(canvas, state, getView) {
       ctx.fillStyle = '#bcab8b'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.20)'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, 3, 3); ctx.fill();
       glyph(BUILDINGS[b.type].icon, cx, cy - 3, TILE * 0.78);
+      animateBuilding(cx, cy, b);
       // dirty / degraded burrow: buzzing flies and a grime tint
       if (BUILDINGS[b.type].breed && (b.dirt || 0) > 18) {
         if (b.degraded) { ctx.fillStyle = 'rgba(80,60,20,0.28)'; ctx.fillRect(b.x * TILE + 2, b.y * TILE + 2, TILE - 4, TILE - 4); }
@@ -293,6 +319,34 @@ export function createRenderer(canvas, state, getView) {
     if (frac < 1) {
       ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x0, y0 - 5, w, 3);
       ctx.fillStyle = frac > 0.5 ? '#7cdc6a' : frac > 0.25 ? '#e6c34d' : '#e06b6b'; ctx.fillRect(x0, y0 - 5, w * frac, 3);
+    }
+  }
+
+  // Living touches on working buildings: chimney smoke, swaying crops, water.
+  function animateBuilding(cx, cy, b) {
+    const type = b.type;
+    if (type === 'steelworks' || type === 'smelter') {
+      for (let i = 0; i < 3; i++) {
+        const p = (animT * 0.5 + i / 3) % 1;
+        ctx.globalAlpha = (1 - p) * 0.5;
+        ctx.fillStyle = '#cfd2d6';
+        ctx.beginPath(); ctx.arc(cx + 5 + Math.sin(animT * 2 + i) * 2, cy - 8 - p * 16, 2 + p * 3, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else if (type === 'farm' || type === 'wheatfield') {
+      ctx.strokeStyle = type === 'wheatfield' ? '#d9b44a' : '#7cb342'; ctx.lineWidth = 1.5;
+      for (let i = 0; i < 4; i++) {
+        const sx = cx - 9 + i * 6, sw = Math.sin(animT * 1.6 + i) * 1.6;
+        ctx.beginPath(); ctx.moveTo(sx, cy + 8); ctx.lineTo(sx + sw, cy + 1); ctx.stroke();
+        if (type === 'wheatfield') { ctx.fillStyle = '#e6c34d'; ctx.beginPath(); ctx.arc(sx + sw, cy, 1.3, 0, 7); ctx.fill(); }
+      }
+    } else if (type === 'well' || type === 'dam') {
+      const p = (animT * 1.2) % 1;
+      ctx.fillStyle = `rgba(120,180,230,${0.7 * (1 - p)})`;
+      ctx.beginPath(); ctx.arc(cx, cy + 2 - p * 6, 1.6, 0, 7); ctx.fill();
+    } else if (type === 'lab') {
+      ctx.fillStyle = `rgba(126,156,255,${0.3 + 0.2 * Math.sin(animT * 4)})`;
+      ctx.beginPath(); ctx.arc(cx + 5, cy - 6, 2, 0, 7); ctx.fill();
     }
   }
 
@@ -445,10 +499,14 @@ export function createRenderer(canvas, state, getView) {
     ctx.fillStyle = vis.body; ctx.beginPath(); ctx.ellipse(0, 0, 8 * s, 6 * s, 0, 0, 7); ctx.fill();
     ctx.fillStyle = vis.belly; ctx.beginPath(); ctx.ellipse(1.5 * s, 2 * s, 4.5 * s, 3.2 * s, 0, 0, 7); ctx.fill();
     const hx = 6.5 * s;
-    ctx.fillStyle = vis.body; ctx.beginPath(); ctx.arc(hx, -1.5 * s, 4.6 * s, 0, 7); ctx.fill();
-    ctx.beginPath(); ctx.arc(hx - 1 * s, -5 * s, vis.ear * 0.6 * s + 1, 0, 7); ctx.fill();
-    ctx.fillStyle = '#f1c0c8'; ctx.beginPath(); ctx.arc(hx - 1 * s, -5 * s, vis.ear * 0.3 * s + 0.5, 0, 7); ctx.fill();
-    ctx.fillStyle = '#241c16'; ctx.beginPath(); ctx.arc(hx + 1.5 * s, -2 * s, 1.1 * s, 0, 7); ctx.fill();
+    // idle head bob (sniffing) when not walking
+    const sniff = walking ? 0 : Math.sin((t || 0) * 3 + (u ? u.id : 0)) * 0.6 * s;
+    ctx.fillStyle = vis.body; ctx.beginPath(); ctx.arc(hx + sniff, -1.5 * s, 4.6 * s, 0, 7); ctx.fill();
+    // ear with occasional twitch
+    const twitch = Math.sin((t || 0) * 12 + (u ? u.id * 2 : 0)) > 0.96 ? -1 * s : 0;
+    ctx.beginPath(); ctx.arc(hx - 1 * s + sniff, -5 * s + twitch, vis.ear * 0.6 * s + 1, 0, 7); ctx.fill();
+    ctx.fillStyle = '#f1c0c8'; ctx.beginPath(); ctx.arc(hx - 1 * s + sniff, -5 * s + twitch, vis.ear * 0.3 * s + 0.5, 0, 7); ctx.fill();
+    ctx.fillStyle = '#241c16'; ctx.beginPath(); ctx.arc(hx + 1.5 * s + sniff, -2 * s, 1.1 * s, 0, 7); ctx.fill();
     ctx.fillStyle = '#3a2a22'; ctx.beginPath(); ctx.arc(hx + 4.2 * s, -1 * s, 1 * s, 0, 7); ctx.fill();
     if (carrying) { ctx.fillStyle = '#caa05a'; ctx.fillRect(-5 * s, -7 * s, 5 * s, 4 * s); ctx.strokeStyle = '#8a6a3a'; ctx.lineWidth = 1; ctx.strokeRect(-5 * s, -7 * s, 5 * s, 4 * s); }
     ctx.restore();
