@@ -359,6 +359,40 @@ console.log('Justice & decrees:');
   s3.justice = 100; const highDeter = Math.max(0, (s3.justice - 50));
   assert(highDeter > lowDeter, 'higher Justice yields more raid deterrence');
   ok('high Justice deters raiders');
+
+  // NPC fates: a raised cub's nature ripens; a sheltered herd sends a gift.
+  const sf = newGame(83, 'woodland', 'syrian', 'Fate', {});
+  sf.env.lived = 500; sf.compassion = 100;
+  sf.pendingFates = [{ kind: 'cub', at: 400 }];
+  stepDecrees(sf, 0.1);
+  assert(!(sf.pendingFates || []).some(f => f.kind === 'cub'), 'the cub fate resolves once due');
+  ok('a raised cub\'s fate ripens (guardian / departs / Trojan-horse betrayal)');
+
+  sf.res.food = 10; sf.popCap = 0; sf.pendingFates = [{ kind: 'herd', at: 400 }];
+  const f0 = sf.res.food; stepDecrees(sf, 0.1);
+  assert(sf.res.food > f0, `a sheltered herd returns a food gift (${f0}→${sf.res.food})`);
+  ok('a sheltered herd returns a parting gift');
+
+  // Parley brokers a truce that stays the raiders.
+  const tp = newGame(84, 'woodland', 'syrian', 'Peace', {});
+  const fid = Object.keys(tp.factions)[0];
+  tp.factions[fid].standing = -40; tp.env.lived = 1000;
+  tp.decree = { id: 'parley', life: 75, born: 0, faction: fid };
+  resolveDecree(tp, 0); // broker the truce
+  assert((tp.truceUntil || 0) > tp.env.lived, 'a brokered truce is in effect');
+  ok('parley brokers a truce (raiders & predators hold off)');
+
+  // Valor (martial pride): morally-neutral, rises by winning fights.
+  const { addValor } = await import('../src/state.js');
+  const sv = newGame(85, 'woodland', 'syrian', 'Spartan', {});
+  assert(sv.valor === 20, 'colony starts with a low Valor baseline');
+  addValor(sv, 200); assert(sv.valor === 100, 'valor clamps at 100');
+  // High Valor lends a proud, morally-neutral lift to spirits (no compassion).
+  sv.valor = 90; sv.morale = 50; const c0 = sv.compassion;
+  for (let i = 0; i < 20; i++) stepEconomy(sv, 0.2);
+  assert(sv.morale > 50, `a proud (high-Valor) colony lifts its own spirits (now ${sv.morale.toFixed(1)})`);
+  assert(Math.abs(sv.compassion - c0) < 6, 'Valor is morally neutral — it does not buy Compassion');
+  ok('Valor: martial pride is morally neutral and lifts a proud colony');
 }
 
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.2.1';
+export const VERSION = 'v0.2.2';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
@@ -842,12 +842,38 @@ export const DECREES = {
     prompt: 'A whimpering predator cub has strayed to your gates, alone and starving. Its kind has hunted your colony before. Do you take it in, or drive it away?',
     eligible: (s) => (s.compassion ?? 50) >= 45,
     choices: [
-      { label: 'Raise it with kindness', desc: 'A gamble of the heart. −Food, +Compassion; raised gently, it may one day guard you.', tone: 'kind', fx: '🐾',
-        result: 'You take the cub in and feed it — a soft heart in a hard world. In time it may repay the kindness.',
-        effect: { compassion: 9, morale: 4, res: { food: -12 }, guardian: true } },
+      { label: 'Raise it with kindness', desc: 'A gamble of the heart. −Food, +Compassion. In time it may grow into a guardian… or slip back to its pack… or have lured them to you.', tone: 'kind', fx: '🐾',
+        result: 'You take the cub in and feed it — a soft heart in a hard world. Only time will tell what it becomes.',
+        effect: { compassion: 9, morale: 4, res: { food: -12 }, fate: 'cub' } },
       { label: 'Drive it off', desc: 'Cautious and firm. +Justice, −Compassion.', tone: 'just', fx: '🚪', default: true,
         result: 'You drive the cub back to the wilds — wise, perhaps, but the colony feels the chill of it.',
         effect: { justice: 4, compassion: -5 } },
+    ],
+  },
+  herd: {
+    id: 'herd', icon: '🦌', title: 'A migrating herd passes through',
+    prompt: 'A weary herd of grazers is migrating through your lands, footsore and hungry. They ask leave to rest and feed a while. Do you shelter them, or send them on their way?',
+    eligible: (s) => (s.res?.food ?? 0) > 40,
+    choices: [
+      { label: 'Shelter & feed them', desc: 'Costs food now; grateful guests repay kindness later. −Food, +Compassion, +Morale; a gift comes in time.', tone: 'kind', fx: '🌿',
+        result: 'You open your meadows to the herd — they graze gratefully and bed down under your watch. They will not forget it.',
+        effect: { compassion: 8, morale: 5, res: { food: -20 }, fate: 'herd' } },
+      { label: 'Send them on', desc: 'Your stores are your own. Bloodless, but cool. +Justice, a little −Compassion.', tone: 'just', fx: '🚶', default: true,
+        result: 'You point the herd onward to other pastures — prudent, if a little cold.',
+        effect: { justice: 3, compassion: -3 } },
+    ],
+  },
+  parley: {
+    id: 'parley', icon: '🕊️', title: 'An uneasy emissary', faction: true,
+    prompt: 'Tensions are high — an emissary arrives under a fraying flag of truce, testing whether there is peace to be had. Do you spend goodwill to broker a truce, or stand firm and let your defenses speak?',
+    eligible: (s) => Object.values(s.factions || {}).some(f => (f.standing ?? 0) < -10),
+    choices: [
+      { label: 'Broker a truce', desc: 'Spend Compassion to buy peace — raids & predators hold off for a while. −Compassion, +Morale, +Standing, 🕊️ truce.', tone: 'kind', fx: '🕊️',
+        result: 'You spend hard-won goodwill to broker an uneasy peace — the wilds and rivals hold back, for now.',
+        effect: { compassion: -6, morale: 4, standing: 12, truce: 200 } },
+      { label: 'Stand firm', desc: 'No concessions; let order and walls answer. +Justice; tensions remain.', tone: 'just', fx: '🛡️', default: true,
+        result: 'You give no ground — the emissary leaves empty-pawed, and the colony trusts in its own strength.',
+        effect: { justice: 6 } },
     ],
   },
 };

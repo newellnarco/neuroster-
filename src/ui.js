@@ -43,6 +43,8 @@ export function createUI(state, ctx) {
       `<span class="env" title="Colony morale — falls from unburied dead, injuries & violence; bury & heal to restore it">${moraleIcon(state.morale)} Morale ${Math.round(state.morale ?? 100)}${(state.bodies?.length) ? ` · ⚰️${state.bodies.length} unburied` : ''}</span>` +
       `<span class="env" title="Compassion — kindness, generosity & care raise it; cruelty & neglect lower it. A kind colony calms predators and draws joiners.">💗 ${Math.round(state.compassion ?? 50)}</span>` +
       `<span class="env${state.decree ? ' decree-due' : ''}" title="Justice / Order — fair, firm rule raises it; wrongs left unanswered lower it. High Justice deters raiders. Decrees trade Justice against Compassion.">⚖️ ${Math.round(state.justice ?? 50)}</span>` +
+      (((state.truceUntil || 0) > (state.env?.lived || 0)) ? `<span class="env" title="A brokered truce — raiders & predators hold off until it lapses.">🕊️ Truce ${Math.max(0, Math.ceil((state.truceUntil - (state.env?.lived || 0)) / 60))}m</span>` : '') +
+      `<span class="env" title="Valor — martial pride, morally neutral. Rises by standing and winning fights. A proud, battle-hardened colony is fierce & happy in its strength (the Spartan path).">🦁 ${Math.round(state.valor ?? 20)}</span>` +
       `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
       `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>` +
       (megaCount(state) ? `<span class="env" title="Megaprojects completed — permanent colony-wide wonders">🏛️ ${megaCount(state)}</span>` : '');

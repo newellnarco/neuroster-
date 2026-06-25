@@ -33,6 +33,7 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     morale: 100,
     compassion: 50, // colony virtue: kindness, generosity & care raise it
     justice: 50,    // colony virtue: fair, firm order — the moral counterweight
+    valor: 20,      // martial pride — morally neutral; rises by winning fights, breeds a proud, fierce colony
     honored: [],    // names of the fallen, remembered by a Hall of Heroes
     bodies: [],
     log: [],
@@ -157,6 +158,13 @@ export function addCompassion(state, n) {
 // against the other.
 export function addJustice(state, n) {
   state.justice = Math.max(0, Math.min(100, (state.justice ?? 50) + n));
+}
+
+// Colony Valor / martial pride (0..100): morally NEUTRAL — neither kind nor cruel.
+// Rises by standing and winning fights; a high-Valor colony is proud, fierce &
+// happy in its strength (the Spartan path). Drifts down toward a low baseline.
+export function addValor(state, n) {
+  state.valor = Math.max(0, Math.min(100, (state.valor ?? 20) + n));
 }
 
 export function logMsg(state, msg) {
