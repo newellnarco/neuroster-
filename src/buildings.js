@@ -1,5 +1,5 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, TOWNHALL_TIERS, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
 import { canAfford, spend, logMsg, addFx } from './state.js';
 import { getTile, TERRAIN, inBounds, wasteAt } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
@@ -91,6 +91,7 @@ export function placeBuilding(state, type, x, y) {
   spend(state, def.cost);
   const b = { id: state.nextId++, type, x, y, active: true };
   if (def.tunnel) { b.tier = 0; b.hp = TUNNEL_TIERS[0].hp; } // tunnels start at wood
+  if (def.townhall) b.tier = 0;
   state.buildings.push(b);
   logMsg(state, `${def.icon} Built a ${def.name}.`);
   return { ok: true };
@@ -168,6 +169,18 @@ export function upgradeTunnel(state, b) {
   return { ok: true };
 }
 const costText = (c) => Object.entries(c).map(([k, v]) => `${k} ${v}`).join(', ');
+
+// Click the Town Hall to upgrade the leader's seat to the next tier.
+export function upgradeTownhall(state, b) {
+  if (!BUILDINGS[b.type]?.townhall) return { ok: false };
+  const next = TOWNHALL_TIERS[(b.tier || 0) + 1];
+  if (!next) return { ok: false, reason: 'Already the Grand Hall (max)' };
+  if (!canAfford(state, next.upgradeCost)) return { ok: false, reason: `Upgrade needs ${costText(next.upgradeCost)}` };
+  spend(state, next.upgradeCost);
+  b.tier = (b.tier || 0) + 1;
+  logMsg(state, `⬆️ The leader's seat is now a ${next.name}! (Keep everyone's comforts up to avoid resentment.)`);
+  return { ok: true };
+}
 
 export function demolish(state, building) {
   const i = state.buildings.indexOf(building);

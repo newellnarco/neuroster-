@@ -26,6 +26,7 @@ export function createRenderer(canvas, state, getView) {
   const tg = terr.getContext('2d');
   let g = ctx;            // current drawing target for helpers
   let bakedSeen = -1;
+  let bmap = new Map();   // "x,y" -> building, rebuilt each frame for adjacency
 
   function draw(now = 0) {
     const t = now / 1000;
@@ -37,6 +38,8 @@ export function createRenderer(canvas, state, getView) {
     drawWaterShimmer(t);
     drawWaste();
 
+    bmap.clear();
+    for (const b of state.buildings) bmap.set(b.x + ',' + b.y, b);
     drawNodes(t);
     drawBuildings(t);
     drawBodies();
@@ -241,6 +244,7 @@ export function createRenderer(canvas, state, getView) {
       if (b.type === 'conveyor' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }
       if (BUILDINGS[b.type].tunnel) { drawTunnel(cx, cy, b); continue; }
+      if (BUILDINGS[b.type].townhall) { drawTownhall(cx, cy, b); continue; }
       ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(b.x * TILE + 4, b.y * TILE + 10, TILE - 8, TILE - 11, 6); ctx.fill();
       ctx.fillStyle = '#bcab8b'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.20)'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, 3, 3); ctx.fill();
@@ -248,9 +252,28 @@ export function createRenderer(canvas, state, getView) {
     }
   }
 
+  // Draw short connector stubs toward matching neighbours, leaving a centre gap
+  // so a hamster travelling along the network stays visible.
+  function drawConnectors(cx, cy, b, color, match) {
+    const gap = 7;
+    g2().fillStyle = color;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nb = bmap.get((b.x + dx) + ',' + (b.y + dy));
+      if (!nb || !match(nb)) continue;
+      const len = TILE / 2 - gap;
+      if (dx) ctx.fillRect(dx > 0 ? cx + gap : cx - gap - len, cy - 4, len, 8);
+      else ctx.fillRect(cx - 4, dy > 0 ? cy + gap : cy - gap - len, 8, len);
+    }
+  }
+  function g2() { return ctx; }
+  const isTunnel = (nb) => !!BUILDINGS[nb.type]?.tunnel;
+  const isBelt = (nb) => nb.type === 'conveyor' || nb.type === 'conveyorMetal';
+  const isFacility = (nb) => ['storage', 'burrow', 'townhall'].includes(nb.type);
+
   // Covered tunnel section: colour by tier (wood/iron/steel) with an HP bar.
   function drawTunnel(cx, cy, b) {
     const tier = TUNNEL_TIERS[b.tier || 0];
+    drawConnectors(cx, cy, b, shade(tier.color, -0.05), (nb) => isTunnel(nb) || isFacility(nb));
     const w = TILE - 4, h = TILE * 0.5, x0 = cx - w / 2, y0 = cy - h / 2;
     ctx.fillStyle = shade(tier.color, -0.18); roundRect(x0, y0 + h * 0.5, w, h * 0.6, 4); ctx.fill();
     ctx.fillStyle = tier.color; roundRect(x0, y0, w, h, 6); ctx.fill();           // arched roof
@@ -263,6 +286,22 @@ export function createRenderer(canvas, state, getView) {
       ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x0, y0 - 5, w, 3);
       ctx.fillStyle = frac > 0.5 ? '#7cdc6a' : frac > 0.25 ? '#e6c34d' : '#e06b6b'; ctx.fillRect(x0, y0 - 5, w * frac, 3);
     }
+  }
+
+  // Town Hall: a civic building that grows grander (and more gilded) by tier.
+  function drawTownhall(cx, cy, b) {
+    const tier = b.tier || 0;
+    const w = TILE - 4, x0 = cx - w / 2, y0 = cy - TILE * 0.32;
+    ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(x0, y0 + TILE * 0.4, w, TILE * 0.28, 4); ctx.fill();
+    ctx.fillStyle = ['#cdbb94', '#d8c9a0', '#e7d8a6'][tier]; roundRect(x0, y0, w, TILE * 0.6, 4); ctx.fill();
+    // pediment roof + columns, gilded at higher tiers
+    ctx.fillStyle = ['#b09a6a', '#c9a94e', '#e6c34d'][tier];
+    poly(x0, y0 + 4, [[0, 0], [w / 2, -6], [w, 0]]);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+    for (let i = 0; i <= 3 + tier; i++) { const lx = x0 + 3 + (w - 6) * i / (3 + tier); ctx.fillRect(lx, y0 + 6, 1.6, TILE * 0.5); }
+    glyph(tier >= 2 ? '👑' : '🏛️', cx, cy - 2, TILE * 0.5);
+    // tier pips
+    ctx.fillStyle = '#ffd54f'; for (let i = 0; i <= tier; i++) { ctx.beginPath(); ctx.arc(cx - 6 + i * 6, cy + TILE * 0.36, 1.8, 0, 7); ctx.fill(); }
   }
 
   // Mine entrance: timbered shaft in a mound, with a remaining-resource readout.
@@ -310,6 +349,7 @@ export function createRenderer(canvas, state, getView) {
 
   function drawConveyor(cx, cy, t, b) {
     const metal = b.type === 'conveyorMetal';
+    drawConnectors(cx, cy, b, metal ? '#6b7178' : '#7a5a36', (nb) => isBelt(nb) || isFacility(nb));
     const w = TILE - 4, h = TILE * 0.42, x0 = cx - w / 2, y0 = cy - h / 2;
     const flow = (b._flow ? 1 : 0.25) * (metal ? 1.8 : 1);
     ctx.fillStyle = metal ? '#6b7178' : '#7a5a36'; roundRect(x0, y0, w, h, 4); ctx.fill();

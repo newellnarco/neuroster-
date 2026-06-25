@@ -2,8 +2,8 @@
 // breeding, loyalty, exploration, and threats.
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit } from './state.js';
-import { MORALE } from './config.js';
-import { makeRodent, stepRodent, combineRodents } from './entities.js';
+import { MORALE, TOWNHALL_TIERS } from './config.js';
+import { makeRodent, stepRodent, combineRodents, gainXp } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { stepEnvironment, envMods } from './environment.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -17,8 +17,9 @@ export function stepEconomy(state, dt) {
   // 1) Rodent AI (gather/haul/sleep).
   for (const u of state.units) stepRodent(state, u, dt);
 
-  // 2) Derived stats from buildings.
+  // 2) Derived stats from buildings + the leader's influence.
   recomputeBuildings(state);
+  updateLeadership(state, dt);
 
   // 3) Building production / refining.
   const wb = wellbeingMul(state);
@@ -34,7 +35,7 @@ export function stepEconomy(state, dt) {
     if (def.mine) { runMine(state, b, def, dt, wb); continue; }
     if (def.belt) { runBelt(state, b, def, dt, wb); continue; }
 
-    let rate = dt * wb * powerMul;
+    let rate = dt * wb * powerMul * (1 + (state._leadership || 0)); // the leader inspires output
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
       let bonus = state.mods.foodMul + env.foodMul;
@@ -315,6 +316,34 @@ function updateDisease(state, dt) {
 
 // Morale: the colony's conscience. Unburied dead & untreated injuries erode it;
 // graveyards bury the fallen to heal grief. Low morale saps fun & breeds deserters.
+// The leader rules by example: teaching (XP), helping & raising hamsters (a
+// colony-wide boost) — but a hall more lavish than everyone's comforts breeds
+// resentment that erodes morale, fun and the very boost it was meant to give.
+function updateLeadership(state, dt) {
+  let tier = -1;
+  for (const b of state.buildings) if (BUILDINGS[b.type]?.townhall) tier = Math.max(tier, b.tier || 0);
+  if (tier < 0) { state._leadership = 0; state._leadBreed = 0; state._resent = 0; return; }
+  const T = TOWNHALL_TIERS[tier];
+  // amenities for everyone else = housing (burrows) + wellbeing buildings
+  const amenities = state.buildings.filter(b => { const d = BUILDINGS[b.type]; return (d?.breed) || d?.category === 'Wellbeing'; }).length;
+  const resent = Math.max(0, T.luxury - amenities);
+  const fairMul = Math.max(0.2, 1 - resent * 0.18);
+  state._resent = resent;
+  state._leadership = T.leadership * fairMul;
+  state._leadBreed = T.breed * fairMul;
+  // teaching: a trickle of XP to every rodent
+  for (const u of state.units) gainXp(state, u, state._leadership * 0.4 * dt);
+  // resentment bites
+  if (resent > 0) {
+    state.morale = Math.max(0, (state.morale ?? 100) - resent * 0.05 * dt);
+    for (const u of state.units) u.needs.fun = Math.max(0, u.needs.fun - resent * 0.025 * dt);
+    if (!state._resentLog || (state.env.lived - state._resentLog) > 35) {
+      state._resentLog = state.env.lived;
+      logMsg(state, `😤 Rodents resent the lavish ${T.name} while their own burrows & comforts lag — build more Housing & Wellbeing!`);
+    }
+  }
+}
+
 function updateMorale(state, dt) {
   if (state.morale == null) state.morale = 100;
   const bodies = state.bodies || (state.bodies = []);
@@ -356,7 +385,7 @@ function updateBreeding(state, dt) {
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04;
+  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
     state.res.food -= 5;

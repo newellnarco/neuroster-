@@ -52,6 +52,10 @@ export const BUILDINGS = {
     name: 'Burrow', icon: '🕳️', desc: '+3 population cap. Breeds hamsters (uses food).',
     cost: { wood: 20 }, category: 'Housing', popCap: 3, breed: true,
   },
+  townhall: {
+    name: 'Meeting Burrow', icon: '🏛️', desc: 'The leader rules by teaching, helping & raising hamsters — a colony-wide boost. But a hall too grand for everyone else\'s comforts breeds resentment. Click to upgrade.',
+    cost: { wood: 35, planks: 15 }, category: 'Housing', townhall: true,
+  },
   storage: {
     name: 'Storage Depot', icon: '📦', desc: '+200 storage. Haul drop-off point.',
     cost: { wood: 25 }, category: 'Storage', storage: 200,
@@ -204,6 +208,17 @@ export const TUNNEL_TIERS = [
   { name: 'Steel', hp: 150, protect: { wolf: 7, hawk: 7, raid: 5 }, color: '#aebfd0', upgradeCost: { steel: 25, iron: 10 } },
 ];
 export const TUNNEL_REPAIR = { steel: 0, iron: 0 }; // repair cost is a fraction of upgrade (computed)
+
+// ---- Town Hall / leadership tiers ------------------------------------------
+// The leader hamster rules by example — teaching (XP), helping, and raising more
+// hamsters (breeding) for a colony-wide boost (`leadership`). But each tier is
+// more lavish (`luxury`); if the hall outshines everyone's housing & comforts,
+// resentment grows: morale, loyalty and output fall. Lift others as you rise.
+export const TOWNHALL_TIERS = [
+  { name: 'Meeting Burrow', leadership: 0.10, breed: 0.3, luxury: 0, upgradeCost: null },
+  { name: 'Town Hall',      leadership: 0.20, breed: 0.6, luxury: 3, upgradeCost: { planks: 40, stone: 30 } },
+  { name: 'Grand Hall',     leadership: 0.34, breed: 1.0, luxury: 6, upgradeCost: { planks: 60, iron: 30, steel: 10 } },
+];
 
 // ---- Rodent species --------------------------------------------------------
 // `protect` = which disaster/predator this species helps defend against.
