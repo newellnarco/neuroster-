@@ -4,6 +4,7 @@ import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
 import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, giftFaction, barterFaction, requestAid, hasTradingHut } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight } from './environment.js';
+import { MILESTONES } from './milestones.js';
 
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
@@ -33,7 +34,13 @@ export function createUI(state, ctx) {
       `<span class="env" title="Population / cap">👥 ${population(state)}/${state.popCap}</span>` +
       `<span class="env" title="Overall wellbeing multiplier">😊 ×${wellbeingMul(state).toFixed(2)}</span>` +
       `<span class="env" title="Colony morale — falls from unburied dead, injuries & violence; bury & heal to restore it">${moraleIcon(state.morale)} Morale ${Math.round(state.morale ?? 100)}${(state.bodies?.length) ? ` · ⚰️${state.bodies.length} unburied` : ''}</span>` +
-      `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>`;
+      `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
+      `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>`;
+  }
+  function milestoneTip(state) {
+    const done = state.milestones || {};
+    const next = MILESTONES.filter(m => !done[m.id]).slice(0, 4).map(m => `${m.icon} ${m.name}: ${m.desc}`);
+    return 'Milestones achieved.' + (next.length ? '\nNext goals:\n' + next.join('\n') : ' All done!');
   }
 
   // ---- Needs bar (colony averages of per-creature needs) ----

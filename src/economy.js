@@ -5,6 +5,7 @@ import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, s
 import { MORALE, TOWNHALL_TIERS } from './config.js';
 import { makeRodent, stepRodent, combineRodents, gainXp } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
+import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods } from './environment.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
 
@@ -82,7 +83,18 @@ export function stepEconomy(state, dt) {
   stepEvents(state, dt);
   stepFactions(state, dt);
 
-  // 9) Age out floating reward feedback.
+  // 9) Milestones (throttled) — concrete goals + reward drip.
+  state._mileT = (state._mileT || 0) + dt;
+  if (state._mileT >= 2) {
+    state._mileT = 0;
+    for (const m of checkMilestones(state)) {
+      if (m.reward) addRes(state, 'research', m.reward);
+      addFx(state, state.world.spawn.x, state.world.spawn.y, '🏆', 2.4);
+      logMsg(state, `🏆 Milestone: ${m.name} — ${m.desc}${m.reward ? ` (+${m.reward} research)` : ''}`);
+    }
+  }
+
+  // 10) Age out floating reward feedback.
   if (state.fx && state.fx.length) {
     const t = state.env.lived;
     state.fx = state.fx.filter(f => t - f.born < f.life);
