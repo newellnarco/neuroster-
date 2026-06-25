@@ -78,7 +78,7 @@ export function startGame(canvas) {
       let guard = 0;
       while (acc >= tickDt && guard++ < 240) { stepEconomy(state, tickDt); acc -= tickDt; }
       saveAcc += frameDt;
-      if (started && saveAcc >= AUTOSAVE_SEC) { saveAcc = 0; saveGame(state); }
+      if (started && saveAcc >= AUTOSAVE_SEC) { saveAcc = 0; saveGame(state); showAutosave(); }
     }
     renderer.draw(now);
     ui.update(frameDt);
@@ -104,6 +104,19 @@ export function startGame(canvas) {
   }
   const btnUpdate = document.getElementById('btn-update');
   if (btnUpdate) btnUpdate.onclick = updateNow;
+
+  // Load / switch colony → save, then drop back to the start screen (Continue /
+  // Load other hamsters / New) by clearing the auto-begin flag and reloading.
+  const btnLoad = document.getElementById('btn-load');
+  if (btnLoad) btnLoad.onclick = () => { try { if (started) saveGame(state); } catch {} localStorage.removeItem(AUTO_KEY); location.reload(); };
+
+  // Brief "Auto-saving…" flash in the header when an autosave fires.
+  let autosaveT;
+  function showAutosave() {
+    const el = document.getElementById('autosave-ind'); if (!el) return;
+    el.classList.remove('hidden');
+    clearTimeout(autosaveT); autosaveT = setTimeout(() => el.classList.add('hidden'), 1400);
+  }
 
   // Quietly poll for a newer VERSION; when one is live, light up the Update button.
   async function checkForUpdate() {
