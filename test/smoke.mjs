@@ -395,4 +395,38 @@ console.log('Justice & decrees:');
   ok('Valor: martial pride is morally neutral and lifts a proud colony');
 }
 
+// 14) Doctrines (virtue-gated skill trees).
+console.log('Doctrines (skill trees):');
+{
+  const { learnDoctrine, doctrineStatus, doctrineBonuses, hasDoctrine } = await import('../src/doctrines.js');
+  const { killUnit } = await import('../src/state.js');
+  const s = newGame(90, 'woodland', 'syrian', 'Doctrine', {});
+  s.res.research = 500;
+  // Phalanx (War) needs Valor 35 — a fresh colony (Valor 20) can't yet.
+  assert(!doctrineStatus(s, 'phalanx').ok, 'War doctrine locked below the Valor threshold');
+  s.valor = 60;
+  assert(doctrineStatus(s, 'phalanx').ok, 'enough Valor unlocks the first War doctrine');
+  // Prereq gating: War Strategy needs Phalanx first.
+  assert(!doctrineStatus(s, 'warstrat').ok, 'a doctrine is locked until its prerequisite is learned');
+  const r = learnDoctrine(s, 'phalanx');
+  assert(r.ok && hasDoctrine(s, 'phalanx'), 'learning a doctrine succeeds');
+  assert(doctrineBonuses(s).defense === 15, 'Phalanx grants +15 defense');
+  assert(doctrineStatus(s, 'warstrat').ok, 'learning the prerequisite unlocks the next doctrine');
+  ok('doctrines gate on virtue thresholds + prerequisites, and fold their bonuses');
+
+  // The bonus folds into the live economy (defense rises).
+  s._doc = doctrineBonuses(s);
+  for (let i = 0; i < 5; i++) stepEconomy(s, 0.1);
+  assert(s.defense >= 15, `doctrine defense folds into the colony (def ${s.defense})`);
+  ok('doctrine bonuses fold into recompute');
+
+  // Honoured Sacrifice: a death steels the colony (morale + Valor) instead of pure grief.
+  const s2 = newGame(91, 'woodland', 'syrian', 'Honour', {});
+  s2.doctrines = { honored: true }; s2._doc = doctrineBonuses(s2);
+  s2.morale = 50; s2.valor = 30;
+  killUnit(s2, s2.units[s2.units.length - 1]);
+  assert(s2.morale > 50 && s2.valor > 30, `Honoured Sacrifice turns loss into resolve (morale ${s2.morale}, valor ${s2.valor})`);
+  ok('Honoured Sacrifice steels the colony on a death');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

@@ -3,6 +3,7 @@
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice } from './state.js';
 import { stepDecrees } from './decrees.js';
+import { doctrineBonuses } from './doctrines.js';
 import { JUSTICE } from './config.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
 import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
@@ -21,6 +22,7 @@ export function stepEconomy(state, dt) {
   const env = state._envMods = envMods(state);
   // Completed megaprojects grant permanent, colony-wide bonuses (cached per tick).
   const mega = state._mega = megaBonuses(state);
+  const doc = state._doc = doctrineBonuses(state); // learned skill-tree perks
   if (mega.power) addRes(state, 'power', mega.power * dt);
   ensureCamps(state); // idempotent — also back-fills camps for pre-camp saves
 
@@ -50,13 +52,13 @@ export function stepEconomy(state, dt) {
     let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)); // leader inspires; builders divert labour; play-enrichment distracts a little
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
-      let bonus = state.mods.foodMul + env.foodMul + (mega.foodMul || 0);
+      let bonus = state.mods.foodMul + env.foodMul + (mega.foodMul || 0) + (doc.foodMul || 0);
       if ((state.fertileUntil || 0) > (state.env.lived || 0)) bonus += 0.6;
       if (def.fertileBonus && isFertile(state.world, b.x, b.y)) bonus += 0.8;
       if ((state.res.fertilizer || 0) > 0) { bonus += FERTILIZER_BOOST; state.res.fertilizer = Math.max(0, state.res.fertilizer - 0.05 * dt); }
       rate *= (1 + bonus);
     }
-    if (def.category === 'Production') rate *= (1 + state.mods.prodMul + (mega.prodMul || 0));
+    if (def.category === 'Production') rate *= (1 + state.mods.prodMul + (mega.prodMul || 0) + (doc.prodMul || 0));
     if (def.produces?.power) rate *= (1 + env.powerGain);
     if (def.produces?.research) rate *= (1 + (state.mods.researchMul || 0) + evoBonus(state, 'all', 'research'));
 
@@ -226,7 +228,7 @@ function recomputeBuildings(state) {
   state._vets = vets;
   // Caretaker huts auto-tend energy, fun & health — easing larger settlements.
   fun += caretakers * 4; health += caretakers * 4;
-  defense = Math.round(defense * (1 + evoBonus(state, 'all', 'defense'))) + (state._mega?.defense || 0);
+  defense = Math.round(defense * (1 + evoBonus(state, 'all', 'defense'))) + (state._mega?.defense || 0) + (state._doc?.defense || 0);
   storage += state._mega?.storage || 0; // Great Granary expands the vaults
   state.popCap = popCap; state.storageCap = storage; state.defense = defense;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
@@ -519,8 +521,9 @@ function updateMorale(state, dt) {
 
   const injured = state.units.filter(u => u.sick || u.needs.health < 25).length;
   let drain = bodies.length * MORALE.bodyDrain + injured * MORALE.injuredDrain;
-  const moraleRecover = MORALE.recover + (state._mega?.moraleRecover || 0); // Monument lifts spirits
-  if (drain > 0) state.morale = Math.max(0, state.morale - drain * dt + (state._mega?.moraleRecover || 0) * dt);
+  const docMorale = state._doc?.moraleRecover || 0; // Negotiation/Stoicism/Sacrifice doctrines
+  const moraleRecover = MORALE.recover + (state._mega?.moraleRecover || 0) + docMorale; // Monument & doctrines lift spirits
+  if (drain > 0) state.morale = Math.max(0, state.morale - drain * dt + ((state._mega?.moraleRecover || 0) + docMorale) * dt);
   else state.morale = Math.min(100, state.morale + moraleRecover * dt);
 
   // A militarised stance (towers set to DEFEND) weighs on the colony's spirit.
@@ -542,7 +545,7 @@ function updateBreeding(state, dt) {
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0)) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
+  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0)) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
     state.res.food -= 5;

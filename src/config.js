@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.2.2';
+export const VERSION = 'v0.2.3';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
@@ -757,6 +757,44 @@ export const MEGAPROJECTS = {
     effect: { leadership: 0.4, breed: 0.6, moraleRecover: 0.4 },
     blurb: '+leadership · faster breeding · steady morale',
   },
+};
+
+// ---- Doctrines (virtue-gated skill trees) ----------------------------------
+// The three colony virtues (💗 Compassion, ⚖️ Justice, 🦁 Valor) don't just sit
+// in the HUD — they unlock DOCTRINES: permanent, colony-wide perks arranged in
+// four branches. Each doctrine needs a virtue threshold (`req`) AND research to
+// learn (`cost`), and some need a prerequisite (`prereq`). This is the player's
+// "skills in war strategy, negotiation, stoicism & sacrifice" idea — Valor leads
+// the martial lines, Compassion the gentle ones, Justice the steady middle.
+// Effects fold (summed) into `state._doc` and read by economy/events/recompute,
+// exactly like megaproject bonuses. `honoredSacrifice` is a special flag.
+export const DOCTRINE_BRANCHES = {
+  war:        { name: 'War Strategy', icon: '⚔️', virtue: 'valor',      desc: 'The Spartan path — drilled defenders and fierce offense.' },
+  negotiation:{ name: 'Negotiation',  icon: '🤝', virtue: 'compassion', desc: 'Win with words — peace, goodwill and steady spirits.' },
+  stoicism:   { name: 'Stoicism',     icon: '🪨', virtue: 'justice',    desc: 'Endure — resilient, frugal, unshaken by hardship.' },
+  sacrifice:  { name: 'Sacrifice',    icon: '🕯️', virtue: 'compassion', desc: 'Give for the group — turn loss into resolve and new life.' },
+};
+export const DOCTRINES = {
+  // War (Valor)
+  phalanx:  { name: 'Phalanx Drill',  icon: '🛡️', branch: 'war', req: { valor: 35 }, cost: { research: 60 },
+              desc: 'Drilled ranks: +15 colony defense.', effect: { defense: 15 } },
+  warstrat: { name: 'War Strategy',   icon: '⚔️', branch: 'war', req: { valor: 55 }, prereq: 'phalanx', cost: { research: 130 },
+              desc: 'Cunning tactics: +10 defense, +8 offense.', effect: { defense: 10, offense: 8 } },
+  // Negotiation (Compassion)
+  silvertongue: { name: 'Silver Tongue', icon: '💬', branch: 'negotiation', req: { compassion: 45 }, cost: { research: 60 },
+              desc: 'Smooth talk softens raiders: +6 raid deterrence.', effect: { raidDeter: 6 } },
+  accord:   { name: 'Grand Accord',   icon: '📜', branch: 'negotiation', req: { compassion: 60, justice: 45 }, prereq: 'silvertongue', cost: { research: 140 },
+              desc: 'Lasting peace: +10 raid deterrence, steady morale.', effect: { raidDeter: 10, moraleRecover: 0.15 } },
+  // Stoicism (Justice)
+  resolve:  { name: 'Stoic Resolve',  icon: '🪨', branch: 'stoicism', req: { justice: 45, valor: 40 }, cost: { research: 80 },
+              desc: 'Frugal endurance: +20% food output, steady morale.', effect: { foodMul: 0.2, moraleRecover: 0.1 } },
+  unbroken: { name: 'Unbroken',       icon: '🗿', branch: 'stoicism', req: { justice: 60 }, prereq: 'resolve', cost: { research: 150 },
+              desc: 'Nothing shakes them: strong steady morale recovery.', effect: { moraleRecover: 0.3 } },
+  // Sacrifice (Compassion)
+  selfless: { name: 'Selfless Hearts', icon: '💗', branch: 'sacrifice', req: { compassion: 55 }, cost: { research: 90 },
+              desc: 'Living for each other: faster breeding, steady morale.', effect: { breed: 0.25, moraleRecover: 0.15 } },
+  honored:  { name: 'Honoured Sacrifice', icon: '🕯️', branch: 'sacrifice', req: { compassion: 65, valor: 40 }, prereq: 'selfless', cost: { research: 170 },
+              desc: 'The fallen inspire: a rodent\'s death steels the colony (a surge of morale & Valor) instead of only grief.', effect: { honoredSacrifice: true } },
 };
 
 // ---- Justice & Decrees (the moral counterweight to Compassion) --------------

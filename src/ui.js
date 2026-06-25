@@ -9,6 +9,8 @@ import { computeAlerts } from './alerts.js';
 import { MEGAPROJECTS, DECREES } from './config.js';
 import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount, costText as megaCostText } from './megaprojects.js';
 import { resolveDecree, choiceAllowed } from './decrees.js';
+import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
+import { learnDoctrine, doctrineStatus, hasDoctrine, doctrineCount } from './doctrines.js';
 
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
@@ -279,6 +281,35 @@ export function createUI(state, ctx) {
       const r = contributeMega(state, btn.dataset.mega); msg(r);
       if (r?.ok) sfx(megaCount(state) > wasDone ? 'milestone' : 'complete');
       renderMega(); renderResbar();
+    });
+  }
+
+  function renderDoctrine() {
+    const VIRT = { compassion: { icon: '💗', val: () => Math.round(state.compassion ?? 50) },
+                   justice:    { icon: '⚖️', val: () => Math.round(state.justice ?? 50) },
+                   valor:      { icon: '🦁', val: () => Math.round(state.valor ?? 20) } };
+    const head = `<div class="hint">Your colony's three virtues — ${VIRT.compassion.icon} <b>${VIRT.compassion.val()}</b> Compassion · ${VIRT.justice.icon} <b>${VIRT.justice.val()}</b> Justice · ${VIRT.valor.icon} <b>${VIRT.valor.val()}</b> Valor — unlock <b>Doctrines</b>: permanent colony-wide perks. Each needs a virtue threshold and 🔬 Research to learn. ${doctrineCount(state)}/${Object.keys(DOCTRINES).length} learned.</div>`;
+    const branches = Object.entries(DOCTRINE_BRANCHES).map(([bk, b]) => {
+      const items = Object.entries(DOCTRINES).filter(([, d]) => d.branch === bk).map(([id, d]) => {
+        const learned = hasDoctrine(state, id);
+        const st = doctrineStatus(state, id);
+        const reqStr = Object.entries(d.req).map(([v, n]) => `${VIRT[v]?.icon || v} ${n}`).join(' · ');
+        const cls = learned ? 'done' : st.ok ? '' : 'bd';
+        const cost = Object.entries(d.cost).map(([k, v]) => `${RESOURCES[k]?.icon || k}${v}`).join(' ');
+        return `<div class="threat ${learned ? 'done' : ''}">
+          <div class="trow"><span>${d.icon} <b>${escHtml(d.name)}</b></span>
+            <span class="${cls}">${learned ? '✅ Learned' : st.ok ? 'Ready' : '🔒'}</span></div>
+          <div class="ds">${escHtml(d.desc)}<br><span class="helpers">Needs ${reqStr} · ${cost}${d.prereq ? ` · after ${escHtml(DOCTRINES[d.prereq].name)}` : ''}</span></div>
+          ${learned ? '' : `<div class="care"><button class="carebtn ${st.ok ? '' : 'cd'}" data-doctrine="${id}" title="${escHtml(st.reason)}">🎓 Learn (${cost})</button></div>`}
+        </div>`;
+      }).join('');
+      return `<div class="cat">${b.icon} ${b.name} <span class="helpers">— ${escHtml(b.desc)}</span></div>${items}`;
+    }).join('');
+    el('tab-doctrine').innerHTML = head + branches;
+    bind('[data-doctrine]', (btn) => {
+      const r = learnDoctrine(state, btn.dataset.doctrine);
+      if (r.ok) { sfx('milestone'); flash('🎓 Doctrine learned!'); } else msg(r);
+      renderDoctrine(); renderResbar(); renderEnv();
     });
   }
 
@@ -561,7 +592,7 @@ export function createUI(state, ctx) {
     clearTimeout(flashTimer); flashTimer = setTimeout(() => f.classList.remove('show'), 1600);
   }
 
-  function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); }
+  function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderDoctrine(); }
 
   // Track a few sim values to fire celebratory/warning cues on change.
   let prev = null;
@@ -604,6 +635,7 @@ export function createUI(state, ctx) {
       if (active('threats')) renderThreats();
       if (active('trade')) renderTrade();
       if (active('mega')) renderMega();
+      if (active('doctrine')) renderDoctrine();
       if (active('evo')) renderEvo();
       if (active('build')) refreshAfford();
     }
@@ -615,7 +647,7 @@ export function createUI(state, ctx) {
   }
 
   return { init, update, flash, newColony: showCharacterCreation,
-    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderLog(); renderAlerts(); renderGuide(); } };
+    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderDoctrine(); renderLog(); renderAlerts(); renderGuide(); } };
 }
 
 function moraleIcon(m) { m = m ?? 100; return m >= 70 ? '😊' : m >= 45 ? '😐' : m >= 25 ? '😟' : '😢'; }

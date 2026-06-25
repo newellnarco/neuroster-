@@ -26,6 +26,7 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     tech: {},
     evolutions: {},
     unlockedSpecies: { hamster: true },
+    doctrines: {}, // learned virtue-gated skill-tree perks
     mods: { mineMul: 0, speedMul: 0, carryMul: 0, prodMul: 0, foodMul: 0, researchMul: 0, revealBonus: 0 },
     nextId: 1,
     fx: [],
@@ -145,6 +146,13 @@ export function killUnit(state, unit) {
   if (i >= 0) state.units.splice(i, 1);
   (state.bodies || (state.bodies = [])).push({ x: unit.x, y: unit.y, species: unit.species, name: unit.name, born: state.env?.lived || 0 });
   addFx(state, unit.x, unit.y, '💀', 2.2);
+  // The Honoured Sacrifice doctrine turns a death into resolve: a surge of
+  // morale & Valor steels the colony, easing pure grief.
+  if (state._doc?.honoredSacrifice) {
+    state.morale = Math.min(100, (state.morale ?? 100) + 8);
+    addValor(state, 6);
+    addFx(state, unit.x, unit.y, '🕯️', 2.4);
+  }
 }
 
 // Colony Compassion (0..100): rises with kindness, generosity & care; falls
