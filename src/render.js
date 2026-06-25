@@ -16,14 +16,20 @@ const VIS = {
 
 export function createRenderer(canvas, state, getView) {
   const ctx = canvas.getContext('2d');
-  canvas.width = GRID_W * TILE;
-  canvas.height = GRID_H * TILE;
+  // Logical world size (drawing coordinate space). The backing store is rendered
+  // at devicePixelRatio for crisp, high-resolution output on retina/HiDPI screens;
+  // all drawing stays in logical VW×VH units thanks to the ctx.scale below.
+  const VW = GRID_W * TILE, VH = GRID_H * TILE;
+  const DPR = Math.max(1, Math.min(3, Math.round((typeof window !== 'undefined' && window.devicePixelRatio) || 1)));
+  canvas.width = VW * DPR; canvas.height = VH * DPR;
+  ctx.scale(DPR, DPR);
   ctx.imageSmoothingEnabled = true;
 
-  // Offscreen terrain buffer, re-baked only when the revealed area changes.
+  // Offscreen terrain buffer (also HiDPI), re-baked only when revealed area changes.
   const terr = document.createElement('canvas');
-  terr.width = canvas.width; terr.height = canvas.height;
+  terr.width = VW * DPR; terr.height = VH * DPR;
   const tg = terr.getContext('2d');
+  tg.scale(DPR, DPR);
   let g = ctx;            // current drawing target for helpers
   let bakedSeen = -1;
   let bmap = new Map();   // "x,y" -> building, rebuilt each frame for adjacency
@@ -34,8 +40,8 @@ export function createRenderer(canvas, state, getView) {
     const seenCount = countSeen();
     if (seenCount !== bakedSeen) { bakeTerrain(); bakedSeen = seenCount; }
 
-    // soft, less-blocky terrain via a gentle blur on the blit
-    ctx.save(); ctx.filter = 'blur(0.5px)'; ctx.drawImage(terr, 0, 0); ctx.restore();
+    // crisp terrain blit (HiDPI source → logical size); feathered tile edges keep it smooth
+    ctx.drawImage(terr, 0, 0, VW, VH);
     drawWaterShimmer(t);
     drawWaste();
 
@@ -60,7 +66,7 @@ export function createRenderer(canvas, state, getView) {
   // (autumn leaves, winter snow, spring blossom petals) so the season is felt.
   function drawSeason(t) {
     const key = seasonKey(state);
-    const W = canvas.width, H = canvas.height;
+    const W = VW, H = VH;
     const tint = { spring: 'rgba(150,210,140,0.05)', summer: 'rgba(255,224,130,0.05)', autumn: 'rgba(214,120,40,0.10)', winter: 'rgba(150,180,225,0.12)' }[key];
     if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H); }
 
@@ -100,10 +106,10 @@ export function createRenderer(canvas, state, getView) {
     const night = f < 0.25 || f > 0.75;
     const n = 22;
     for (let i = 0; i < n; i++) {
-      const bx = (i * 137.5) % canvas.width;
-      const by = (i * 89.3) % canvas.height;
+      const bx = (i * 137.5) % VW;
+      const by = (i * 89.3) % VH;
       const dx = Math.sin(t * 0.6 + i) * 14, dy = Math.cos(t * 0.5 + i * 1.3) * 10;
-      const px = (bx + dx + canvas.width) % canvas.width, py = (by + dy + canvas.height) % canvas.height;
+      const px = (bx + dx + VW) % VW, py = (by + dy + VH) % VH;
       if (night) {
         const glow = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 3 + i));
         ctx.fillStyle = `rgba(190,230,120,${glow * 0.5})`;
@@ -120,7 +126,7 @@ export function createRenderer(canvas, state, getView) {
   // ---------- Terrain (baked) ----------
   function bakeTerrain() {
     g = tg;
-    tg.clearRect(0, 0, terr.width, terr.height);
+    tg.clearRect(0, 0, VW, VH);
     const ter = state.world.terrain;
     for (let y = 0; y < GRID_H; y++) {
       for (let x = 0; x < GRID_W; x++) {
@@ -646,16 +652,40 @@ export function createRenderer(canvas, state, getView) {
     return VIS[u.species] || VIS.hamster;
   }
 
+  // A plush, soft-3D radial gradient that gives a rounded body "volume": lit from
+  // the upper-left, shading to a darker lower-right edge (ambient occlusion).
+  // Cached by colour+radius — gradient coords are in the (translated) local space,
+  // so the same object is reusable for every creature of that colour/size.
+  const _gradCache = new Map();
+  function plushGrad(color, r) {
+    const key = color + '|' + r.toFixed(2);
+    let gr = _gradCache.get(key);
+    if (!gr) {
+      gr = ctx.createRadialGradient(-r * 0.42, -r * 0.5, r * 0.12, 0, 0, r * 1.18);
+      gr.addColorStop(0, shade(color, 0.34));
+      gr.addColorStop(0.55, color);
+      gr.addColorStop(1, shade(color, -0.26));
+      _gradCache.set(key, gr);
+    }
+    return gr;
+  }
+
   function drawCreatureRaw(cx, cy, face, vis, legPhase, walking, sleeping, carrying, t = 0, u = null) {
     const s = vis.size / 15;
     const bob = walking ? Math.abs(Math.sin(legPhase)) * 1.6 : Math.sin((t || 0) * 2 + (u ? u.id : 0)) * 0.5;
-    ctx.fillStyle = 'rgba(0,0,0,0.22)';
-    ctx.beginPath(); ctx.ellipse(cx, cy + 7 * s, 9 * s, 3.4 * s, 0, 0, 7); ctx.fill();
+    // Soft, blurred contact shadow (stacked fading ellipses → an ambient-occlusion pool).
+    for (let i = 3; i >= 1; i--) {
+      ctx.fillStyle = `rgba(0,0,0,${0.05 + i * 0.045})`;
+      ctx.beginPath(); ctx.ellipse(cx, cy + 7.5 * s, (6 + i * 1.6) * s, (2.2 + i * 0.7) * s, 0, 0, 7); ctx.fill();
+    }
     ctx.save(); ctx.translate(cx, cy - bob); ctx.scale(face, 1);
 
     if (sleeping) {
-      ctx.fillStyle = vis.body; ctx.beginPath(); ctx.ellipse(0, 2 * s, 9 * s, 6 * s, 0, 0, 7); ctx.fill();
+      ctx.save(); ctx.translate(2 * s, 2 * s);
+      ctx.fillStyle = plushGrad(vis.body, 8 * s); ctx.beginPath(); ctx.ellipse(0, 0, 9 * s, 6 * s, 0, 0, 7); ctx.fill();
+      ctx.restore();
       ctx.fillStyle = vis.belly; ctx.beginPath(); ctx.arc(4 * s, 2 * s, 3 * s, 0, 7); ctx.fill();
+      softHighlight(-3 * s, -1 * s, 4 * s);
       ctx.restore();
       ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = '9px serif'; ctx.textAlign = 'center';
       ctx.fillText('z', cx + 8, cy - 8 - (((t || 0) % 2) / 2) * 6);
@@ -663,30 +693,61 @@ export function createRenderer(canvas, state, getView) {
     }
     const swing = walking ? Math.sin(legPhase) * 3 * s : 0;
     if (vis.tail > 0) {
-      ctx.strokeStyle = shade(vis.body, -0.1); ctx.lineWidth = vis.tailW; ctx.lineCap = 'round';
+      ctx.strokeStyle = shade(vis.body, -0.12); ctx.lineWidth = vis.tailW; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(-7 * s, 1 * s);
       ctx.quadraticCurveTo(-7 * s - vis.tail * 0.6, 1 * s - Math.sin(legPhase) * 2, -7 * s - vis.tail, -2 * s); ctx.stroke();
     }
-    ctx.fillStyle = shade(vis.body, -0.2);
-    foot(-3 * s, 6 * s + swing, s); foot(3 * s, 6 * s - swing, s);
-    ctx.fillStyle = vis.body; ctx.beginPath(); ctx.ellipse(0, 0, 8 * s, 6 * s, 0, 0, 7); ctx.fill();
-    if (vis.patch) { ctx.fillStyle = vis.patch; ctx.beginPath(); ctx.ellipse(-2 * s, -1.5 * s, 3.4 * s, 2.6 * s, 0, 0, 7); ctx.fill(); } // coat patch
-    ctx.fillStyle = vis.belly; ctx.beginPath(); ctx.ellipse(1.5 * s, 2 * s, 4.5 * s, 3.2 * s, 0, 0, 7); ctx.fill();
-    const hx = 6.5 * s;
-    // idle head bob (sniffing) when not walking
+    // little rounded feet
+    ctx.fillStyle = shade(vis.body, -0.24);
+    foot(-3 * s, 6.4 * s + swing, s); foot(3 * s, 6.4 * s - swing, s);
+
+    // plush body (rounder), with belly, optional coat patch, and a glossy highlight
+    ctx.fillStyle = plushGrad(vis.body, 8 * s);
+    ctx.beginPath(); ctx.ellipse(0, 0, 8.2 * s, 6.4 * s, 0, 0, 7); ctx.fill();
+    if (vis.patch) { ctx.fillStyle = vis.patch; ctx.beginPath(); ctx.ellipse(-2 * s, -1.5 * s, 3.4 * s, 2.6 * s, 0, 0, 7); ctx.fill(); }
+    ctx.fillStyle = vis.belly; ctx.globalAlpha = 0.92; ctx.beginPath(); ctx.ellipse(1.6 * s, 2.2 * s, 4.6 * s, 3.4 * s, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    softHighlight(-3 * s, -2.4 * s, 4.2 * s);
+
+    const hx = 6.6 * s;
     const sniff = walking ? 0 : Math.sin((t || 0) * 3 + (u ? u.id : 0)) * 0.6 * s;
-    ctx.fillStyle = vis.body; ctx.beginPath(); ctx.arc(hx + sniff, -1.5 * s, 4.6 * s, 0, 7); ctx.fill();
-    // ear with occasional twitch
+    // ears (behind head), with an occasional twitch
     const twitch = Math.sin((t || 0) * 12 + (u ? u.id * 2 : 0)) > 0.96 ? -1 * s : 0;
-    ctx.beginPath(); ctx.arc(hx - 1 * s + sniff, -5 * s + twitch, vis.ear * 0.6 * s + 1, 0, 7); ctx.fill();
-    ctx.fillStyle = '#f1c0c8'; ctx.beginPath(); ctx.arc(hx - 1 * s + sniff, -5 * s + twitch, vis.ear * 0.3 * s + 0.5, 0, 7); ctx.fill();
-    ctx.fillStyle = '#241c16'; ctx.beginPath(); ctx.arc(hx + 1.5 * s + sniff, -2 * s, 1.1 * s, 0, 7); ctx.fill();
-    ctx.fillStyle = '#3a2a22'; ctx.beginPath(); ctx.arc(hx + 4.2 * s, -1 * s, 1 * s, 0, 7); ctx.fill();
-    if (carrying) { ctx.fillStyle = '#caa05a'; ctx.fillRect(-5 * s, -7 * s, 5 * s, 4 * s); ctx.strokeStyle = '#8a6a3a'; ctx.lineWidth = 1; ctx.strokeRect(-5 * s, -7 * s, 5 * s, 4 * s); }
+    ctx.fillStyle = shade(vis.body, -0.05);
+    ctx.beginPath(); ctx.arc(hx - 1 * s + sniff, -5.2 * s + twitch, vis.ear * 0.62 * s + 1, 0, 7); ctx.fill();
+    ctx.fillStyle = '#f3c2cb'; ctx.beginPath(); ctx.arc(hx - 1 * s + sniff, -5.2 * s + twitch, vis.ear * 0.32 * s + 0.5, 0, 7); ctx.fill();
+    // plush head
+    ctx.save(); ctx.translate(hx + sniff, -1.6 * s);
+    ctx.fillStyle = plushGrad(vis.body, 4.8 * s); ctx.beginPath(); ctx.arc(0, 0, 4.8 * s, 0, 7); ctx.fill();
+    softHighlight(-1.7 * s, -1.8 * s, 2.3 * s);
+    // cheek
+    ctx.fillStyle = 'rgba(243,180,170,0.35)'; ctx.beginPath(); ctx.arc(-1.2 * s, 1.6 * s, 1.5 * s, 0, 7); ctx.fill();
+    // snout + nose
+    ctx.fillStyle = '#2a201a'; ctx.beginPath(); ctx.arc(4.2 * s, 0.4 * s, 1 * s, 0, 7); ctx.fill();
+    // big glossy eye with a catchlight
+    glossyEye(1.8 * s, -0.4 * s, 1.4 * s);
     ctx.restore();
-    if (u && u.founder) { ctx.fillStyle = '#ffd54f'; ctx.font = '10px serif'; ctx.textAlign = 'center'; ctx.fillText('♛', cx, cy - 12 * s - bob); }
+
+    if (carrying) {
+      ctx.fillStyle = '#caa05a'; rrect(-5.5 * s, -7.5 * s, 5.5 * s, 4.5 * s, 1.4 * s); ctx.fill();
+      ctx.strokeStyle = '#8a6a3a'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    ctx.restore();
+    if (u && u.founder) { ctx.fillStyle = '#ffd54f'; ctx.font = '11px serif'; ctx.textAlign = 'center'; ctx.fillText('♛', cx, cy - 13 * s - bob); }
   }
   function foot(x, y, s) { ctx.beginPath(); ctx.ellipse(x, y, 2 * s, 1.4 * s, 0, 0, 7); ctx.fill(); }
+  // A soft white specular highlight (radial → transparent) for a glossy plush sheen.
+  function softHighlight(x, y, r) {
+    const gr = ctx.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, 'rgba(255,255,255,0.34)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.12)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r * 0.85, 0, 7); ctx.fill();
+  }
+  // A big rounded eye with a white catchlight — reads as cute & modern.
+  function glossyEye(x, y, r) {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.fillStyle = '#241c16'; ctx.beginPath(); ctx.arc(x + r * 0.18, y, r * 0.72, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.beginPath(); ctx.arc(x - r * 0.25, y - r * 0.35, r * 0.3, 0, 7); ctx.fill();
+  }
+  function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
   // ---------- Overlays ----------
   function drawFx() {
@@ -711,20 +772,20 @@ export function createRenderer(canvas, state, getView) {
   function drawDayNight() {
     const f = dayFraction(state);
     const dark = Math.max(0, Math.cos(f * Math.PI * 2)) * 0.42;
-    if (dark > 0.01) { ctx.fillStyle = `rgba(12,20,50,${dark})`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    if (dark > 0.01) { ctx.fillStyle = `rgba(12,20,50,${dark})`; ctx.fillRect(0, 0, VW, VH); }
     const tw = Math.max(0, 1 - Math.abs(Math.abs(f - 0.5) - 0.25) * 8) * 0.16;
-    if (tw > 0.01) { ctx.fillStyle = `rgba(255,150,60,${tw})`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    if (tw > 0.01) { ctx.fillStyle = `rgba(255,150,60,${tw})`; ctx.fillRect(0, 0, VW, VH); }
   }
   function drawWeather(t) {
     const w = state.env?.weather;
     const tint = { rain: 'rgba(60,90,140,0.12)', fog: 'rgba(200,200,210,0.18)', snow: 'rgba(230,238,255,0.10)', storm: 'rgba(30,40,70,0.18)', humid: 'rgba(120,160,90,0.09)', drought: 'rgba(200,160,80,0.09)' }[w];
-    if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, VW, VH); }
     if (w === 'rain' || w === 'storm') {
       ctx.strokeStyle = 'rgba(170,200,235,0.4)'; ctx.lineWidth = 1;
-      for (let i = 0; i < 140; i++) { const px = (i * 97 % canvas.width), py = ((i * 53 + t * 700) % canvas.height); ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px - 3, py + 9); ctx.stroke(); }
+      for (let i = 0; i < 140; i++) { const px = (i * 97 % VW), py = ((i * 53 + t * 700) % VH); ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px - 3, py + 9); ctx.stroke(); }
     } else if (w === 'snow') {
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      for (let i = 0; i < 90; i++) { const px = ((i * 131 + Math.sin(t + i) * 12) % canvas.width), py = ((i * 71 + t * 120) % canvas.height); ctx.beginPath(); ctx.arc(px, py, 1.4, 0, 7); ctx.fill(); }
+      for (let i = 0; i < 90; i++) { const px = ((i * 131 + Math.sin(t + i) * 12) % VW), py = ((i * 71 + t * 120) % VH); ctx.beginPath(); ctx.arc(px, py, 1.4, 0, 7); ctx.fill(); }
     }
   }
 
