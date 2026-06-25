@@ -340,6 +340,7 @@ export function createUI(state, ctx) {
     if (el('btn-export')) el('btn-export').onclick = () => ctx.onExport?.();
     if (el('btn-import')) el('btn-import').onclick = () => ctx.onImport?.();
     if (el('btn-help')) el('btn-help').onclick = showHelp;
+    if (el('btn-settings')) el('btn-settings').onclick = showSettings;
     if (el('help-close')) el('help-close').onclick = hideHelp;
     document.querySelectorAll('#help-modal [data-help-jump]').forEach(b => b.onclick = () => {
       const t = el(b.dataset.helpJump); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -357,6 +358,33 @@ export function createUI(state, ctx) {
       const n = prompt('Rename your founder hamster (once every 30 days):', state.founder?.name || '');
       if (n != null) msg(renameFounder(state, n));
     };
+  }
+
+  // ---- In-game Settings (adjust the challenge live; identity/world are fixed) ----
+  function showSettings() {
+    const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const card = el('settings-modal').querySelector('.modal-card');
+    const f = state.founder || {};
+    const DIS = {
+      on:  { icon: '⚡', name: 'On',  desc: 'Predators, disasters & raids strike.' },
+      off: { icon: '🕊️', name: 'Off', desc: 'Peaceful — none of the above.' },
+    };
+    const row = (group, data, current) => `<div class="grid" id="set-${group}">${Object.entries(data).map(([k, v]) =>
+      `<button class="card opt ${k === current ? 'sel' : ''}" data-set${group}="${k}"><div class="ico">${v.icon}</div><div class="nm">${v.name}</div><div class="ds">${v.desc}</div></button>`).join('')}</div>`;
+    card.innerHTML = `
+      <h2>⚙️ Settings</h2>
+      <p>Adjust the challenge any time — changes save with this colony. Your hamster's identity (name, breed, coat), biome and map are fixed once founded.</p>
+      <div class="cat">Difficulty</div>${row('difficulty', DIFFICULTIES, state.difficulty)}
+      <div class="cat">Predators &amp; disasters</div>${row('disasters', DIS, state.disasters === false ? 'off' : 'on')}
+      <div class="cat">This colony (fixed)</div>
+      <div class="hint">🐹 <b>${esc(f.name)}</b> · ${esc(BREEDS[f.breed]?.name || '')} · ${esc(COAT_COLORS[f.coat?.color]?.name || 'Golden')} coat · ${esc(BIOMES[state.biome]?.name || state.biome)} · ${esc(DENSITIES[state.density]?.name || '')} resources · ${esc(DIFFICULTIES[state.difficulty]?.name || '')}</div>
+      <button id="set-close" class="modal-cancel">Done</button>`;
+    el('settings-modal').classList.remove('hidden');
+    const remark = (group) => card.querySelectorAll(`[data-set${group}]`).forEach(x => x.classList.toggle('sel',
+      group === 'disasters' ? (x.dataset['set' + group] === (state.disasters === false ? 'off' : 'on')) : (x.dataset['set' + group] === state.difficulty)));
+    card.querySelectorAll('[data-setdifficulty]').forEach(b => b.onclick = () => { state.difficulty = b.dataset.setdifficulty; ctx.onSave?.(); flash('Difficulty: ' + (DIFFICULTIES[state.difficulty]?.name || state.difficulty)); remark('difficulty'); });
+    card.querySelectorAll('[data-setdisasters]').forEach(b => b.onclick = () => { state.disasters = b.dataset.setdisasters === 'on'; ctx.onSave?.(); flash(state.disasters ? '⚡ Disasters ON' : '🕊️ Peaceful mode'); remark('disasters'); });
+    card.querySelector('#set-close').onclick = () => el('settings-modal').classList.add('hidden');
   }
 
   // ---- How-to-Play overlay ----
