@@ -109,11 +109,17 @@ becomes live on the next browser refresh.
     ⚠️ Use *this* file, **not** the build `docker-compose.yml` — building an image over a
     network share is slow and flaky; the NAS file just runs `node:20-alpine` and serves.
   - Build & run. The NAS pulls `node:20-alpine` and starts the container; nothing compiles.
-- If port **8080** is busy on the NAS, create a file named `.env` in that folder containing
-  `BIND_PORT=8888`, then use that port.
+- If port **8080** is busy on the NAS, edit `docker-compose.nas.yml` and change the **left**
+  number of the ports line — `"8888:8080"` — then browse that port. (Container Manager's
+  validator rejects `${VAR}` env defaults with *"the format … is invalid"*, so the port is
+  set directly in the file rather than via a `.env`.)
+- **If Container Manager still says the compose format is invalid:** it's usually CRLF line
+  endings from the Windows checkout. Easiest fix — in *Create Project* choose **paste** and
+  paste the file contents into the web editor (it saves as LF), or re-pull after this update
+  (a `.gitattributes` now forces these files to LF).
 
 **4. Open it on the network.**
-- From any device on your LAN: **`http://<NAS-IP>:8080`** (or your `BIND_PORT`).
+- From any device on your LAN: **`http://<NAS-IP>:8080`** (or whatever host port you set).
 - Health check: `http://<NAS-IP>:8080/healthz` → `ok`.
 
 **Updates** flow automatically: the Windows task pulls new commits → files change on the
