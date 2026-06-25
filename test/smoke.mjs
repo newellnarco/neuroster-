@@ -505,4 +505,22 @@ console.log('Pollution & power:');
   ok('statues lift morale & compassion');
 }
 
+// 17) Burrow crowding: a packed burrow gets filthy faster than a sparse one.
+console.log('Burrow crowding:');
+{
+  const { BUILDINGS } = await import('../src/config.js');
+  const bk = Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed); // the burrow type
+  function burrowDirt(popN) {
+    const g = newGame(40, 'woodland', 'syrian', 'Dirt', {});
+    while (g.units.length > popN) g.units.pop();
+    g.res.food = 4; // keep population put (no breeding) so we isolate crowding
+    const sp = g.world.spawn; g.buildings.push({ type: bk, x: sp.x, y: sp.y });
+    for (let i = 0; i < 25; i++) stepEconomy(g, 0.2);
+    return g.buildings.find(b => b.type === bk).dirt || 0;
+  }
+  const crowded = burrowDirt(5), sparse = burrowDirt(1);
+  assert(crowded > sparse * 1.5, `a crowded burrow dirties faster (sparse ${sparse.toFixed(2)} vs crowded ${crowded.toFixed(2)})`);
+  ok(`burrow filth scales with crowding (sparse ${sparse.toFixed(2)} < crowded ${crowded.toFixed(2)})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

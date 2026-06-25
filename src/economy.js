@@ -383,10 +383,16 @@ function updateExploration(state, env) {
 // stop housing/breeding until cleaned (click a burrow to clean it).
 function updateBurrows(state, dt) {
   const caretakers = state._caretakers || 0;
-  const occ = Math.max(1, population(state));
+  // Filth scales with how CROWDED each burrow is: spread the colony across its
+  // breeding burrows and compare to each burrow's capacity. An empty burrow
+  // barely needs cleaning; a packed/over-capacity one gets filthy fast.
+  const breedBurrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed && !b.underConstruction);
+  const perBurrow = population(state) / (breedBurrows.length || 1);
   for (const b of state.buildings) {
     if (!BUILDINGS[b.type]?.breed || b.underConstruction) continue;
-    b.dirt = (b.dirt || 0) + BURROW.dirtRate * dt * (0.5 + occ * 0.02);
+    const cap = BUILDINGS[b.type].popCap || 3;
+    const fullness = Math.min(2.2, perBurrow / cap); // 0 (empty) … 1 (full) … 2.2 (jammed)
+    b.dirt = (b.dirt || 0) + BURROW.dirtRate * dt * (0.35 + fullness);
     if (caretakers > 0) b.dirt = Math.max(0, b.dirt - caretakers * BURROW.cleanRate * dt);
     if (b.dirt > BURROW.filthAt) addWaste(state.world, b.x, b.y, BURROW.dirtRate * dt * 0.6);
     const wasDeg = b.degraded;

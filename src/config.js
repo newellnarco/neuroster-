@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.3.8';
+export const VERSION = 'v0.3.9';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
@@ -856,8 +856,8 @@ export const JUSTICE = {
   driftTarget: 50,      // drifts back toward the middle without decrees
   courtNudge: 0.02,     // Courthouse steadily lifts Order
   raidDeter: 0.2,       // raid severity reduced per point of Justice over 50
-  decreeFirst: 360,     // seconds before the first decree can fall
-  decreeEvery: [200, 140], // base + jittered seconds between decrees
+  decreeFirst: 480,     // seconds before the first decree can fall
+  decreeEvery: [320, 200], // base + jittered seconds between decrees (calmer pacing)
 };
 
 // Each decree: an eligibility test, a prompt, and 2–3 choices. A choice carries

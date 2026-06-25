@@ -106,7 +106,10 @@ export function totalOffense(state) {
 }
 
 // Disasters don't begin until the colony has had time to find its feet.
-const GRACE_SECONDS = 300;
+const GRACE_SECONDS = 420;
+// Global pacing: stretches the gaps between ALL events so a normal game breathes
+// (raise for calmer, lower for busier). Difficulty still scales severity.
+const EVENT_PACE = 1.7;
 
 // Called each tick. Uses per-disaster countdown timers stored on state.events.
 export function stepEvents(state, dt) {
@@ -121,13 +124,14 @@ export function stepEvents(state, dt) {
   for (const [key, d] of Object.entries(DISASTERS)) {
     if (d.biomes && !d.biomes.includes(biome)) continue; // biome-specific events
     // First scheduled occurrence is offset past the grace period.
-    const ev = state.events[key] || (state.events[key] = { timer: d.interval * (0.6 + 0.8 * hash(key)) });
+    const ev = state.events[key] || (state.events[key] = { timer: d.interval * EVENT_PACE * (0.6 + 0.8 * hash(key)) });
     ev.timer -= dt;
     if (ev.timer > 0) continue;
 
-    // Reschedule next occurrence; they grow slightly more frequent over time.
-    const ramp = Math.max(0.55, 1 - elapsed / 6000);
-    ev.timer = d.interval * ramp * (0.7 + 0.6 * hash(key + elapsed));
+    // Reschedule next occurrence; they grow a little more frequent over time, but
+    // gently (higher floor, slower ramp) so the late game stays playable.
+    const ramp = Math.max(0.72, 1 - elapsed / 12000);
+    ev.timer = d.interval * EVENT_PACE * ramp * (0.7 + 0.6 * hash(key + elapsed));
 
     // A brokered truce holds predators (not natural disasters) at bay for a while.
     if (d.kind === 'predator' && (state.truceUntil || 0) > elapsed) continue;
@@ -241,7 +245,7 @@ export function stepFactions(state, dt) {
     // raid cadence
     st.raidTimer -= dt;
     if (st.raidTimer <= 0) {
-      st.raidTimer = 150 + 120 * hash(id + Math.floor(lived));
+      st.raidTimer = (150 + 120 * hash(id + Math.floor(lived))) * EVENT_PACE;
       if (lived < GRACE_SECONDS || state.disasters === false) continue; // peaceful mode: no raids
       if ((state.truceUntil || 0) > lived) continue; // a brokered truce stays the raiders' paws
       const pressure = Math.max(0, -st.standing) + Math.min(45, hoard * 0.12);
