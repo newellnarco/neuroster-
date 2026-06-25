@@ -51,6 +51,23 @@ docker build -t neuroster .
 docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neuroster
 ```
 
+#### Prebuilt image (GHCR) — for a NAS / server with no build step
+
+CI publishes a **multi-arch** image (amd64 + arm64) to GitHub Container Registry on
+every push to `main`, so you can just pull and run — no cloning or building on the box
+(ideal for a Synology Container Manager / Docker API setup):
+
+```bash
+docker run -d -p 8080:8080 --restart unless-stopped \
+  --name neuroster ghcr.io/newellnarco/neuroster-:latest
+```
+
+On **Synology Container Manager**: *Registry* → add/search `ghcr.io/newellnarco/neuroster-`
+→ download `latest` → *Image* → run, map a host port to container port **8080**, enable
+auto-restart. Saves live in the browser, so the container is stateless (no volumes needed).
+The package must be **public** in GitHub (or log in to `ghcr.io` with a token) to pull
+without auth.
+
 ### Controls
 - **Click** a building in the Build panel, then **click the map** to place it.
 - **Right-click** cancels placement. **Click an existing structure** to demolish it (50% refund).

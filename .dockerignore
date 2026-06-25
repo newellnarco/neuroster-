@@ -1,5 +1,8 @@
 .git
+.github
 node_modules
+test
 *.log
+*.md
 .DS_Store
 /tmp
