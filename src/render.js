@@ -290,17 +290,28 @@ export function createRenderer(canvas, state, getView) {
     }
   }
 
+  // Overlay a procedural material texture, clipped to the path currently on `ctx`
+  // (caller defines the shape, e.g. a ball/roundRect). Restores cleanly.
+  function texClip(name, x, y, w, h, alpha, blend) {
+    const pat = TEX[name]; if (!pat) return;
+    ctx.save(); ctx.clip(); ctx.globalAlpha = alpha; if (blend) ctx.globalCompositeOperation = blend;
+    ctx.fillStyle = pat; ctx.fillRect(x, y, w, h); ctx.restore();
+  }
   function drawTree(x, y, sc) {
     const sway = Math.sin(animT * 1.1 + x * 0.12 + y * 0.05) * 1.3 * sc; // wind sway (canopy only)
     ctx.fillStyle = '#7a5230'; ctx.fillRect(x - 1.5 * sc, y, 3 * sc, 8 * sc);          // trunk
+    ctx.beginPath(); ctx.rect(x - 1.5 * sc, y, 3 * sc, 8 * sc); texClip('bark', x - 2 * sc, y, 4 * sc, 8 * sc, 0.7); // bark texture
     const r = 7 * sc, cxp = x + sway, cyp = y - 2 * sc;
     ctx.fillStyle = '#2f6d2f'; ball(cxp, cyp, r); ball(cxp - r * 0.6, cyp + 3 * sc, r * 0.8); ball(cxp + r * 0.6, cyp + 3 * sc, r * 0.8);
+    // leaf texture across the canopy (soft-light keeps the green)
+    ctx.beginPath(); ctx.arc(cxp, cyp + 1 * sc, r * 1.35, 0, 7); texClip('leaf', cxp - r * 1.4, cyp - r * 1.4, r * 2.8, r * 2.8, 0.5, 'soft-light');
     ctx.fillStyle = 'rgba(150,210,120,0.55)'; ball(cxp - r * 0.3, cyp - r * 0.5, r * 0.5);  // top-left highlight
     ctx.fillStyle = 'rgba(0,40,0,0.18)'; ball(cxp + r * 0.4, cyp + r * 0.3, r * 0.5);       // bottom-right shade
   }
   function drawBoulder(x, y, sc) {
     const r = 7 * sc;
     ctx.fillStyle = '#8a939b'; ball(x, y, r);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); texClip('stone', x - r, y - r, r * 2, r * 2, 0.5, 'soft-light'); // stone texture
     ctx.fillStyle = 'rgba(255,255,255,0.28)'; ball(x - r * 0.3, y - r * 0.35, r * 0.5);
     ctx.fillStyle = 'rgba(0,0,0,0.22)'; ball(x + r * 0.35, y + r * 0.3, r * 0.45);
   }
@@ -383,6 +394,7 @@ export function createRenderer(canvas, state, getView) {
     const w = TILE - 4, h = TILE * 0.5, x0 = cx - w / 2, y0 = cy - h / 2;
     ctx.fillStyle = shade(tier.color, -0.18); roundRect(x0, y0 + h * 0.5, w, h * 0.6, 4); ctx.fill();
     ctx.fillStyle = tier.color; roundRect(x0, y0, w, h, 6); ctx.fill();           // arched roof
+    texClip(/wood/i.test(tier.name) ? 'wood' : 'stone', x0, y0, w, h, 0.5, 'soft-light');
     ctx.fillStyle = 'rgba(255,255,255,0.18)'; roundRect(x0, y0, w, 3, 3); ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;                       // ribs
     for (let i = 1; i < 4; i++) { const rx = x0 + (w / 4) * i; ctx.beginPath(); ctx.moveTo(rx, y0 + 2); ctx.lineTo(rx, y0 + h - 2); ctx.stroke(); }
@@ -402,6 +414,7 @@ export function createRenderer(canvas, state, getView) {
     const w = TILE - 8, h = TILE * 0.6, x0 = cx - w / 2, y0 = cy - h / 2 + 2;
     ctx.fillStyle = shade(tier.color, -0.2); roundRect(x0, y0 + 3, w, h, 3); ctx.fill();   // shadow
     ctx.fillStyle = tier.color; roundRect(x0, y0, w, h, 3); ctx.fill();                     // body
+    texClip(/wood/i.test(tier.name) ? 'wood' : 'brick', x0, y0, w, h, 0.55, 'soft-light');   // wall material
     ctx.fillStyle = shade(tier.color, 0.12);                                                // crenellations
     const merlons = 3, mw = w / (merlons * 2 - 1);
     for (let i = 0; i < merlons; i++) ctx.fillRect(x0 + i * mw * 2, y0 - 3, mw, 5);
@@ -422,6 +435,7 @@ export function createRenderer(canvas, state, getView) {
     const w = TILE - 4, x0 = cx - w / 2, y0 = cy - 5;
     ctx.fillStyle = shade(tier.color, -0.18); roundRect(x0, y0 + 6, w, 7, 2); ctx.fill(); // under-beam shadow
     ctx.fillStyle = tier.color; roundRect(x0, y0, w, 10, 3); ctx.fill();                   // deck
+    texClip(/wood/i.test(tier.name) ? 'wood' : 'stone', x0, y0, w, 10, 0.5, 'soft-light');  // deck material
     ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;                               // planks
     for (let i = 1; i < 6; i++) { const px = x0 + (w / 6) * i; ctx.beginPath(); ctx.moveTo(px, y0 + 1); ctx.lineTo(px, y0 + 9); ctx.stroke(); }
     ctx.strokeStyle = shade(tier.color, 0.18); ctx.lineWidth = 2;                          // hand-rail + posts
