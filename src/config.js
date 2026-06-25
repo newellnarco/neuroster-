@@ -198,9 +198,9 @@ export const BUILDINGS = {
     cost: { stone: 15 }, category: 'Defense', defense: 2, protect: { wolf: 2, raid: 2 },
   },
   watchtower: {
-    name: 'Watchtower', icon: '🗼', desc: 'Ranged defense; spots threats; hits flyers.',
+    name: 'Watchtower', icon: '🗼', desc: 'Click to set its stance: 👁️ WATCH (wide vision / early warning, gentle) or 🗡️ DEFEND (stronger defense + offense, but a militarised stance costs morale).',
     cost: { wood: 20, stone: 30 }, category: 'Defense', defense: 8,
-    protect: { wolf: 3, hawk: 4, raid: 4 },
+    protect: { wolf: 3, hawk: 4, raid: 4 }, tower: true, towerOffense: 6,
   },
   tunnel: {
     name: 'Tunnel (Wood)', icon: '🛤️', desc: 'Covered run: rodents travel protected; blocks other animals crossing. Has HP, takes damage, and upgrades wood→iron→steel (click to upgrade/repair).',

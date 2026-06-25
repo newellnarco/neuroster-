@@ -70,7 +70,8 @@ export function protectionAgainst(state, key) {
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (b.underConstruction) continue;
-    if (def?.protect?.[key]) p += def.protect[key];
+    // Towers protect more in DEFEND stance, less while just on WATCH.
+    if (def?.protect?.[key]) p += def.protect[key] * (def.tower ? (b.mode === 'defend' ? 1 : 0.6) : 1);
     // Tiered forts (tunnels bar crossings; bridges hold floods) — protection
     // scales with tier & remaining HP.
     const ft = fortTiers(b.type);
@@ -91,7 +92,12 @@ export function protectionAgainst(state, key) {
 
 export function totalOffense(state) {
   let o = 0;
-  for (const b of state.buildings) if (!b.underConstruction) o += BUILDINGS[b.type]?.offense || 0;
+  for (const b of state.buildings) {
+    if (b.underConstruction) continue;
+    const def = BUILDINGS[b.type];
+    o += def?.offense || 0;
+    if (def?.tower && b.mode === 'defend') o += def.towerOffense || 0; // towers fight only when set to DEFEND
+  }
   for (const u of state.units) o += SPECIES[u.species]?.atk || 0; // soldiers (guinea pigs)
   return o;
 }

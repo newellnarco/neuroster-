@@ -278,6 +278,7 @@ export function createRenderer(canvas, state, getView) {
       ctx.fillStyle = '#bcab8b'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.20)'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, 3, 3); ctx.fill();
       glyph(BUILDINGS[b.type].icon, cx, cy - 3, TILE * 0.78);
+      if (BUILDINGS[b.type].tower) glyph(b.mode === 'defend' ? '🗡️' : '👁️', cx + 9, cy - 9, 11); // stance badge
       animateBuilding(cx, cy, b);
       // dirty / degraded burrow: buzzing flies and a grime tint
       if (BUILDINGS[b.type].breed && (b.dirt || 0) > 18) {

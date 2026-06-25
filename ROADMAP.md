@@ -114,6 +114,9 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] **Milestones & achievements** (first hybrid, day 30 survived, apex evolution…).
 
 ### 🔁 Change
+- [x] **Tower stances** — click a Watchtower to toggle 👁️ **Watch** (×0.6 defense but wide
+      vision/early-warning, no social cost) vs 🗡️ **Defend** (full defense + offense, but a
+      militarised stance drains morale & fun). Social-impact choice, fits the ethics theme.
 - [ ] Promote "Threats" panel into a fuller **Defense & Military** screen (offense raids vs AI colonies).
 - [ ] Expand the Evolution tree into species-specific branches (beaver dams, rat swarms…).
 - [ ] Per-unit need decay modified by traits (Vigor) — partially via evolutions; make per-unit Vigor matter.

@@ -99,6 +99,7 @@ export function placeBuilding(state, type, x, y) {
   const b = { id: state.nextId++, type, x, y, active: true };
   if (def.tunnel) { b.tier = 0; b.hp = TUNNEL_TIERS[0].hp; } // tunnels start at wood
   if (def.bridge) { b.tier = 0; b.hp = BRIDGE_TIERS[0].hp; } // bridges start at wood
+  if (def.tower) b.mode = 'watch'; // towers start peaceful (vision), toggle to defend
   if (def.townhall) b.tier = 0;
   // Start as a construction site; rodents build it over time before it works.
   b.underConstruction = true; b.progress = 0; b.buildTime = buildTimeFor(def.cost);
