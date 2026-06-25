@@ -79,6 +79,55 @@ matched to `main`, and `install-task.cmd` registers a Scheduled Task to run it e
 15 minutes. See [`scripts/windows/README.md`](scripts/windows/README.md). (Needs Git for
 Windows on `PATH` and credentials cached from your initial clone.)
 
+### Run on a Synology NAS from a shared Windows folder (live, no rebuilds)
+
+Pipeline: **GitHub → your PC** (auto-synced by the updater above) **→ NAS** (over the
+network) **→ any browser on your LAN**. The NAS serves the files straight from the shared
+folder using `docker-compose.nas.yml` (the official Node image — no build), so a new commit
+becomes live on the next browser refresh.
+
+**1. Share the repo folder on Windows.**
+- Share the repo folder **directly** so the share *is* the project root. File Explorer →
+  right-click `C:\github\neuroster-` → **Properties → Sharing → Advanced Sharing** → tick
+  **Share this folder**, set the share name (e.g. `neuroster`) → **Permissions** → allow
+  **Read** for the account the NAS will use → OK. This gives a path like
+  **`\\OFFICE\neuroster`** (PC name = `hostname`).
+- Ensure the network profile is **Private** and *File and Printer Sharing* is on.
+
+**2. Mount that share on the Synology.**
+- DSM → **Control Panel → Shared Folder → Create → Mount Remote Folder → SMB**.
+- Remote server = your PC's name/IP (e.g. `OFFICE`), shared folder = `neuroster`, with a
+  Windows account that can read it. In **File Station** the mounted folder should now show
+  `server.js`, `index.html`, `src/`, and `docker-compose.nas.yml` directly (it *is* the
+  repo root). *(Alternatively you can share the parent `C:\github` and point at the
+  `neuroster-` subfolder — same result.)*
+
+**3. Run it in Container Manager (live bind-mount, no build).**
+- **Container Manager → Project → Create.**
+  - **Path:** the mounted share folder (the one containing `docker-compose.nas.yml`).
+  - **Compose:** select / paste **`docker-compose.nas.yml`**.
+    ⚠️ Use *this* file, **not** the build `docker-compose.yml` — building an image over a
+    network share is slow and flaky; the NAS file just runs `node:20-alpine` and serves.
+  - Build & run. The NAS pulls `node:20-alpine` and starts the container; nothing compiles.
+- If port **8080** is busy on the NAS, create a file named `.env` in that folder containing
+  `BIND_PORT=8888`, then use that port.
+
+**4. Open it on the network.**
+- From any device on your LAN: **`http://<NAS-IP>:8080`** (or your `BIND_PORT`).
+- Health check: `http://<NAS-IP>:8080/healthz` → `ok`.
+
+**Updates** flow automatically: the Windows task pulls new commits → files change on the
+share → **refresh the browser** to see them (the server reads files fresh each request,
+with `Cache-Control: no-cache`). No rebuild, no restart.
+
+**Caveats.**
+- The NAS reads files over the network, so the **PC must be on** for the app to serve. For
+  an always-on server independent of the PC, use the GHCR prebuilt-image route above.
+- Bind-mounting a remote (SMB) folder into a container works on most DSM versions. If
+  Container Manager won't let you pick the mounted path as a volume, copy `neuroster-` into
+  a normal NAS shared folder instead (you then lose live-on-refresh and would re-sync or
+  rebuild manually).
+
 ### Controls
 - **Click** a building in the Build panel, then **click the map** to place it.
 - **Right-click** cancels placement. **Click an existing structure** to demolish it (50% refund).

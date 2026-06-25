@@ -1,0 +1,28 @@
+# docker-compose.nas.yml — run Neuroster on a NAS straight from a (bind-mounted)
+# source folder. No build and no image to maintain: the official Node image
+# serves the files live, so a `git pull` on the source shows up on the next
+# browser refresh.
+#
+# Intended for a source folder the NAS can reach — e.g. a Windows share kept in
+# sync by scripts/windows/update-neuroster.vbs and mounted on the Synology.
+# If host port 8080 is taken on the NAS, put BIND_PORT=8888 in a .env next to
+# this file and browse that port instead.
+services:
+  neuroster:
+    image: node:20-alpine
+    container_name: neuroster
+    working_dir: /app
+    command: node server.js
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8080
+    ports:
+      - "${BIND_PORT:-8080}:8080"
+    volumes:
+      - ./:/app:ro          # the source folder, mounted read-only and served live
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
