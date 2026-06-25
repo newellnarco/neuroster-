@@ -1,7 +1,7 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES } from './config.js';
-import { addRes, population, logMsg, wellbeingMul, evoBonus } from './state.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY } from './config.js';
+import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx } from './state.js';
 import { makeRodent, stepRodent, combineRodents } from './entities.js';
 import { stepEvents } from './events.js';
 import { stepEnvironment, envMods } from './environment.js';
@@ -54,10 +54,16 @@ export function stepEconomy(state, dt) {
   updateBreeding(state, dt);
   updateLoyalty(state, dt);
   stepEvents(state, dt);
+
+  // 9) Age out floating reward feedback.
+  if (state.fx && state.fx.length) {
+    const t = state.env.lived;
+    state.fx = state.fx.filter(f => t - f.born < f.life);
+  }
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0;
+  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def) continue;
@@ -67,11 +73,15 @@ function recomputeBuildings(state) {
     fun += def.curiosity || 0;
     health += def.health || 0;
     feeders += def.feeder || 0;
+    waterers += def.waterer || 0;
+    caretakers += def.caretaker || 0;
   }
-  // Evolutions can add a flat defense bonus.
+  // Caretaker huts auto-tend energy, fun & health — easing larger settlements.
+  fun += caretakers * 4; health += caretakers * 4;
   defense = Math.round(defense * (1 + evoBonus(state, 'all', 'defense')));
   state.popCap = popCap; state.storageCap = storage; state.defense = defense;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
+  state._waterers = waterers; state._caretakers = caretakers;
 }
 
 function runAutoMine(state, b, def, dt, wb) {
@@ -112,19 +122,23 @@ function powerMultiplier(state) {
 // Each rodent eats, drinks, gets bored, and ages its health independently.
 function updatePerUnitNeeds(state, dt, env) {
   const feederFactor = Math.max(0.4, 1 - (state._feeders || 0) * 0.15);
-  const funRecover = (state._funBld || 0) * 0.05 * dt;     // Playgrounds
-  const healthRecover = (state._healthBld || 0) * 0.04 * dt; // Infirmaries
+  const watererFactor = Math.max(0.4, 1 - (state._waterers || 0) * 0.15);
+  const funRecover = (state._funBld || 0) * 0.05 * dt;     // Playgrounds + caretakers
+  const healthRecover = (state._healthBld || 0) * 0.04 * dt; // Infirmaries + caretakers
+  const energyRecover = (state._caretakers || 0) * 0.6 * dt; // caretakers ease rest needs
   const envDrain = 1 + (env.needDrain || 0);
 
   for (const u of state.units) {
     const n = u.needs;
     const retain = Math.max(0.4, 1 - evoBonus(state, u.species, 'needRetain'));
+    u.bond = Math.max(0, (u.bond ?? 45) - BOND_DECAY * dt); // affection gently fades
 
     // Food & water: drain, then eat/drink from colony stores if running low.
     for (const key of ['food', 'water']) {
       const def = NEEDS[key];
       let drain = def.drain * dt * envDrain * retain;
       if (key === 'food') drain *= feederFactor;
+      if (key === 'water') drain *= watererFactor;
       n[key] = Math.max(0, n[key] - drain);
       if (n[key] < def.eatAt) {
         const want = dt * 0.9;
@@ -133,8 +147,9 @@ function updatePerUnitNeeds(state, dt, env) {
         n[key] = Math.min(100, n[key] + used * 7);
       }
     }
-    // Energy: gentle base drain while awake (work/sleep handled in entities).
-    if (u.phase !== 'sleep') n.energy = Math.max(0, n.energy - NEEDS.energy.drain * dt * retain);
+    // Energy: gentle base drain while awake (work/sleep handled in entities);
+    // caretakers passively top it up so big colonies need less hand-holding.
+    if (u.phase !== 'sleep') n.energy = Math.max(0, Math.min(100, n.energy - NEEDS.energy.drain * dt * retain + energyRecover));
     // Fun: boredom rises over time; Playgrounds & variety (entities) relieve it.
     n.fun = Math.max(0, Math.min(100, n.fun - NEEDS.fun.drain * dt + funRecover));
     // Health: drifts toward the average of the other needs; buildings heal;
@@ -172,12 +187,15 @@ function updateBreeding(state, dt) {
     }
     if (!child) child = makeRodent(state, 'hamster', sp.x, sp.y);
     state.units.push(child);
+    addFx(state, child.x, child.y, '🐣', 2);
     logMsg(state, child.hybridOf ? `✨ A hybrid ${SPECIES[child.species].name} was born (blended traits)!` : '🐹 A new hamster was born!');
   }
 }
 
 function updateLoyalty(state, dt) {
-  const wb = wellbeingMul(state);
+  // Bond (affection from hands-on care) makes rodents more loyal.
+  const avgBond = state.units.length ? state.units.reduce((a, u) => a + (u.bond ?? 45), 0) / state.units.length : 45;
+  const wb = wellbeingMul(state) + (avgBond - 45) / 220;
   if (wb < 0.62 && population(state) > 1) {
     state._unrest = (state._unrest || 0) + dt * (0.62 - wb) * 2;
     if (state._unrest >= 1) {

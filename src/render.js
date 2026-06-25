@@ -29,8 +29,23 @@ export function createRenderer(canvas, state, getView) {
     drawBuildings(t);
     drawRodents(t);
     drawHover(view);
+    drawFx();
     drawDayNight();
     drawWeather(t);
+  }
+
+  // Floating reward feedback rising & fading above the world.
+  function drawFx() {
+    const now = state.env?.lived || 0;
+    for (const f of state.fx || []) {
+      const age = now - f.born;
+      if (age < 0 || age > f.life) continue;
+      const k = age / f.life;
+      const px = f.x * TILE + TILE / 2, py = f.y * TILE + TILE / 2 - 14 - k * 22;
+      ctx.globalAlpha = 1 - k;
+      glyph(f.text, px, py, 15);
+      ctx.globalAlpha = 1;
+    }
   }
 
   // ---------- Terrain ----------

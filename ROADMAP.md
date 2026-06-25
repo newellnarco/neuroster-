@@ -47,6 +47,7 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 14 | Login-gated time (no offline progress) | ✅ Shipped | World is exactly as left |
 | 15 | Competing/cooperative AI colonies (diplomacy) | 🔴 Planned | Alliances, rivals, raids, trade |
 | 16 | Megaprojects & long-horizon goals | 🔴 Planned | Grand Wheel, Citadel; retention anchors |
+| 16b | Gamified care + engagement loop | ✅ Shipped | Hands-on Feed/Water/Play/Pet with reward FX, **bond** (affection→productivity+loyalty), caretaker/auto-waterer automation to ease scale |
 | 17 | Quests / achievements / notifications | 🔴 Planned | The "neurotic check-in" hook |
 | 18 | Art, audio & tutorial polish | 🔴 Planned | Sprites, SFX, onboarding |
 
@@ -113,6 +114,22 @@ Ranked by impact on the "build, maintain, keep coming back" fantasy:
 7. **Art & audio + tutorial** — once systems settle, polish converts curiosity to retention.
 
 ---
+
+## Engagement & pacing philosophy
+
+The game should **reward interaction without punishing absence-for-a-few-minutes**:
+- **Needs drain over minutes, not seconds** (tuned so a stocked colony is fine for a
+  while). 1 day = 15 min sets the rhythm.
+- **Hands-on care (Feed/Play/Pet/Water)** gives an instant boost + reward FX + **bond**
+  — the satisfying micro-interaction ("serotonin hit"). Cooldowns reward *periodic*
+  check-ins over frantic clicking.
+- **Bond → productivity & loyalty**: caring visibly pays off, but decays slowly so you
+  come back. Things **take time** (gather/build/level) so progress feels earned.
+- **Automation eases scale, never removes the player**: feeders, auto-waterers, caretaker
+  huts, conveyors, mines reduce micromanagement as colonies grow — but optimizing,
+  expanding, evolving and defending always invite more interaction.
+- **Next for retention:** notifications/milestones (Arc 17) and megaprojects (Arc 16),
+  plus a "while-you-were-away report" (status only — still no offline *progress*).
 
 ## Continue here (next session)
 

@@ -61,6 +61,14 @@ export const BUILDINGS = {
     name: 'Infirmary', icon: '🏥', desc: 'Tends sick & injured rodents. Raises Health.',
     cost: { planks: 20, iron: 5 }, category: 'Wellbeing', health: 6,
   },
+  autowater: {
+    name: 'Auto-Waterer', icon: '🚰', desc: 'Pipes water to rodents; slows the Water need drain.',
+    cost: { planks: 15, iron: 5 }, category: 'Wellbeing', waterer: 0.4,
+  },
+  caretaker: {
+    name: "Caretaker's Hut", icon: '🏡', desc: 'A caretaker auto-tends rodents\' energy, fun & health — run big colonies hands-free.',
+    cost: { planks: 30, iron: 10, food: 20 }, category: 'Wellbeing', caretaker: 1,
+  },
   sawmill: {
     name: 'Sawmill', icon: '🪚', desc: 'Refines Wood into Planks.',
     cost: { wood: 40, stone: 10 }, category: 'Production',
@@ -224,6 +232,19 @@ export const TRAITS = {
   wit:       { name: 'Wit',       icon: '🧠', desc: 'Research & curiosity output.',affects: ['research'],       perLevel: 0.15 },
 };
 export const TRAIT_BASE_COST = { research: 8, food: 10 }; // scales with level
+
+// ---- Hands-on care actions -------------------------------------------------
+// The player can directly tend an individual rodent for an instant need boost,
+// a little XP, and a big jump in BOND (affection). Cooldowns (seconds) keep it
+// from being spammed and reward periodic check-ins rather than constant clicking.
+// Bond raises productivity a touch and makes rodents loyal — caring pays off.
+export const CARE = {
+  feed:  { name: 'Feed',  icon: '🍽️', need: 'food',   amount: 35, cost: { food: 4 },  xp: 3, bond: 7,  cd: 8,  fx: '🍖' },
+  water: { name: 'Water', icon: '💧', need: 'water',  amount: 35, cost: { water: 4 }, xp: 3, bond: 7,  cd: 8,  fx: '💧' },
+  play:  { name: 'Play',  icon: '🪀', need: 'fun',    amount: 40, cost: {},            xp: 6, bond: 11, cd: 18, fx: '✨' },
+  pet:   { name: 'Pet',   icon: '❤️', need: 'health', amount: 18, cost: {},            xp: 2, bond: 16, cd: 14, fx: '❤️' },
+};
+export const BOND_DECAY = 0.04;   // per second; gentle, so daily care keeps it up
 
 // ---- Founder hamster: breeds & names ---------------------------------------
 // Players begin as a single "founder" hamster of a chosen breed. The breed

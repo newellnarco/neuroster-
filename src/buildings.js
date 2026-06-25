@@ -1,8 +1,26 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
-import { canAfford, spend, logMsg } from './state.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { canAfford, spend, logMsg, addFx } from './state.js';
 import { getTile, TERRAIN, inBounds } from './world.js';
-import { makeRodent } from './entities.js';
+import { makeRodent, gainXp } from './entities.js';
+
+// Hands-on care: tend a single rodent for an instant need boost + bond + XP.
+// Cooldowns reward periodic check-ins (not frantic clicking). Returns ok/reason.
+export function careFor(state, unit, kind) {
+  const c = CARE[kind];
+  if (!c || !unit) return { ok: false, reason: 'Unavailable' };
+  const now = state.env?.lived || 0;
+  const ready = (unit.careCd?.[kind] || 0);
+  if (now < ready) return { ok: false, reason: `${c.name} again in ${Math.ceil(ready - now)}s` };
+  if (!canAfford(state, c.cost)) return { ok: false, reason: 'Not enough resources' };
+  spend(state, c.cost);
+  unit.needs[c.need] = Math.min(100, (unit.needs[c.need] || 0) + c.amount);
+  unit.bond = Math.min(100, (unit.bond ?? 45) + c.bond);
+  gainXp(state, unit, c.xp);
+  unit.careCd = unit.careCd || {}; unit.careCd[kind] = now + c.cd;
+  addFx(state, unit.x, unit.y, c.fx, 1.4);
+  return { ok: true };
+}
 
 // The "main hamster" / player level = the highest level any rodent has reached.
 // It gates access to advanced content, rewarding long-term colony management.

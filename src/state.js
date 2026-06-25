@@ -24,6 +24,7 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     unlockedSpecies: { hamster: true },
     mods: { mineMul: 0, speedMul: 0, carryMul: 0, prodMul: 0, foodMul: 0, researchMul: 0, revealBonus: 0 },
     nextId: 1,
+    fx: [],
     log: [],
   };
 
@@ -112,6 +113,13 @@ export function evoBonus(state, species, key) {
     if (e.bonus?.[key]) b += e.bonus[key];
   }
   return b;
+}
+
+// Floating reward feedback (rising, fading text/emoji over the world).
+export function addFx(state, x, y, text, life = 1.6) {
+  if (!state.fx) state.fx = [];
+  state.fx.push({ x, y, text, born: state.env?.lived || 0, life });
+  if (state.fx.length > 80) state.fx.shift();
 }
 
 export function logMsg(state, msg) {

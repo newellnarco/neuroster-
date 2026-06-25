@@ -59,7 +59,11 @@ opening `index.html` directly via `file://` won't work because it uses ES module
 - **Predators & natural disasters**: wolves, hawks, raiders, floods, earthquakes —
   countered by defensive buildings and protective species; scaled by biome, weather,
   night, and your breed's difficulty.
-- **Loyalty**: a thriving colony attracts wild joiners; a neglected one loses rodents.
+- **Hands-on care**: select any rodent to **Feed / Water / Play / Pet** it for an instant
+  need boost, reward feedback, and **bond** (affection) that lifts its productivity and
+  loyalty. Cooldowns reward periodic check-ins; **caretaker huts & auto-waterers**
+  automate care so big colonies stay manageable.
+- **Loyalty**: a thriving, well-bonded colony attracts wild joiners; a neglected one loses rodents.
 - **Persistent, login-gated time**: autosaves; there is **no offline progress** — the
   world is exactly as you left it.
 

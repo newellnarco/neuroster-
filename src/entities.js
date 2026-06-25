@@ -1,7 +1,7 @@
 // entities.js — rodent units: stats, per-creature needs, sleep, levels, AI,
 // and trait combination (breeding).
 import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H } from './config.js';
-import { traitMul, wellbeingMul, addRes, evoBonus } from './state.js';
+import { traitMul, wellbeingMul, addRes, evoBonus, addFx } from './state.js';
 import { isNight } from './environment.js';
 
 let _id = 1;
@@ -25,6 +25,8 @@ export function makeRodent(state, species, x, y) {
     progress: 0,
     // per-creature needs (0..100)
     needs: { food: 85, water: 85, energy: 90, fun: 75, health: 100 },
+    bond: 45,          // affection toward the player; raised by hands-on care
+    careCd: {},        // per-action cooldown timestamps (lived seconds)
     level: 1, xp: 0, skillPoints: 0,
     traits: {},
     prefKind: PREF_ORDER[count % PREF_ORDER.length],
@@ -37,7 +39,8 @@ export function productivity(state, u) {
   const sustenance = (n.food + n.water + n.energy + n.fun) / 4;   // 0..100
   const base = 0.3 + 0.7 * (sustenance / 100);
   const health = 0.5 + 0.5 * (n.health / 100);
-  return Math.max(0.12, base * health);
+  const bond = 1 + ((u.bond ?? 50) - 50) / 600; // affection gives a small lift
+  return Math.max(0.12, base * health * bond);
 }
 // Day/night alignment with the species' natural active phase.
 export function activityMul(state, u) {
@@ -72,6 +75,7 @@ export function gainXp(state, u, amt) {
     u.xp -= xpForLevel(u.level);
     u.level++;
     u.skillPoints++;
+    addFx(state, u.x, u.y, `⭐Lv.${u.level}`, 1.8);
   }
 }
 

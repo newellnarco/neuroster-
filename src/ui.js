@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, SLEEP, TILE, xpForLevel } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, TILE, xpForLevel } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight } from './environment.js';
 
@@ -119,12 +119,22 @@ export function createUI(state, ctx) {
         return `<button class="trait ${can ? '' : 'poor'}" data-unit="${u.id}" data-trait="${tid}"
           title="${td.name}: ${td.desc}\n${free ? 'Free with a skill point' : 'Next: ' + costStr(cost)}">${td.icon}${'•'.repeat(lvl) || '–'}</button>`;
       }).join('');
+      const name = u.founder ? `♛ ${u.name}` : `#${u.id}`;
+      const bond = Math.round(u.bond ?? 45);
+      const now = state.env?.lived || 0;
+      const care = view.selUnit === u.id ? `<div class="care">${Object.entries(CARE).map(([k, c]) => {
+        const cd = (u.careCd?.[k] || 0) - now;
+        const ready = cd <= 0;
+        return `<button class="carebtn ${ready ? '' : 'cd'}" data-care="${k}" data-cu="${u.id}"
+          title="${c.name}: +${c.amount} ${NEEDS[c.need].name}, +${c.bond} bond${Object.keys(c.cost).length ? ' · ' + costStr(c.cost) : ''}">
+          ${c.icon}${ready ? '' : ` ${Math.ceil(cd)}s`}</button>`;
+      }).join('')}</div>` : '';
       return `<div class="unit ${sel}" data-selunit="${u.id}">
-        <div class="uhead">${sp.icon} #${u.id} ${phase}${hybrid}
+        <div class="uhead">${sp.icon} ${name} ${phase}${hybrid}
           <span class="lvl">Lv.${u.level}${u.skillPoints ? ` · ⭐${u.skillPoints}` : ''}</span>
           <span class="xpbar"><span style="width:${Math.min(100, 100 * u.xp / xpForLevel(u.level))}%"></span></span>
-          <span class="sub">${sleepInfo}</span></div>
-        <div class="traits">${traits}</div></div>`;
+          <span class="sub">❤️${bond} · ${sleepInfo}</span></div>
+        <div class="traits">${traits}</div>${care}</div>`;
     }).join('');
 
     el('tab-rodents').innerHTML = recruitHtml +
@@ -135,6 +145,11 @@ export function createUI(state, ctx) {
     bind('[data-trait]', (btn) => {
       const u = state.units.find(x => x.id == btn.dataset.unit);
       if (u) msg(upgradeTrait(state, u, btn.dataset.trait));
+      renderRodents();
+    });
+    bind('[data-care]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.cu);
+      if (u) msg(careFor(state, u, btn.dataset.care));
       renderRodents();
     });
     bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
