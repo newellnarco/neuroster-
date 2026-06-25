@@ -486,7 +486,7 @@ export function createUI(state, ctx) {
     });
   }
 
-  return { init, update, flash,
+  return { init, update, flash, newColony: showCharacterCreation,
     renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderLog(); renderAlerts(); renderGuide(); } };
 }
 

@@ -1,6 +1,9 @@
 // config.js — all tunable game data lives here (data-driven design).
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
+// Bump this whenever you ship a change you want to identify in-game.
+export const VERSION = 'v0.2.0';
+
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
 export const GRID_H = 28;        // world height in tiles

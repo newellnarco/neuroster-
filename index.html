@@ -7,8 +7,24 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Startup / loading screen (shown every launch) -->
+  <div id="splash" class="splash">
+    <div class="splash-inner">
+      <div class="splash-title">🐹 <b>Neuroster</b></div>
+      <div class="splash-sub">A hamster colony world-builder</div>
+      <div class="splash-progress"><div id="splash-bar" class="splash-bar"></div></div>
+      <div id="splash-loadtext" class="splash-loadtext">Loading…</div>
+      <div id="splash-menu" class="splash-menu hidden">
+        <button id="splash-continue" class="splash-btn primary">▶ Continue</button>
+        <button id="splash-new" class="splash-btn">🆕 New Colony</button>
+      </div>
+      <div id="splash-hint" class="splash-hint"></div>
+    </div>
+    <div id="splash-version" class="splash-version"></div>
+  </div>
+
   <header id="topbar">
-    <div class="brand">🐹 <b>Neuroster</b></div>
+    <div class="brand">🐹 <b>Neuroster</b> <span id="app-version" class="ver"></span></div>
     <div id="resbar" class="resbar"></div>
     <div class="spacer"></div>
     <div class="controls">
