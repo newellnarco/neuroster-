@@ -545,6 +545,16 @@ export function createUI(state, ctx) {
   // ---- Canvas interaction ----
   function setupCanvas() {
     const c = ctx.canvas;
+    // Zoom: scale the canvas' CSS width; #board scrolls to pan when zoomed in.
+    const board = c.parentElement;
+    if (view.zoom == null) view.zoom = 1;
+    const applyZoom = () => { c.style.width = Math.round(view.zoom * 100) + '%'; };
+    const setZoom = (z) => { view.zoom = Math.max(0.6, Math.min(3.5, z)); applyZoom(); };
+    applyZoom();
+    el('zoom-in') && (el('zoom-in').onclick = () => setZoom(view.zoom + 0.25));
+    el('zoom-out') && (el('zoom-out').onclick = () => setZoom(view.zoom - 0.25));
+    el('zoom-reset') && (el('zoom-reset').onclick = () => setZoom(1));
+    board.addEventListener('wheel', (e) => { e.preventDefault(); setZoom(view.zoom + (e.deltaY < 0 ? 0.2 : -0.2)); }, { passive: false });
     const toTile = (e) => {
       // Map screen → tile via the LOGICAL world grid, independent of the canvas'
       // HiDPI backing resolution (c.width is devicePixelRatio-scaled).

@@ -49,9 +49,14 @@
   <main id="stage">
     <div id="board">
       <canvas id="game"></canvas>
+      <div id="zoomctl">
+        <button id="zoom-out" title="Zoom out (scroll down)">−</button>
+        <button id="zoom-reset" title="Reset zoom">⤢</button>
+        <button id="zoom-in" title="Zoom in (scroll up)">＋</button>
+      </div>
       <div id="flash" class="flash"></div>
       <div id="guide" class="guide hidden"></div>
-      <div class="hotkeys">Space = pause · 1/2/3 = speed · Click building to place · Right-click cancels · Click a structure to demolish</div>
+      <div class="hotkeys">Scroll = zoom · Space = pause · 1/2/3 = speed · Click a hamster to care for it · Click a building to place · Right-click cancels</div>
     </div>
 
     <aside id="sidebar">
