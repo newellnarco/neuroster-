@@ -32,6 +32,21 @@ export function setupLayout() {
     log.style.height = h + 'px'; set('neuroster.logH', Math.round(h));
   });
 
+  // Collapse / hide toggles sitting ON the dividers (modular panels).
+  const wireCollapse = (btn, target, key, hidChar, showChar) => {
+    if (!btn || !target) return;
+    if (get(key) === '1') { target.classList.add('collapsed'); btn.textContent = hidChar; }
+    btn.addEventListener('pointerdown', (e) => e.stopPropagation()); // don't begin a drag
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const hid = target.classList.toggle('collapsed');
+      btn.textContent = hid ? hidChar : showChar;
+      set(key, hid ? '1' : '0');
+    });
+  };
+  wireCollapse(document.getElementById('vcollapse'), sidebar, 'neuroster.sidebarHid', '‹', '›');
+  wireCollapse(document.getElementById('hcollapse'), log, 'neuroster.logHid', '⌃', '⌄');
+
   setupPinTooltips();
 }
 

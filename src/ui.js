@@ -594,6 +594,24 @@ export function createUI(state, ctx) {
     el('zoom-out') && (el('zoom-out').onclick = () => setZoom(view.zoom - 0.25));
     el('zoom-reset') && (el('zoom-reset').onclick = () => setZoom(1));
     board.addEventListener('wheel', (e) => { e.preventDefault(); setZoom(view.zoom + (e.deltaY < 0 ? 0.2 : -0.2)); }, { passive: false });
+    // Right-button drag pans the (zoomed) map; a plain right-click still cancels
+    // a held building. `board` is the #viewport scroller.
+    let panning = false, panMoved = false, psx = 0, psy = 0, pl = 0, pt = 0;
+    board.addEventListener('pointerdown', (e) => {
+      if (e.button !== 2) return;
+      panning = true; panMoved = false; psx = e.clientX; psy = e.clientY; pl = board.scrollLeft; pt = board.scrollTop;
+      try { board.setPointerCapture(e.pointerId); } catch {}
+      board.classList.add('panning'); e.preventDefault();
+    });
+    board.addEventListener('pointermove', (e) => {
+      if (!panning) return;
+      const dx = e.clientX - psx, dy = e.clientY - psy;
+      if (Math.abs(dx) + Math.abs(dy) > 3) panMoved = true;
+      board.scrollLeft = pl - dx; board.scrollTop = pt - dy;
+    });
+    const endPan = () => { panning = false; board.classList.remove('panning'); };
+    board.addEventListener('pointerup', endPan);
+    board.addEventListener('pointercancel', endPan);
     const toTile = (e) => {
       // Map screen → tile via the LOGICAL world grid, independent of the canvas'
       // HiDPI backing resolution (c.width is devicePixelRatio-scaled).
@@ -635,7 +653,7 @@ export function createUI(state, ctx) {
       if (b && BUILDINGS[b.type].breed && (b.dirt || 0) >= 1) { const r = cleanBurrow(state, b); flash(r.ok ? '🧹 Burrow cleaned' : r.reason || ''); return; }
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
-    c.addEventListener('contextmenu', (e) => { e.preventDefault(); view.placing = null; renderBuild(); });
+    c.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!panMoved) { view.placing = null; renderBuild(); } });
     // Escape also drops the held building → back to the arrow/select cursor.
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && view.placing) { view.placing = null; renderBuild(); flash('↩︎ Back to select'); } });
   }
