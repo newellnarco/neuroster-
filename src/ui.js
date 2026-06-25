@@ -23,9 +23,10 @@ export function createUI(state, ctx) {
     const order = ['wood', 'stone', 'ironore', 'coal', 'seeds', 'water', 'food', 'planks', 'iron', 'power', 'research'];
     el('resbar').innerHTML = order.map(k => {
       const r = RESOURCES[k];
-      return `<span class="res" title="${r.name}">${r.icon}<b>${fmt(state.res[k] || 0)}</b></span>`;
+      const tip = `${r.icon} ${r.name} — ${RESDESC[k] || 'a colony resource'} (click to pin)`;
+      return `<span class="res" title="${escHtml(tip)}">${r.icon}<b>${fmt(state.res[k] || 0)}</b></span>`;
     }).join('') +
-      `<span class="res storage" title="Storage used / cap">📦<b>${fmt(totalStored(state))}/${state.storageCap}</b></span>`;
+      `<span class="res storage" title="Storage used / cap — build Storage Depots to raise the cap; surplus over the cap is wasted (click to pin)">📦<b>${fmt(totalStored(state))}/${state.storageCap}</b></span>`;
   }
 
   // ---- Environment bar (biome, day/clock, weather, level, defense) ----
@@ -670,6 +671,20 @@ export function createUI(state, ctx) {
     renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderDoctrine(); renderLog(); renderAlerts(); renderGuide(); } };
 }
 
+// Short, plain-language notes shown when you click a resource chip.
+const RESDESC = {
+  wood: 'gathered from trees; the basic building material',
+  stone: 'gathered from rock; sturdier builds & walls',
+  ironore: 'mined underground; smelt it into Iron',
+  coal: 'mined; fuels smelting & coal power (pollutes)',
+  seeds: 'planted in Farms to grow Food',
+  water: 'from wells/ponds; rodents must drink',
+  food: 'feeds your colony — keep it stocked',
+  planks: 'refined wood (Sawmill); for advanced builds',
+  iron: 'refined ore (Smelter); for tough structures',
+  power: 'from wheels/solar/hydro/coal; runs machines',
+  research: 'earned by labs & milestones; spend on Skills',
+};
 function moraleIcon(m) { m = m ?? 100; return m >= 70 ? '😊' : m >= 45 ? '😐' : m >= 25 ? '😟' : '😢'; }
 function escHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function fmt(n) { n = Math.floor(n); return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : '' + n; }
