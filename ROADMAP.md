@@ -189,9 +189,9 @@ back-filled onto old saves via `ensureCamps`).
    let players send their own caravans (trade missions) or war parties back.
 2. **True pathfinding** (bigger refactor) — makes tunnels physically gate movement,
    gophers travel underground, and dams use real river geography (currently abstracted).
-3. **Audio + tutorial/onboarding** — ✅ both shipped (synthesised `audio.js` cues + 🔊
-   toggle; first-run How-to-Play overlay). Next polish: an ambient day/night soundscape
-   and a guided first-session "do this next" flow.
+3. **Audio + tutorial/onboarding** — ✅ shipped: synthesised `audio.js` cues + 🔊 toggle,
+   a first-run How-to-Play overlay, AND a **Getting-started checklist** that auto-ticks
+   first steps. Next polish: an ambient day/night soundscape and contextual tips.
 4. **Multiple named save slots** — export/import landed; per-slot management is the
    remaining piece (UI for naming/listing/switching colonies).
 5. **More megaprojects & a megaproject site on the map** — currently abstract (contribute
