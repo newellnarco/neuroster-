@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.2.7';
+export const VERSION = 'v0.3.0';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
@@ -160,11 +160,11 @@ export const BUILDINGS = {
   smelter: {
     name: 'Smelter', icon: '🔥', desc: 'Smelts Iron Ore + Coal into Iron.',
     cost: { wood: 30, stone: 40 }, category: 'Production',
-    produces: { iron: 0.3 }, consumes: { ironore: 0.5, coal: 0.3 },
+    produces: { iron: 0.3 }, consumes: { ironore: 0.5, coal: 0.3 }, pollutes: 0.8,
   },
   steelworks: {
-    name: 'Steelworks', icon: '🏭', desc: 'Forges Iron + Coal into Steel for the toughest structures.',
-    cost: { stone: 50, iron: 20 }, category: 'Production',
+    name: 'Steelworks', icon: '🏭', desc: 'Forges Iron + Coal into Steel for the toughest structures. Burning coal pollutes.',
+    cost: { stone: 50, iron: 20 }, category: 'Production', pollutes: 1.0,
     produces: { steel: 0.25 }, consumes: { iron: 0.4, coal: 0.3 },
   },
   mine: {
@@ -172,9 +172,29 @@ export const BUILDINGS = {
     cost: { wood: 40, planks: 10 }, category: 'Extraction', mine: true, radius: 1, rate: 1.2,
   },
   wheel: {
-    name: 'Wheel Generator', icon: '🎡', desc: 'Rodents run wheels: Food → Power.',
+    name: 'Wheel Generator', icon: '🎡', desc: 'Rodents run wheels: Food → Power. Clean, but modest.',
     cost: { wood: 35, planks: 5 }, category: 'Automation',
     produces: { power: 0.6 }, consumes: { food: 0.4 },
+  },
+  electricwheel: {
+    name: 'Electric Wheel', icon: '🔌', desc: 'A dynamo wheel — far more Power per Food than a plain wheel, with only a faint exhaust.',
+    cost: { planks: 20, iron: 15 }, category: 'Automation',
+    produces: { power: 1.1 }, consumes: { food: 0.4 }, pollutes: 0.4,
+  },
+  coalplant: {
+    name: 'Coal Plant', icon: '🏭', desc: 'Burns Coal for abundant Power — but belches Pollution that poisons farms & sickens rodents. Plant trees or go green (solar/hydro/wheels) to offset it.',
+    cost: { stone: 50, iron: 20 }, category: 'Automation',
+    produces: { power: 1.7 }, consumes: { coal: 0.5 }, pollutes: 2.2,
+  },
+  solar: {
+    name: 'Solar Panel', icon: '🔆', desc: 'Clean Power from sunlight — strong at midday, NOTHING at night, and weak in fog, snow & storms. Reliable only when the sun cooperates.',
+    cost: { planks: 20, iron: 15, plastic: 8 }, category: 'Automation',
+    produces: { power: 1.3 }, solar: true,
+  },
+  hydro: {
+    name: 'Water Turbine', icon: '🌀', desc: 'Clean Power from flowing water (place by a pond/river). But it chokes the flow: too many turbines (or beaver Dams) starve water sources upstream.',
+    cost: { planks: 25, iron: 20 }, category: 'Automation',
+    produces: { power: 1.2 }, needsWater: true, radius: 3, upstreamPenalty: true,
   },
   conveyor: {
     name: 'Conveyor (Wood)', icon: '🛞', desc: 'Animated belt: auto-moves a nearby node\'s output to storage.',
@@ -190,7 +210,7 @@ export const BUILDINGS = {
   },
   refinery: {
     name: 'Refinery', icon: '🛢️', desc: 'Refines Coal into Plastic for advanced belts & parts.',
-    cost: { stone: 40, iron: 20 }, category: 'Production', produces: { plastic: 0.3 }, consumes: { coal: 0.4 },
+    cost: { stone: 40, iron: 20 }, category: 'Production', produces: { plastic: 0.3 }, consumes: { coal: 0.4 }, pollutes: 0.9,
   },
   lab: {
     name: 'Research Lab', icon: '🔬', desc: 'Generates Research points.',
@@ -483,6 +503,22 @@ export const WETTAIL = {
 };
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
+
+// ---- Pollution -------------------------------------------------------------
+// Coal-burning industry (coal plant, smelter, steelworks, refinery, electric
+// wheel) emits Pollution (0..100). It drifts down on its own and is scrubbed by
+// living TREES, so planting/keeping forests offsets dirty power. High pollution
+// poisons the land — farms yield less — and sickens rodents (health drains).
+// Clean power (wheels, solar, hydro) emits none. The classic green tradeoff.
+export const POLLUTION = {
+  rise: 0.05,         // per second per unit of a running building's `pollutes`
+  treeScrub: 0.012,   // per second per living tree node (forests clean the air)
+  decay: 0.03,        // natural dispersal per second
+  farmAt: 25,         // above this, farm yield starts to suffer
+  farmMax: 0.5,       // up to −50% food output at 100 pollution
+  sickAt: 45,         // above this, rodents' health drains
+  healthDrain: 0.05,  // per second at full pollution, scaled above sickAt
+};
 
 // Burrows get dirty as hamsters live in them. Left uncleaned they leak filth
 // (wet-tail risk) and eventually DEGRADE — losing their housing & breeding value

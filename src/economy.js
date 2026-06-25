@@ -9,8 +9,8 @@ import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from '.
 import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
-import { stepEnvironment, envMods, seasonKey, currentSeason } from './environment.js';
-import { SEASONS } from './config.js';
+import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction } from './environment.js';
+import { SEASONS, POLLUTION } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -43,6 +43,11 @@ export function stepEconomy(state, dt) {
   const upstreamMul = Math.max(0.3, 1 - 0.3 * dams);
   // Weather can rain extra water into stores.
   if (env.waterGain) addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4));
+  const sun = solarFactor(state); // 0..1 daylight×weather, for solar panels
+  let pollSrc = 0;                 // pollution emitted by running industry this tick
+  // Pollution above a threshold poisons farmland (cuts food yield).
+  const poll = state.pollution || 0;
+  const pollFarm = poll > POLLUTION.farmAt ? Math.min(POLLUTION.farmMax, (poll - POLLUTION.farmAt) / (100 - POLLUTION.farmAt) * POLLUTION.farmMax) : 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.active === false || b.underConstruction) continue;
@@ -56,9 +61,11 @@ export function stepEconomy(state, dt) {
       if ((state.fertileUntil || 0) > (state.env.lived || 0)) bonus += 0.6;
       if (def.fertileBonus && isFertile(state.world, b.x, b.y)) bonus += 0.8;
       if ((state.res.fertilizer || 0) > 0) { bonus += FERTILIZER_BOOST; state.res.fertilizer = Math.max(0, state.res.fertilizer - 0.05 * dt); }
-      rate *= (1 + bonus);
+      bonus -= pollFarm; // smog poisons the crops
+      rate *= Math.max(0.1, 1 + bonus);
     }
     if (def.category === 'Production') rate *= (1 + state.mods.prodMul + (mega.prodMul || 0) + (doc.prodMul || 0));
+    if (def.solar) rate *= sun; // solar panels follow the sun (and clear skies)
     if (def.produces?.power) rate *= (1 + env.powerGain);
     if (def.produces?.research) rate *= (1 + (state.mods.researchMul || 0) + evoBonus(state, 'all', 'research'));
 
@@ -72,7 +79,9 @@ export function stepEconomy(state, dt) {
       const r = (k === 'water' && !def.upstreamPenalty) ? rate * upstreamMul : rate;
       addRes(state, k, v * r);
     }
+    if (def.pollutes && rate > 0) pollSrc += def.pollutes; // running industry emits smog
   }
+  state._pollSrc = pollSrc;
   // Remove any mines that collapsed this tick (deposit exhausted).
   if (state._collapse && state._collapse.length) {
     for (const b of state._collapse) { const i = state.buildings.indexOf(b); if (i >= 0) state.buildings.splice(i, 1); }
@@ -129,6 +138,7 @@ export function stepEconomy(state, dt) {
     state.morale = Math.min(100, (state.morale ?? 100) + pride * dt);
     for (const u of state.units) u.needs.fun = Math.min(100, u.needs.fun + pride * 0.5 * dt);
   }
+  stepPollution(state, dt); // coal smog rises from industry, scrubbed by forests
 
   // 9) Milestones (throttled) — concrete goals + reward drip.
   state._mileT = (state._mileT || 0) + dt;
@@ -594,6 +604,32 @@ function stepRescues(state, dt) {
   reveal(state.world, x, y, 2);
   addFx(state, x, y, '💗', 2.2);
   logMsg(state, `🐾 A lost ${SPECIES[species]?.name || 'animal'} appeared nearby — click it to take it in and give it a home.`);
+}
+
+// Solar output factor (0..1): follows daylight (peaks at noon, zero at night)
+// and the weather (clear skies best; fog/snow/storm dim the panels).
+function solarFactor(state) {
+  const f = dayFraction(state);
+  let day = 0;
+  if (f > 0.25 && f < 0.75) day = Math.sin((f - 0.25) / 0.5 * Math.PI); // 0 → 1 → 0
+  const wk = { clear: 1, wind: 0.9, humid: 0.85, drought: 1, rain: 0.5, fog: 0.4, snow: 0.45, storm: 0.3 };
+  return Math.max(0, day * (wk[state.env?.weather] ?? 0.8));
+}
+
+// Coal smog rises from running industry, disperses on its own, and is scrubbed
+// by living forests. High pollution poisons crops (handled in production) and
+// drains rodents' health here.
+function stepPollution(state, dt) {
+  let trees = 0;
+  for (const n of state.world.nodes) if (n.kind === 'trees' && n.amount > 0) trees++;
+  const rise = (state._pollSrc || 0) * POLLUTION.rise;
+  const fall = trees * POLLUTION.treeScrub + POLLUTION.decay;
+  state.pollution = Math.max(0, Math.min(100, (state.pollution || 0) + (rise - fall) * dt));
+  const p = state.pollution;
+  if (p > POLLUTION.sickAt) {
+    const d = (p - POLLUTION.sickAt) / (100 - POLLUTION.sickAt) * POLLUTION.healthDrain * dt;
+    for (const u of state.units) u.needs.health = Math.max(0, u.needs.health - d);
+  }
 }
 
 function updateLoyalty(state, dt) {

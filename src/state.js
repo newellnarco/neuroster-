@@ -35,6 +35,7 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     compassion: 50, // colony virtue: kindness, generosity & care raise it
     justice: 50,    // colony virtue: fair, firm order — the moral counterweight
     valor: 20,      // martial pride — morally neutral; rises by winning fights, breeds a proud, fierce colony
+    pollution: 0,   // coal-industry smog (0..100): hurts farms & health; trees scrub it
     honored: [],    // names of the fallen, remembered by a Hall of Heroes
     bodies: [],
     log: [],

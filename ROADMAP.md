@@ -28,6 +28,8 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 
 ## Arcs
 
+| 20 | ⚡ Power variety + 🏭 Pollution | ✅ Shipped | New power buildings with real tradeoffs: **Coal Plant** (abundant power, heavy pollution), **Solar Panel** (clean but sun/weather-dependent — nothing at night, weak in fog/snow/storm), **Water Turbine** (clean power but throttles water flow **upstream**, like beaver Dams), **Electric Wheel** (more power/food, faint exhaust). New **Pollution** stat (0–100): coal industry (coal plant, smelter, steelworks, refinery, electric wheel) emits smog that **poisons farm yield** and **sickens rodents** when high; **forests scrub it**, clean power emits none. 🏭 env chip. **Next:** furnace/forge/mason/statues + plant-trees; hamster balls; oak→squirrel/nut economy. |
+
 | # | Arc | Status | Notes |
 |---|-----|--------|-------|
 | 1 | Core loop: gather → store → refine → build | ✅ Shipped | Workers auto-gather/haul; refining via Sawmill/Smelter |
