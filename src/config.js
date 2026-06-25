@@ -26,6 +26,7 @@ export const RESOURCES = {
   planks:   { name: 'Planks',   icon: '🟫', kind: 'refined', color: '#caa05a' },
   iron:     { name: 'Iron',     icon: '🔩', kind: 'refined', color: '#cfd6dd' },
   steel:    { name: 'Steel',    icon: '⚙️', kind: 'refined', color: '#9fb0c4' },
+  plastic:  { name: 'Plastic',  icon: '🟦', kind: 'refined', color: '#6fa8dc' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
   research: { name: 'Research', icon: '🔬', kind: 'abstract', color: '#7e9cff' },
 };
@@ -148,9 +149,17 @@ export const BUILDINGS = {
     name: 'Conveyor (Wood)', icon: '🛞', desc: 'Animated belt: auto-moves a nearby node\'s output to storage.',
     cost: { wood: 30, planks: 10 }, category: 'Automation', belt: { rate: 1.0, tier: 1 }, radius: 2, needsNode: true,
   },
+  conveyorPlastic: {
+    name: 'Conveyor (Plastic)', icon: '🟦', desc: 'Faster plastic belt: better throughput than wood.',
+    cost: { plastic: 20, planks: 10 }, category: 'Automation', belt: { rate: 1.6, tier: 2 }, radius: 2, needsNode: true,
+  },
   conveyorMetal: {
-    name: 'Conveyor (Metal)', icon: '⚙️', desc: 'Faster metal belt: higher throughput from nearby nodes.',
-    cost: { planks: 20, iron: 20 }, category: 'Automation', belt: { rate: 2.2, tier: 3 }, radius: 3, needsNode: true,
+    name: 'Conveyor (Metal)', icon: '⚙️', desc: 'Fastest metal belt: highest throughput from nearby nodes.',
+    cost: { planks: 20, iron: 20 }, category: 'Automation', belt: { rate: 2.4, tier: 3 }, radius: 3, needsNode: true,
+  },
+  refinery: {
+    name: 'Refinery', icon: '🛢️', desc: 'Refines Coal into Plastic for advanced belts & parts.',
+    cost: { stone: 40, iron: 20 }, category: 'Production', produces: { plastic: 0.3 }, consumes: { coal: 0.4 },
   },
   lab: {
     name: 'Research Lab', icon: '🔬', desc: 'Generates Research points.',

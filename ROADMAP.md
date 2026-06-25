@@ -72,9 +72,9 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] Balance pass: tune drains/yields once conveyors & more buildings land.
 
 ### ➕ Add
-- [x] **Conveyor belts** (wood + metal tiers) auto-move resources from nearby nodes to
-      storage, animated. ↳ still to add: **plastic tier** + **multi-segment belt networks**
-      (chain belts node→belt→belt→storage with direction).
+- [x] **Conveyor belts** — all three tiers now shipped: **wood → plastic → metal**
+      (plastic from a new Refinery: coal → plastic). Still to add: **multi-segment belt
+      networks** (chain belts node→belt→belt→storage with direction).
 - [ ] **True isometric/dimetric camera** — current view is a faux-3D 3/4 angle (depth via
       tile bevels, shadows & raised objects) that keeps the grid 1:1 for exact clicking.
       A real iso projection (+ inverse picking) would deepen the WC2/WC3 feel; larger refactor.

@@ -267,7 +267,7 @@ export function createRenderer(canvas, state, getView) {
       ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(cx, cy + TILE * 0.30, 11, 4.5, 0, 0, 7); ctx.fill();
       if (b.underConstruction) { drawSite(cx, cy, b, t); continue; }
       if (b.type === 'wheel') { drawWheel(cx, cy - 3, t, b); continue; }
-      if (b.type === 'conveyor' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
+      if (b.type === 'conveyor' || b.type === 'conveyorPlastic' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }
       if (BUILDINGS[b.type].tunnel) { drawTunnel(cx, cy, b); continue; }
       if (BUILDINGS[b.type].townhall) { drawTownhall(cx, cy, b); continue; }
@@ -300,7 +300,9 @@ export function createRenderer(canvas, state, getView) {
   }
   function g2() { return ctx; }
   const isTunnel = (nb) => !!BUILDINGS[nb.type]?.tunnel;
-  const isBelt = (nb) => nb.type === 'conveyor' || nb.type === 'conveyorMetal';
+  const isBelt = (nb) => nb.type === 'conveyor' || nb.type === 'conveyorPlastic' || nb.type === 'conveyorMetal';
+  const beltColor = (b) => b.type === 'conveyorMetal' ? '#6b7178' : b.type === 'conveyorPlastic' ? '#5a8fc2' : '#7a5a36';
+  const beltRoller = (b) => b.type === 'conveyorMetal' ? '#aeb4bb' : b.type === 'conveyorPlastic' ? '#9fc4e8' : '#caa05a';
   const isFacility = (nb) => ['storage', 'burrow', 'townhall'].includes(nb.type);
 
   // Covered tunnel section: colour by tier (wood/iron/steel) with an HP bar.
@@ -432,18 +434,19 @@ export function createRenderer(canvas, state, getView) {
   }
 
   function drawConveyor(cx, cy, t, b) {
-    const metal = b.type === 'conveyorMetal';
-    drawConnectors(cx, cy, b, metal ? '#6b7178' : '#7a5a36', (nb) => isBelt(nb) || isFacility(nb));
+    const col = beltColor(b), roller = beltRoller(b);
+    const speed = b.type === 'conveyorMetal' ? 1.8 : b.type === 'conveyorPlastic' ? 1.3 : 1;
+    drawConnectors(cx, cy, b, col, (nb) => isBelt(nb) || isFacility(nb));
     const w = TILE - 4, h = TILE * 0.42, x0 = cx - w / 2, y0 = cy - h / 2;
-    const flow = (b._flow ? 1 : 0.25) * (metal ? 1.8 : 1);
-    ctx.fillStyle = metal ? '#6b7178' : '#7a5a36'; roundRect(x0, y0, w, h, 4); ctx.fill();
-    ctx.fillStyle = metal ? '#aeb4bb' : '#caa05a';
+    const flow = (b._flow ? 1 : 0.25) * speed;
+    ctx.fillStyle = col; roundRect(x0, y0, w, h, 4); ctx.fill();
+    ctx.fillStyle = roller;
     ctx.beginPath(); ctx.arc(x0 + 4, cy, h / 2 - 1, 0, 7); ctx.fill();
     ctx.beginPath(); ctx.arc(x0 + w - 4, cy, h / 2 - 1, 0, 7); ctx.fill();
     const gap = 7, off = (t * 26 * flow) % gap;
     ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
     for (let sx = x0 + 4 - gap; sx < x0 + w; sx += gap) { const ax = sx + off; ctx.beginPath(); ctx.moveTo(ax, cy - 3); ctx.lineTo(ax + 3, cy); ctx.lineTo(ax, cy + 3); ctx.stroke(); }
-    if (b._flow) { const p = (t * 0.5) % 1; dot(x0 + 4 + p * (w - 8), cy - h / 2 - 2, 2.5, metal ? '#cfd6dd' : '#caa05a'); }
+    if (b._flow) { const p = (t * 0.5) % 1; dot(x0 + 4 + p * (w - 8), cy - h / 2 - 2, 2.5, roller); }
   }
 
   // Unburied dead — a sombre marker until a Graveyard lays them to rest.
