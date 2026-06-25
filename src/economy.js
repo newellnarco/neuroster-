@@ -1,7 +1,9 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
-import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion } from './state.js';
+import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice } from './state.js';
+import { stepDecrees } from './decrees.js';
+import { JUSTICE } from './config.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
 import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
@@ -92,6 +94,7 @@ export function stepEconomy(state, dt) {
   stepEvents(state, dt);
   stepFactions(state, dt);
   stepRescues(state, dt);
+  stepDecrees(state, dt); // moral dilemmas: spend a virtue on purpose for the group
   // Seasons turn; each new season opens with a festival — a communal lift.
   {
     const sk = seasonKey(state);
@@ -107,6 +110,15 @@ export function stepEconomy(state, dt) {
   }
   // Compassion drifts gently toward 50; a Sanctuary's daily care keeps it high.
   { const c = state.compassion ?? 50; state.compassion = Math.max(0, Math.min(100, c + (50 - c) * 0.002 * dt + (state._sanctuary || 0) * 0.03 * dt)); }
+  // Justice/Order drifts toward the middle; a Courthouse steadily upholds it.
+  { const j = state.justice ?? 50; state.justice = Math.max(0, Math.min(100, j + (JUSTICE.driftTarget - j) * 0.002 * dt + (state._courts || 0) * JUSTICE.courtNudge * dt)); }
+  // Almshouses share surplus Food → Compassion (generosity that buys goodwill).
+  if ((state._alms || 0) > 0 && (state.res.food || 0) > 40) {
+    const give = Math.min(state.res.food - 40, (state._alms) * 0.4 * dt);
+    state.res.food -= give; addCompassion(state, give * 0.06);
+  }
+  // A Hall of Heroes lends steady morale recovery — the honoured dead inspire.
+  if ((state._memorial || 0) > 0) state.morale = Math.min(100, (state.morale ?? 100) + (state._memorial) * 0.05 * dt);
 
   // 9) Milestones (throttled) — concrete goals + reward drip.
   state._mileT = (state._mileT || 0) + dt;
@@ -173,7 +185,7 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0;
+  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
@@ -195,8 +207,14 @@ function recomputeBuildings(state) {
     caretakers += def.caretaker || 0;
     vets += def.vet || 0;
     if (def.sanctuary) sanctuaries++;
+    if (def.court) courts++;
+    if (def.almshouse) alms++;
+    if (def.memorial) memorials++;
   }
   state._sanctuary = sanctuaries;
+  state._courts = courts;
+  state._alms = alms;
+  state._memorial = memorials;
   state._vets = vets;
   // Caretaker huts auto-tend energy, fun & health — easing larger settlements.
   fun += caretakers * 4; health += caretakers * 4;
@@ -479,7 +497,15 @@ function updateMorale(state, dt) {
       state.morale = Math.min(100, state.morale + bestRestore);
       addCompassion(state, 1); // honouring the fallen is an act of love
       addFx(state, b.x, b.y, '🕊️', 2);
-      logMsg(state, `🕊️ A fallen rodent was laid to rest (+${bestRestore} morale). The colony grieves but heals.`);
+      // A Hall of Heroes remembers the fallen by name (most recent first).
+      const memorial = state.buildings.some(x => BUILDINGS[x.type]?.memorial);
+      if (memorial && b.name) {
+        (state.honored || (state.honored = [])).unshift({ name: b.name, species: b.species });
+        if (state.honored.length > 24) state.honored.pop();
+      }
+      logMsg(state, memorial && b.name
+        ? `🎖️ ${b.name} was laid to rest with honour in the Hall of Heroes (+${bestRestore} morale). They will be remembered.`
+        : `🕊️ A fallen rodent was laid to rest (+${bestRestore} morale). The colony grieves but heals.`);
     }
   }
 

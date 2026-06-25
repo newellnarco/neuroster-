@@ -7,7 +7,7 @@ concrete fix / add / change items; **Recommendations** are ideas to pull from fr
 > Update this file every session: tick off what shipped, append what's new, and
 > leave a "Continue here" note at the bottom so the next session can resume fast.
 
-_Last updated: 2026-06-25 — added the alert/notification bar (Arc 17), megaprojects (Arc 16) & save export/import._
+_Last updated: 2026-06-25 — **Justice/Order virtue + moral Decrees** (Courthouse, Hall of Heroes, Almshouse): hard dilemmas that spend one virtue to buy another. Earlier this session: Compassion + Rescue/Sanctuary, family lineage & names, seasons/festivals + seasonal visuals._
 
 ---
 
@@ -59,6 +59,10 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 17d | Sand Bath + burrow upkeep | ✅ Shipped | Sand Bath cleans hamsters (health + anti-wet-tail hygiene); **burrows degrade if not cleaned** (lose housing/breeding) — caretakers auto-clean or click to clean |
 | 17e | Deployment | ✅ Shipped | Zero-dep configurable server (HOST/IP/PORT), Docker + compose, /healthz |
 | 18 | Animation & realism polish | 🟡 Ongoing | Swaying trees/crops, chimney smoke, water droplets, lab glow, fireflies/pollen, rodent ear-twitch/sniff. **Seasonal atmosphere** — a per-season tint + signature drifting motes (🍂 autumn leaves, ❄️ winter snow, 🌸 spring petals, ☀️ summer warmth). **Synthesised audio** (`audio.js`): UI/action cues + a living **ambient soundscape** — wind, rain, running water & fire beds that follow weather/biome, plus scheduled **birds (day), crickets (night), happy chittering/purring (only when safe & content), nibbling, thunder**, and a **scared hamster scream** on raids. 🔊 mute toggle. |
+| 19 | 💗 Compassion & kindness | ✅ Shipped | A colony **Compassion** virtue (0–100): care, gifts, mercy, burials & **rescues** raise it; cruelty/neglect lower it. A kind colony **calms predators** and **draws joiners**. **Rescue/Sanctuary**: lost/hurt strays wander to your edge — click to take them in; a **Sanctuary** speeds arrivals. |
+| 19b | 👪 Family lineage & names | ✅ Shipped | Every rodent has a **given name + family surname**; `breedChild` inherits the family line, **coat colour** (blended), **traits** (averaged) & a **best-skill head-start**; births logged by name with parent links; rename in the Rodents panel. |
+| 19c | 🌸 Seasons & festivals | ✅ Shipped | Spring→Summer→Autumn→Winter shift food/needs/breeding; each new season opens with a **festival** (morale + compassion lift; Harvest gifts food). Per-season visuals (Arc 18). |
+| 19d | ⚖️ Justice/Order + moral Decrees | ✅ Shipped | A second virtue, **Justice/Order** (deters raids), the counterweight to Compassion. Periodic **Decree dilemmas** — famine triage, a captured raider, a starving neighbour, a lost predator cub — where **every choice spends one virtue (or food/comfort) to buy another**; dithering auto-resolves and costs morale. New civics: **⚖️ Courthouse** (unlocks merciful verdicts, raises Order), **🎖️ Hall of Heroes** (remembers the fallen by name, steady morale), **🍞 Almshouse** (shares surplus food → Compassion + raid goodwill). |
 
 ---
 
@@ -205,7 +209,25 @@ autosave (no offline progress), and a **deployable server (Docker, configurable 
 - Verify every change with: `node --check` all files, a headless `stepEconomy` smoke
   (see scratchpad history), and a Playwright load (zero console errors).
 
-**Shipped this session:** the live **alert bar** (Arc 17, `src/alerts.js` — purely derived,
+**Morality system (this session, `src/decrees.js` + `JUSTICE`/`DECREES` in config):**
+two colony virtues — 💗 **Compassion** (kindness; calms predators, draws joiners) and
+⚖️ **Justice/Order** (firm rule; deters raids) — surfaced as env-bar chips and traded
+against each other by **Decree dilemmas**. A decree raises `state.decree = {id, faction?, life}`;
+the UI auto-opens a modal (`showDecree` in `ui.js`); the player picks a choice
+(`resolveDecree`) whose declarative `effect` spends one virtue/resource to buy another;
+ignoring it (`life` runs out) auto-resolves the `default` choice and dims morale.
+`requires:'court'` choices need a **Courthouse**. New civics fold into `recompute`
+(`state._courts/_alms/_memorial`): Courthouse nudges Justice, Almshouse converts surplus
+food→Compassion, Hall of Heroes records the fallen by name (`state.honored`) + steady morale.
+A raised predator cub (`state.guardian`) adds predator defense. 38 smoke checks pass.
+
+**Next ideas in this vein (not yet built):** a founder **Leadership skill tree**
+(Just/Compassionate/Provider/Protector/Diplomat) gated by virtue thresholds; more NPC
+animal events (wandering merchant, migrating herd, predator parley); a **Bell Tower**
+rally that spends morale for a temporary work surge; heroic-sacrifice events that feed
+the Hall of Heroes.
+
+**Shipped earlier:** the live **alert bar** (Arc 17, `src/alerts.js` — purely derived,
 nothing persisted), **megaprojects** (Arc 16, `src/megaprojects.js` + `MEGAPROJECTS` in
 config; contribute-over-time, bonuses folded into economy/events/recompute via the
 `state._mega` per-tick cache), **save export/import** (`save.js` + topbar buttons +

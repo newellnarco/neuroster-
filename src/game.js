@@ -47,6 +47,8 @@ export function startGame(canvas) {
   });
   ui.init();
   ui.renderAll();
+  // Dev hook: lets tests & the console inspect/poke the live colony.
+  window.neuroster = { get state() { return state; }, ui, view };
 
   // Start screen: loading bar, then Continue / Load (your other hamsters) / New
   // Colony. The sim stays paused (and gameplay keys inert) until the player

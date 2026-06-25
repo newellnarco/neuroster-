@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE } from './config.js';
 import { logMsg, population, addRes, addFx, addCompassion } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan } from './factions.js';
@@ -142,7 +142,10 @@ function fireDisaster(state, key, d, elapsed) {
   let severity = d.baseSeverity * grow * biomeMul * Math.max(0.2, envMul) * breedDiff * gameDiff;
   if (d.kind === 'predator') severity *= (1 - Math.min(0.2, Math.max(0, (state.compassion ?? 50) - 50) / 250)); // a gentle, kind colony unsettles predators less
   const offenseBonus = (d.kind === 'predator') ? totalOffense(state) : 0;
-  const protect = protectionAgainst(state, key) + offenseBonus;
+  let protect = protectionAgainst(state, key) + offenseBonus;
+  // Firm, fair Order deters raiders; a raised predator cub guards against beasts.
+  if (key === 'raid') protect += Math.max(0, (state.justice ?? 50) - 50) * JUSTICE.raidDeter;
+  if (d.kind === 'predator') protect += (state.guardian || 0) * 2;
   const net = severity - protect;
 
   // Floods are double-edged: they always bring seeds & fertile soil, and only
@@ -244,7 +247,9 @@ export function stepFactions(state, dt) {
 function fireFactionRaid(state, id, f, pressure) {
   spawnCaravan(state, id, 'raid'); // a war party visibly marches from their camp
   const severity = pressure * (1 + (state.env?.lived || 0) / 4000);
-  const protect = protectionAgainst(state, 'raid') + totalOffense(state);
+  let protect = protectionAgainst(state, 'raid') + totalOffense(state);
+  protect += Math.max(0, (state.justice ?? 50) - 50) * JUSTICE.raidDeter; // Order on the gates
+  protect += (state.guardian || 0) * 2;
   if (severity - protect <= 2) {
     logMsg(state, `${f.icon} ${f.name} raiders probed your defenses but were driven off!`);
     handleRepel(state, `${f.name} raiders`, id); // heal them (Vet) to win them over, or fight

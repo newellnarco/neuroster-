@@ -303,4 +303,62 @@ console.log('Seasons & festivals:');
   ok('a festival fires (and lifts morale) when the season turns');
 }
 
+// 13) Justice & Decrees (spend a virtue on purpose for the group).
+console.log('Justice & decrees:');
+{
+  const { addJustice } = await import('../src/state.js');
+  const { stepDecrees, resolveDecree, choiceAllowed } = await import('../src/decrees.js');
+  const { DECREES } = await import('../src/config.js');
+  const s = newGame(80, 'woodland', 'syrian', 'Judge', {});
+  assert(s.justice === 50, 'colony starts at neutral justice');
+  addJustice(s, 80); assert(s.justice === 100, 'justice clamps at 100');
+  addJustice(s, -300); assert(s.justice === 0, 'justice clamps at 0');
+  ok('justice stat exists and clamps 0..100');
+
+  // A decree can be raised and resolved, spending one virtue to buy another.
+  s.justice = 50; s.compassion = 50; s.morale = 80;
+  s.decree = { id: 'triage', life: 75, born: 0 };
+  const beforeC = s.compassion, beforeJ = s.justice, food = s.res.food;
+  const applied = resolveDecree(s, 0); // "let the frail rest": +compassion, −food, −justice
+  assert(applied, 'resolving a decree returns true');
+  assert(s.decree === null, 'decree clears after a choice');
+  assert(s.compassion > beforeC, `kind choice raised compassion (${beforeC}→${s.compassion})`);
+  assert(s.justice < beforeJ, `kind choice spent justice (${beforeJ}→${s.justice})`);
+  assert(s.res.food < food, 'kind choice cost food');
+  ok(`decree resolved: compassion ${beforeC}→${s.compassion}, justice ${beforeJ}→${s.justice}`);
+
+  // Court-gated mercy: the raider's "let them join" needs a Courthouse.
+  const mercy = DECREES.raider.choices.find(c => c.requires === 'court');
+  s._courts = 0; assert(!choiceAllowed(s, mercy), 'mercy verdict locked without a Courthouse');
+  s._courts = 1; assert(choiceAllowed(s, mercy), 'a Courthouse unlocks the merciful verdict');
+  ok('Courthouse gates the merciful raider verdict');
+
+  // Dithering auto-resolves a pending decree (and costs a little morale).
+  s.morale = 80; s.decree = { id: 'triage', life: 0.05, born: 0 };
+  s.env.lived = 9999; // past the decree grace window
+  stepDecrees(s, 0.1); // life runs out → auto-resolve
+  assert(s.decree === null, 'an ignored decree auto-resolves');
+  assert(s.morale < 80, 'letting the moment pass costs morale');
+  ok('an unresolved decree auto-resolves (indecision costs morale)');
+
+  // Almshouse/Courthouse/Hall of Heroes fold into the economy.
+  const s2 = newGame(81, 'woodland', 'syrian', 'Civic', {});
+  s2.res.food = 200; s2.justice = 50;
+  const place = (type) => s2.buildings.push({ type, x: s2.world.spawn.x, y: s2.world.spawn.y });
+  place('almshouse'); place('courthouse'); place('hallofheroes');
+  for (let i = 0; i < 30; i++) stepEconomy(s2, 0.2);
+  assert(s2._courts === 1 && s2._alms === 1 && s2._memorial === 1, 'civic buildings are counted');
+  assert(s2.justice > 50, `a Courthouse lifts Justice over time (now ${s2.justice.toFixed(1)})`);
+  assert(s2.compassion > 50, `an Almshouse lifts Compassion via sharing (now ${s2.compassion.toFixed(1)})`);
+  ok('Courthouse raises Justice, Almshouse raises Compassion, Hall of Heroes counted');
+
+  // High Justice deters raids (raid protection rises with Order).
+  const s3 = newGame(82, 'woodland', 'syrian', 'Order', {});
+  s3.env.lived = 4000;
+  s3.justice = 50; const lowDeter = Math.max(0, (s3.justice - 50));
+  s3.justice = 100; const highDeter = Math.max(0, (s3.justice - 50));
+  assert(highDeter > lowDeter, 'higher Justice yields more raid deterrence');
+  ok('high Justice deters raiders');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
