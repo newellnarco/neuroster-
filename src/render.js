@@ -319,6 +319,7 @@ export function createRenderer(canvas, state, getView) {
     const sway = Math.sin(animT * 1.4 + x * 0.2) * 0.8 * sc;
     const r = 6 * sc; x += sway;
     ctx.fillStyle = '#4e8a3a'; ball(x, y, r); ball(x - r * 0.6, y + 1, r * 0.7); ball(x + r * 0.6, y + 1, r * 0.7);
+    ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, 7); texClip('leaf', x - r * 1.5, y - r * 1.5, r * 3, r * 3, 0.45, 'soft-light'); // foliage texture
     ctx.fillStyle = 'rgba(180,220,120,0.5)'; ball(x - r * 0.2, y - r * 0.4, r * 0.4);
     ctx.fillStyle = '#caa33a'; dot(x + 1, y + 1, 1.4, '#caa33a'); // seeds
   }
@@ -326,6 +327,7 @@ export function createRenderer(canvas, state, getView) {
     ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(cx, cy + 6, 9, 4, 0, 0, 7); ctx.fill();
     ctx.fillStyle = n.kind === 'coalseam' ? '#3b4248' : '#8d6e63';
     blob(cx, cy + 2, 7, n.id, 1);
+    texClip('stone', cx - 9, cy - 6, 18, 16, n.kind === 'coalseam' ? 0.35 : 0.5, 'soft-light'); // rocky ore texture
     ctx.fillStyle = n.kind === 'coalseam' ? '#20262b' : '#caa07a';
     dot(cx - 2, cy, 1.6); dot(cx + 3, cy + 2, 1.4); dot(cx + 1, cy - 3, 1.3);
     ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
@@ -353,6 +355,7 @@ export function createRenderer(canvas, state, getView) {
       if (BUILDINGS[b.type].townhall) { drawTownhall(cx, cy, b); continue; }
       ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(b.x * TILE + 4, b.y * TILE + 10, TILE - 8, TILE - 11, 6); ctx.fill();
       ctx.fillStyle = '#bcab8b'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
+      texClip('wood', b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 0.4, 'soft-light'); // timber structure base
       ctx.fillStyle = 'rgba(255,255,255,0.20)'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, 3, 3); ctx.fill();
       glyph(BUILDINGS[b.type].icon, cx, cy - 3, TILE * 0.78);
       if (BUILDINGS[b.type].tower) glyph(b.mode === 'defend' ? '🗡️' : '👁️', cx + 9, cy - 9, 11); // stance badge
