@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.2.4';
+export const VERSION = 'v0.2.5';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
