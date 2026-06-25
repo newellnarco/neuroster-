@@ -1,0 +1,17 @@
+# Run Neuroster anywhere with: docker compose up -d
+# Configure the bind address / IP and port below (or via a .env file).
+services:
+  neuroster:
+    build: .
+    image: neuroster:latest
+    container_name: neuroster
+    restart: unless-stopped
+    environment:
+      # Inside the container the server binds HOST:PORT.
+      HOST: "0.0.0.0"
+      PORT: "8080"
+    ports:
+      # "HOST_IP:HOST_PORT:CONTAINER_PORT"
+      # - Leave HOST_IP empty (default below) to expose on all interfaces (LAN/WAN).
+      # - Set a specific IP to bind to one interface, e.g. "192.168.1.50:8080:8080".
+      - "${BIND_IP:-0.0.0.0}:${BIND_PORT:-8080}:8080"
