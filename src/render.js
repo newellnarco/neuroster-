@@ -2,7 +2,7 @@
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
 import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
-import { dayFraction, currentWeather } from './environment.js';
+import { dayFraction, currentWeather, seasonKey } from './environment.js';
 
 const VIS = {
   hamster:   { body: '#dcab68', belly: '#f4e2bd', size: 15, ear: 4, tail: 3, tailW: 3 },
@@ -52,7 +52,46 @@ export function createRenderer(canvas, state, getView) {
     drawHover(getView());
     drawDayNight();
     drawWeather(t);
+    drawSeason(t);
     drawAmbient(t);
+  }
+
+  // Seasonal atmosphere: a gentle full-screen tint + signature drifting motes
+  // (autumn leaves, winter snow, spring blossom petals) so the season is felt.
+  function drawSeason(t) {
+    const key = seasonKey(state);
+    const W = canvas.width, H = canvas.height;
+    const tint = { spring: 'rgba(150,210,140,0.05)', summer: 'rgba(255,224,130,0.05)', autumn: 'rgba(214,120,40,0.10)', winter: 'rgba(150,180,225,0.12)' }[key];
+    if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H); }
+
+    if (key === 'autumn') {
+      const cols = ['#c8762e', '#b8531f', '#d89a3a', '#a8451c'];
+      for (let i = 0; i < 26; i++) {
+        const x = (i * 139 + Math.sin(t * 0.6 + i) * 42 + W) % W;
+        const y = (i * 97 + t * 42) % H;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(t * 1.4 + i);
+        ctx.fillStyle = cols[i & 3]; ctx.globalAlpha = 0.8;
+        ctx.beginPath(); ctx.ellipse(0, 0, 4, 2, 0, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    } else if (key === 'winter') {
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      for (let i = 0; i < 60; i++) {
+        const x = (i * 131 + Math.sin(t * 0.8 + i) * 14 + W) % W;
+        const y = (i * 71 + t * 60) % H;
+        ctx.beginPath(); ctx.arc(x, y, 1.3 + (i % 3) * 0.4, 0, 7); ctx.fill();
+      }
+    } else if (key === 'spring') {
+      for (let i = 0; i < 20; i++) {
+        const x = (i * 151 + Math.sin(t * 0.9 + i) * 30 + W) % W;
+        const y = (i * 101 + t * 28) % H;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(t + i);
+        ctx.fillStyle = i % 2 ? 'rgba(255,190,210,0.8)' : 'rgba(255,225,235,0.75)';
+        ctx.beginPath(); ctx.ellipse(0, 0, 3, 1.6, 0, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+    }
   }
 
   // Drifting fireflies at night; soft pollen motes by day.
