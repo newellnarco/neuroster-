@@ -209,4 +209,19 @@ console.log('Walls:');
   ok(`wall upgrades wood→stone, raising defense (${defWood}→${s.defense}) & protection`);
 }
 
+// 9) New-game options: peaceful mode disables events; coat persists.
+console.log('Creation options:');
+{
+  const s = newGame(3, 'woodland', 'robo', 'Peace', { disasters: false, coat: { color: 'grey', pattern: 'patched' } });
+  assert(s.disasters === false, 'disasters flag stored');
+  assert(s.founder.coat?.color === 'grey' && s.founder.coat?.pattern === 'patched', 'coat stored on founder');
+  s.env.lived = 400; // past the grace period
+  for (let i = 0; i < 200; i++) stepEconomy(s, 0.1);
+  assert(!s.events || Object.keys(s.events).length === 0, 'no disasters scheduled in peaceful mode');
+  ok('peaceful mode disables disasters; coat stored');
+  const back = importSaveString(exportSave(s));
+  assert(back.ok && back.state.founder.coat?.color === 'grey' && back.state.disasters === false, 'coat & peaceful flag survive save/load');
+  ok('coat & peaceful mode survive a save roundtrip');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

@@ -649,6 +649,25 @@ export const STARTING = {
   storageCap: 300,
 };
 
+// ---- Founder coat (cosmetic) ----------------------------------------------
+// The founder hamster's colour & pattern, chosen at creation (or randomised).
+export const COAT_COLORS = {
+  golden:    { name: 'Golden',    body: '#dcab68', belly: '#f4e2bd' },
+  cream:     { name: 'Cream',     body: '#e8d6a8', belly: '#f7eed5' },
+  cinnamon:  { name: 'Cinnamon',  body: '#c8824e', belly: '#edd0ab' },
+  chocolate: { name: 'Chocolate', body: '#7a5230', belly: '#b88a5c' },
+  grey:      { name: 'Grey',      body: '#b7b4bd', belly: '#e7e6ee' },
+  charcoal:  { name: 'Charcoal',  body: '#595560', belly: '#8b8690' },
+  white:     { name: 'White',     body: '#eef0f2', belly: '#ffffff' },
+  black:     { name: 'Black',     body: '#3c3940', belly: '#6b6770' },
+  sable:     { name: 'Sable',     body: '#8a6a3a', belly: '#d8c193' },
+};
+export const COAT_PATTERNS = {
+  classic: { icon: '🎨', name: 'Classic', desc: 'Soft lighter belly.' },
+  solid:   { icon: '⬤', name: 'Solid',   desc: 'One uniform colour.' },
+  patched: { icon: '🐾', name: 'Patched', desc: 'A contrasting patch.' },
+};
+
 // ---- Megaprojects ----------------------------------------------------------
 // The long-horizon, multi-session carrots (Arc 16). Unlike normal buildings you
 // don't pay their cost up front: you CONTRIBUTE surplus toward each project's

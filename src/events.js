@@ -106,6 +106,7 @@ const GRACE_SECONDS = 300;
 
 // Called each tick. Uses per-disaster countdown timers stored on state.events.
 export function stepEvents(state, dt) {
+  if (state.disasters === false) return; // peaceful mode: no predators/disasters
   if (!state.events) state.events = {};
   const pop = population(state);
   if (pop <= 0) return;
@@ -230,7 +231,7 @@ export function stepFactions(state, dt) {
     st.raidTimer -= dt;
     if (st.raidTimer <= 0) {
       st.raidTimer = 150 + 120 * hash(id + Math.floor(lived));
-      if (lived < GRACE_SECONDS) continue;
+      if (lived < GRACE_SECONDS || state.disasters === false) continue; // peaceful mode: no raids
       const pressure = Math.max(0, -st.standing) + Math.min(45, hoard * 0.12);
       if (pressure > 14) fireFactionRaid(state, id, f, pressure);
     }

@@ -14,7 +14,8 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
   const state = {
     version: 3,
     seed, biome, difficulty, density,
-    founder: { breed: breedKey, name, lastRenameDay: 0 },
+    disasters: opts.disasters === false ? false : true, // predators & disasters on/off
+    founder: { breed: breedKey, name, lastRenameDay: 0, coat: opts.coat || { color: 'golden', pattern: 'classic' } },
     world,
     res: {},
     storageCap: STARTING.storageCap,
