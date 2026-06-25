@@ -129,8 +129,19 @@ body {
 
 /* Stage layout */
 #stage { flex: 1; display: flex; min-height: 0; }
-#board { flex: 1; position: relative; display: flex; align-items: safe center; justify-content: safe center;
+#board { flex: 1; min-width: 0; position: relative; display: flex; align-items: safe center; justify-content: safe center;
   background: radial-gradient(circle at 50% 30%, #2c2924, #161410); overflow: auto; padding: 10px; }
+/* Draggable dividers */
+.vsplit { flex: 0 0 6px; cursor: ew-resize; background: var(--line); position: relative; z-index: 6; }
+.vsplit:hover, .vsplit.dragging { background: var(--accent); }
+.hsplit { flex: 0 0 6px; cursor: ns-resize; background: var(--line); }
+.hsplit:hover, .hsplit.dragging { background: var(--accent); }
+/* Click-pinned tooltip */
+.pin-tip { position: fixed; z-index: 200; max-width: 320px; background: rgba(20,18,15,.97);
+  color: var(--ink); border: 1px solid var(--accent); border-radius: 8px; padding: 9px 12px;
+  font-size: 12.5px; line-height: 1.45; box-shadow: 0 6px 22px rgba(0,0,0,.5); }
+.pin-tip.hidden { display: none; }
+#resbar .res, #envbar .env, #needsbar .need { cursor: pointer; }
 #game { background: #6f9e4b; border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.5);
   width: 100%; height: auto; image-rendering: auto; cursor: pointer; display: block; }
 /* Zoom controls (bottom-right of the board) */
@@ -229,8 +240,8 @@ body {
 .helpers { color: var(--accent); }
 
 /* Log */
-.log { border-top: 1px solid var(--line); padding: 8px 10px; font-size: 12px;
-  color: var(--muted); max-height: 130px; overflow-y: auto; }
+.log { flex: 0 0 auto; padding: 8px 10px; font-size: 12px;
+  color: var(--muted); height: 130px; overflow-y: auto; }
 .log div { padding: 1px 0; }
 
 /* Biome picker modal */

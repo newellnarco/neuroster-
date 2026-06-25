@@ -5,6 +5,7 @@ import { stepEconomy } from './economy.js';
 import { createRenderer } from './render.js';
 import { createUI } from './ui.js';
 import { createAudio } from './audio.js';
+import { setupLayout } from './layout.js';
 import { saveGame, loadGame, exportSave, importSaveString, hasSave,
   listSlots, selectSlot, deleteSlot, startNewSlot, saveAsNewSlot } from './save.js';
 
@@ -47,6 +48,7 @@ export function startGame(canvas) {
   });
   ui.init();
   ui.renderAll();
+  setupLayout(); // resizable panel/log dividers + click-to-pin tooltips
   // Dev hook: lets tests & the console inspect/poke the live colony.
   window.neuroster = { get state() { return state; }, ui, view };
 
