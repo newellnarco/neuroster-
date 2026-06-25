@@ -4,6 +4,7 @@ import { newGame } from './state.js';
 import { stepEconomy } from './economy.js';
 import { createRenderer } from './render.js';
 import { createUI } from './ui.js';
+import { createAudio } from './audio.js';
 import { saveGame, loadGame, clearSave, exportSave, importSaveString } from './save.js';
 
 const START_KEY = 'neuroster.newstart';
@@ -24,8 +25,9 @@ export function startGame(canvas) {
   const view = { placing: null, hover: null, canPlace: false, paused: false, speed: 1, selUnit: null };
 
   const renderer = createRenderer(canvas, state, () => view);
+  const audio = createAudio();
   const ui = createUI(state, {
-    canvas, view,
+    canvas, view, audio,
     onNewGame: (opt) => { localStorage.setItem(START_KEY, JSON.stringify(opt || {})); location.reload(); },
     onSave: () => saveGame(state),
     onExport: () => exportColony(state, ui),
