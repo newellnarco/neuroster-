@@ -212,8 +212,9 @@ with `Cache-Control: no-cache`). No rebuild, no restart.
   and the **version number**) that then offers **▶ Continue** or **🆕 New Colony** — press
   any key or click to begin. Background art lives in `assets/` (ships with an SVG scene;
   swap in your own — see [`assets/README.md`](assets/README.md)).
-- **Built-in How-to-Play guide**: a concise onboarding overlay opens on your first visit
-  (and any time from the **❓ Help** button) so new players know the loop at a glance.
+- **Built-in game guide**: the top-right **❓** button opens a sectioned guide — *Story,
+  How to play, What things are, Progression, Choices, Hamsters & saves* — with quick-nav
+  chips. It also opens automatically on your first visit so new players aren't lost.
 - **Getting-started checklist**: a small on-map checklist of first steps (build a burrow,
   farm, well…) that **auto-ticks as you play** and tucks itself away once you're set up.
 - **Sound effects** (synthesised, no asset files): satisfying cues for caring for a rodent,

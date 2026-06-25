@@ -234,6 +234,16 @@ body {
 ul.help { margin: 6px 0 4px; padding-left: 18px; color: var(--ink); }
 ul.help li { margin: 5px 0; font-size: 13px; line-height: 1.5; }
 ul.help b { color: var(--accent); font-weight: 600; }
+.controls .helpbtn { font-weight: 700; border-radius: 50%; width: 30px; height: 30px; padding: 0;
+  line-height: 1; border-color: var(--accent); }
+.help-card { max-width: 760px; }
+.help-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; position: sticky; top: 0;
+  background: var(--panel); padding: 8px 0; z-index: 2; border-bottom: 1px solid var(--line); }
+.help-nav button { background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 999px; padding: 5px 11px; font-size: 12px; cursor: pointer; }
+.help-nav button:hover { border-color: var(--accent); }
+.help-card h3 { margin: 16px 0 4px; font-size: 15px; color: var(--accent); scroll-margin-top: 52px;
+  border-top: 1px solid var(--line); padding-top: 12px; }
 .namerow { display: flex; gap: 8px; }
 .namerow input { flex: 1; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
   border-radius: 8px; padding: 8px 12px; font-size: 15px; }

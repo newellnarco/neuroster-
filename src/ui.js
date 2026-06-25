@@ -341,6 +341,9 @@ export function createUI(state, ctx) {
     if (el('btn-import')) el('btn-import').onclick = () => ctx.onImport?.();
     if (el('btn-help')) el('btn-help').onclick = showHelp;
     if (el('help-close')) el('help-close').onclick = hideHelp;
+    document.querySelectorAll('#help-modal [data-help-jump]').forEach(b => b.onclick = () => {
+      const t = el(b.dataset.helpJump); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     if (el('btn-mute')) {
       const sync = () => { el('btn-mute').textContent = audio.isMuted() ? '🔇' : '🔊'; };
       sync();

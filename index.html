@@ -30,13 +30,13 @@
     <div id="resbar" class="resbar"></div>
     <div class="spacer"></div>
     <div class="controls">
-      <button id="btn-help" title="How to play">❓ Help</button>
       <button id="btn-mute" title="Toggle sound">🔊</button>
       <button id="btn-save" title="Save now">💾 Save</button>
       <button id="btn-saveas" title="Save as a new hamster (fork this colony)">💾＋</button>
       <button id="btn-export" title="Download your colony as a save file">⬆️ Export</button>
       <button id="btn-import" title="Load a colony from a save file">⬇️ Import</button>
       <button id="btn-new" title="New colony">🆕 New</button>
+      <button id="btn-help" class="helpbtn" title="Help &amp; game guide — story, what things are, progression, choices, how to play">❓</button>
       <input id="import-file" type="file" accept=".json,application/json" hidden />
     </div>
   </header>
@@ -77,35 +77,98 @@
   </main>
 
   <div id="help-modal" class="modal hidden">
-    <div class="modal-card">
-      <h2>🐹 How to Play Neuroster</h2>
-      <p>You're the founder of a hamster colony. Explore, gather, build, automate, and keep your rodents thriving — there's no losing, only growing.</p>
+    <div class="modal-card help-card">
+      <h2>🐹 Neuroster — Game Guide</h2>
+      <nav class="help-nav">
+        <button data-help-jump="help-story">📖 Story</button>
+        <button data-help-jump="help-play">🎮 How to play</button>
+        <button data-help-jump="help-things">📦 What things are</button>
+        <button data-help-jump="help-progress">📈 Progression</button>
+        <button data-help-jump="help-choices">⚖️ Choices</button>
+        <button data-help-jump="help-saves">💾 Hamsters &amp; saves</button>
+      </nav>
 
-      <div class="cat">The core loop</div>
+      <h3 id="help-story">📖 The story &amp; your goal</h3>
       <ul class="help">
-        <li><b>Gather → Store → Refine → Build.</b> Rodents auto-gather nearby resources and haul them to storage. Build a <b>🪚 Sawmill</b>/<b>Smelter</b> to refine, then better buildings.</li>
-        <li><b>Place buildings</b> from the <b>🏗️ Build</b> tab: click a card, then click a map tile. Right-click cancels. Start with a <b>🕳️ Burrow</b> (housing + breeding) and a <b>🌾 Farm</b>.</li>
-        <li><b>Construction takes time</b> — awake rodents build it; more builders = faster.</li>
+        <li>You are the <b>founder hamster</b> of a brand-new colony. From a single burrow you'll
+          <b>explore, gather, build, automate, populate, and defend</b> a living warren of rodents.</li>
+        <li>There's <b>no "game over"</b> — only growing a thriving colony. Setbacks (a raid, a flood,
+          a lost rodent) are challenges to recover from, not failure.</li>
+        <li><b>Time only passes while you play</b> (it autosaves; there's no offline progress) — the world
+          is exactly as you left it when you return.</li>
       </ul>
 
-      <div class="cat">Keep them happy</div>
+      <h3 id="help-play">🎮 How to interact</h3>
       <ul class="help">
-        <li>Every rodent has its own <b>food, water, energy, fun &amp; health</b> (the bars up top are colony averages). Keep <b>Food</b> and <b>Water</b> stocked; build <b>Playgrounds</b> for fun and <b>Infirmaries</b> for health.</li>
-        <li><b>Select a rodent</b> (click it, or open the <b>🐹 Rodents</b> tab) to <b>Feed / Water / Play / Pet</b> it — an instant boost plus <b>bond</b> that lifts loyalty &amp; productivity.</li>
-        <li>Watch the <b>alert bar</b>: it flags whatever needs attention now. Click an alert to jump to the right panel.</li>
+        <li><b>Build:</b> open <b>🏗️ Build</b>, click a card, then click a map tile to place it.
+          <b>Right-click</b> cancels. Buildings take <b>time</b> to construct — awake rodents build them
+          (more builders = faster). Start with a <b>🕳️ Burrow</b> (housing + breeding), a <b>🌾 Farm</b>,
+          and a <b>well/pond</b> for water.</li>
+        <li><b>Care for a rodent:</b> click it on the map (or open <b>🐹 Rodents</b>), then
+          <b>Feed / Water / Play / Pet</b> — an instant need boost plus <b>bond</b> (affection) that
+          raises its productivity &amp; loyalty. Cooldowns reward periodic check-ins.</li>
+        <li><b>Click structures</b> to act on them: upgrade a <b>tunnel</b> or <b>Town Hall</b>, repair a
+          flooded <b>mine</b>, clean a dirty <b>burrow</b>, or demolish (50% refund).</li>
+        <li><b>The alert bar</b> (top) flags whatever needs attention now — <b>click an alert</b> to jump
+          straight to the right panel. The <b>Getting-Started</b> checklist guides your first steps.</li>
+        <li><b>Controls:</b> <b>Space</b> = pause · <b>1 / 2 / 3</b> = speed (1× / 2× / 4×) · <b>🔊</b> mute.
+          1 in-game day = 15 real minutes; hamsters are <b>nocturnal</b> (others differ).</li>
       </ul>
 
-      <div class="cat">Grow &amp; defend</div>
+      <h3 id="help-things">📦 What things are</h3>
       <ul class="help">
-        <li><b>🔬 Skills</b> &amp; <b>🧬 Evolve</b> spend Research on permanent upgrades and new species. <b>🤝 Trade</b> with neighbouring factions for alliances (but don't hoard what they covet — it invites raids).</li>
-        <li><b>🛡️ Threats</b> shows predators &amp; disasters; counter them with defensive buildings and guardian species. Bury the fallen and heal the sick to protect <b>morale</b>.</li>
-        <li><b>🏛️ Mega</b> projects are long-term wonders — pour <b>surplus</b> resources in over time for huge permanent boosts.</li>
+        <li><b>Resources:</b> <i>raw</i> (🪵 wood, 🪨 stone, ⛰️ iron ore, ⚫ coal, 🌱 seeds, 💧 water),
+          <i>refined</i> (🌾 food → 🟡 grain → 🟤 pellets, 🟫 planks, 🔩 iron, ⚙️ steel, 🟦 plastic, 💩 fertilizer),
+          and <i>abstract</i> (⚡ power, 🔬 research). <b>Storage is capped</b> — build Storage so surplus isn't wasted.</li>
+        <li><b>Needs</b> (each rodent has its own; the bars up top are colony averages):
+          <b>food, water, energy, fun</b> (curiosity↔boredom) and <b>health</b>. Let them slip and
+          productivity, loyalty and breeding suffer.</li>
+        <li><b>Buildings</b> by category: <b>Housing</b> (burrow, Town Hall), <b>Food</b>, <b>Production</b>
+          (sawmill, smelter, steelworks, refinery, lab, trading hut, conveyors), <b>Wellbeing</b>
+          (playground, infirmary, sand bath, graveyards, caretaker, feeders, toys/maze), <b>Defense</b>
+          (walls, towers, barracks, levees, quake shelters), <b>Mining</b>, and <b>Power</b> (wheel).</li>
+        <li><b>Rodents &amp; species:</b> hamsters plus recruitable <b>guinea pigs</b> (guards/soldiers),
+          gerbils, mice, rats, <b>beavers</b> (dams) and <b>gophers</b> (fast mine repair). New births can be
+          <b>hybrids</b> blending parents' best traits.</li>
+        <li><b>Threats:</b> predators (🐺 wolf, 🦅 hawk, 🏴 raiders) and disasters (🌊 flood, 🌋 quake, plus
+          biome-specific tsunami / avalanche / blight / sandstorm / wildfire). Counter them with defensive
+          buildings <i>and</i> guardian species.</li>
+        <li><b>Neighbours:</b> four animal <b>factions</b> have camps at the map's edges; caravans travel to
+          you for trades and raids.</li>
       </ul>
 
-      <div class="cat">Controls &amp; time</div>
+      <h3 id="help-progress">📈 Progression</h3>
       <ul class="help">
-        <li><b>Space</b> = pause · <b>1 / 2 / 3</b> = speed (1×/2×/4×). 1 in-game day = 15 real minutes. Hamsters are <b>nocturnal</b>.</li>
-        <li><b>No offline progress</b> — the world only advances while you're playing, and autosaves. Use <b>⬆️ Export / ⬇️ Import</b> to back up or move a colony.</li>
+        <li><b>Core loop:</b> gather → store → refine → build → <b>automate</b> (wheels for power, conveyors,
+          mines, caretakers/feeders) so bigger colonies stay manageable.</li>
+        <li><b>Levels:</b> rodents earn <b>XP</b> from work → levels → <b>⭐ skill points</b> you spend on their
+          traits for free. Your highest-level rodent sets your <b>Main Hamster level</b>, which gates advanced content.</li>
+        <li><b>🔬 Skills:</b> spend <b>Research</b> on colony-wide upgrades and to unlock new species.</li>
+        <li><b>🧬 Evolve:</b> permanent, species-wide upgrades (some need a prerequisite or a higher level).</li>
+        <li><b>🏛️ Megaprojects:</b> colony-defining wonders you <b>contribute surplus to over many sessions</b>
+          for huge permanent boosts (production, defense, storage, morale).</li>
+        <li><b>🏆 Milestones:</b> concrete goals that pay out a steady drip of rewards.</li>
+      </ul>
+
+      <h3 id="help-choices">⚖️ Choices &amp; consequences</h3>
+      <ul class="help">
+        <li><b>Kindness vs preservation:</b> unburied dead &amp; untreated injuries crush <b>morale</b>, and so
+          does killing with lethal defenses — but a <b>Vet Clinic</b> lets you <b>heal</b> repelled raiders
+          (morale rises, and they may even <b>join</b> you). Bury the fallen in tiered graves to heal grief.</li>
+        <li><b>Diplomacy:</b> gift &amp; trade what factions covet to build <b>alliances</b> (allies send aid) —
+          but <b>hoarding</b> their coveted goods breeds envy and invites <b>raids</b>.</li>
+        <li><b>Leadership:</b> a Town Hall gives a colony-wide boost — but a hall <b>too lavish</b> for everyone
+          else's comforts breeds <b>resentment</b> that erodes morale and output. Keep housing &amp; wellbeing up.</li>
+        <li><b>Difficulty &amp; resource density</b> (chosen when you found a colony) shape how dangerous and how
+          sparse your world is.</li>
+      </ul>
+
+      <h3 id="help-saves">💾 Your hamsters &amp; saves</h3>
+      <ul class="help">
+        <li><b>Autosaves</b> to your active hamster — no offline progress.</li>
+        <li><b>Multiple hamsters:</b> <b>🆕 New Colony</b> starts a new one; <b>💾＋ Save As</b> forks a named copy;
+          the start screen's <b>📂 Load</b> lists all your hamsters — click one to resume its latest autosave.</li>
+        <li><b>⬆️ Export / ⬇️ Import</b> to back up a colony or move it between machines.</li>
       </ul>
 
       <button id="help-close" class="modal-cancel">Got it — let's play! 🐹</button>
