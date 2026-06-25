@@ -97,8 +97,9 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
       (currently abstracted as protection + faster repairs).
 - [ ] **River geography for dams** — model real upstream tiles so a dam visibly dries the
       flow above it and irrigates below (currently a global upstream-flow penalty).
-- [ ] **Distraction/entertainment objects** — toys, wheels-for-fun, mazes that trade a
-      little productivity for big Fun (boredom relief) — deepen boredom↔curiosity loop.
+- [x] **Distraction/entertainment objects** — 🧸 Toy Box, 🎡 Fun Wheel & 🌀 Hedge Maze:
+      big Curiosity relief, and the wheel/maze add a colony-wide **distraction** that trades
+      a little output for fun (capped at −20%). Deepens the boredom↔curiosity loop.
 - [ ] **Disease/health events** + quarantine; Infirmary becomes essential in marsh.
 - [x] **Notifications/alerts** when a need bottoms out or a raid looms (retention) — shipped as the live alert bar (`src/alerts.js`).
 - [x] **Export/import save** (file download + file load, with validation & typed-array reattach). Multiple named **save slots** still pending.

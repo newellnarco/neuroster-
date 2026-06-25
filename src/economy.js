@@ -44,7 +44,7 @@ export function stepEconomy(state, dt) {
     if (def.mine) { runMine(state, b, def, dt, wb); continue; }
     if (def.belt) { runBelt(state, b, def, dt, wb); continue; }
 
-    let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1); // leader inspires; builders divert labour
+    let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)); // leader inspires; builders divert labour; play-enrichment distracts a little
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
       let bonus = state.mods.foodMul + env.foodMul + (mega.foodMul || 0);
@@ -156,7 +156,7 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0;
+  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
@@ -165,6 +165,7 @@ function recomputeBuildings(state) {
     storage += def.storage || 0;
     defense += def.defense || 0;
     fun += def.curiosity || 0;
+    distract += def.distract || 0;
     health += def.health || 0;
     feeders += def.feeder || 0;
     waterers += def.waterer || 0;
@@ -179,6 +180,7 @@ function recomputeBuildings(state) {
   state.popCap = popCap; state.storageCap = storage; state.defense = defense;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
   state._waterers = waterers; state._caretakers = caretakers; state._hygiene = hygiene;
+  state._distract = Math.min(0.2, distract); // enrichment-for-fun trades a little output (capped)
 }
 
 // A Mine attaches to one underground deposit, extracts it, and collapses when spent.
