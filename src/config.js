@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.3.2';
+export const VERSION = 'v0.3.3';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
@@ -712,9 +712,12 @@ export const EVOLUTIONS = {
 };
 
 export const STARTING = {
-  resources: { wood: 90, stone: 45, food: 80, seeds: 50, water: 80 },
+  // Generous starting stock so the first guided builds (Burrow, Farm, Well,
+  // Storage, Sawmill, Wheel) all land with margin to spare — including a few
+  // planks so the Wheel is buildable before a Sawmill exists.
+  resources: { wood: 140, stone: 75, food: 120, seeds: 60, water: 100, planks: 12 },
   hamsters: 5,
-  storageCap: 300,
+  storageCap: 700,
 };
 
 // ---- Seasons & festivals ---------------------------------------------------
