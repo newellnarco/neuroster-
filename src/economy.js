@@ -1,9 +1,10 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR } from './config.js';
-import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend } from './state.js';
+import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit } from './state.js';
+import { MORALE } from './config.js';
 import { makeRodent, stepRodent, combineRodents } from './entities.js';
-import { stepEvents } from './events.js';
+import { stepEvents, stepFactions } from './events.js';
 import { stepEnvironment, envMods } from './environment.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
 
@@ -73,10 +74,12 @@ export function stepEconomy(state, dt) {
   updateWaste(state, dt);
   updateDisease(state, dt);
 
-  // 6) Breeding, 7) Loyalty, 8) Disasters.
+  // 6) Morale (grief/ethics), Breeding, Loyalty, Disasters.
+  updateMorale(state, dt);
   updateBreeding(state, dt);
   updateLoyalty(state, dt);
   stepEvents(state, dt);
+  stepFactions(state, dt);
 
   // 9) Age out floating reward feedback.
   if (state.fx && state.fx.length) {
@@ -303,11 +306,48 @@ function updateDisease(state, dt) {
     } else {
       u.sickT += dt;
       if (u.sickT > WETTAIL.dieAfter && state.units.length > 1) {
-        state.units.splice(i, 1);
-        addFx(state, u.x, u.y, '💀', 2.2);
-        logMsg(state, '💀 A rodent died of untreated wet tail. Build a Vet Clinic!');
+        killUnit(state, u);
+        logMsg(state, '💀 A rodent died of untreated wet tail. Bury it (Graveyard) & build a Vet Clinic!');
       }
     }
+  }
+}
+
+// Morale: the colony's conscience. Unburied dead & untreated injuries erode it;
+// graveyards bury the fallen to heal grief. Low morale saps fun & breeds deserters.
+function updateMorale(state, dt) {
+  if (state.morale == null) state.morale = 100;
+  const bodies = state.bodies || (state.bodies = []);
+  // The grandest resting place sets how fast & how respectfully we bury (tombs >
+  // crypts > dirt graves restore more morale through respect).
+  let graves = 0, bestRestore = 0, bestInterval = Infinity;
+  for (const b of state.buildings) {
+    const def = BUILDINGS[b.type];
+    if (!def?.graveyard) continue;
+    graves++;
+    bestRestore = Math.max(bestRestore, def.buryRestore || MORALE.buryRestore);
+    bestInterval = Math.min(bestInterval, def.buryInterval || MORALE.buryInterval);
+  }
+  if (graves > 0 && bodies.length) {
+    state._buryT = (state._buryT || 0) + dt * graves;
+    if (state._buryT >= bestInterval) {
+      state._buryT = 0;
+      const b = bodies.shift();
+      state.morale = Math.min(100, state.morale + bestRestore);
+      addFx(state, b.x, b.y, '🕊️', 2);
+      logMsg(state, `🕊️ A fallen rodent was laid to rest (+${bestRestore} morale). The colony grieves but heals.`);
+    }
+  }
+
+  const injured = state.units.filter(u => u.sick || u.needs.health < 25).length;
+  let drain = bodies.length * MORALE.bodyDrain + injured * MORALE.injuredDrain;
+  if (drain > 0) state.morale = Math.max(0, state.morale - drain * dt);
+  else state.morale = Math.min(100, state.morale + MORALE.recover * dt);
+
+  // Low morale drips away everyone's Fun (sad colony).
+  if (state.morale < 60) {
+    const sap = (60 - state.morale) / 60 * 0.25 * dt;
+    for (const u of state.units) u.needs.fun = Math.max(0, u.needs.fun - sap);
   }
 }
 
@@ -338,7 +378,9 @@ function updateBreeding(state, dt) {
 function updateLoyalty(state, dt) {
   // Bond (affection from hands-on care) makes rodents more loyal.
   const avgBond = state.units.length ? state.units.reduce((a, u) => a + (u.bond ?? 45), 0) / state.units.length : 45;
-  const wb = wellbeingMul(state) + (avgBond - 45) / 220;
+  // Low morale (grief, neglect, violence) makes rodents far likelier to desert.
+  const moralePenalty = (100 - (state.morale ?? 100)) / 280;
+  const wb = wellbeingMul(state) + (avgBond - 45) / 220 - moralePenalty;
   if (wb < 0.62 && population(state) > 1) {
     state._unrest = (state._unrest || 0) + dt * (0.62 - wb) * 2;
     if (state._unrest >= 1) {

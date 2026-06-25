@@ -1,5 +1,5 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
 import { canAfford, spend, logMsg, addFx } from './state.js';
 import { getTile, TERRAIN, inBounds, wasteAt } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
@@ -105,6 +105,43 @@ export function repairMine(state, b) {
   const secs = Math.round(MINE_REPAIR.seconds / (1 + 0.5 * gophers));
   b.repairUntil = (state.env?.lived || 0) + secs;
   logMsg(state, `🔧 Repairing a flooded mine (~${secs}s)${gophers ? ' — gophers digging in fast!' : ''}…`);
+  return { ok: true };
+}
+
+// ---- Diplomacy / trade (needs a Trading Hut) ---------------------------
+export const hasTradingHut = (state) => state.buildings.some(b => BUILDINGS[b.type]?.trading);
+const clampStanding = (v) => Math.max(-100, Math.min(100, v));
+
+// Gift a coveted resource to strengthen the alliance.
+export function giftFaction(state, id) {
+  const f = FACTIONS[id]; if (!f || !hasTradingHut(state)) return { ok: false, reason: 'Build a Trading Hut' };
+  const res = f.covets.find(r => (state.res[r] || 0) >= TRADE.giftAmount);
+  if (!res) return { ok: false, reason: `Need ${TRADE.giftAmount} of ${f.covets.join('/')}` };
+  state.res[res] -= TRADE.giftAmount;
+  state.factions[id].standing = clampStanding(state.factions[id].standing + TRADE.giftStanding);
+  logMsg(state, `${f.icon} Gifted ${TRADE.giftAmount} ${res} to the ${f.name} (+alliance).`);
+  return { ok: true };
+}
+// Barter a coveted resource for their offered goods.
+export function barterFaction(state, id) {
+  const f = FACTIONS[id]; if (!f || !hasTradingHut(state)) return { ok: false, reason: 'Build a Trading Hut' };
+  const res = f.covets.find(r => (state.res[r] || 0) >= TRADE.barterGive);
+  if (!res) return { ok: false, reason: `Need ${TRADE.barterGive} of ${f.covets.join('/')}` };
+  state.res[res] -= TRADE.barterGive;
+  state.res[f.offers] = (state.res[f.offers] || 0) + TRADE.barterGet;
+  state.factions[id].standing = clampStanding(state.factions[id].standing + TRADE.barterStanding);
+  logMsg(state, `${f.icon} Traded ${TRADE.barterGive} ${res} → ${TRADE.barterGet} ${f.offers} with the ${f.name}.`);
+  return { ok: true };
+}
+// Call in a favour from an ally — costs standing, brings emergency supplies.
+export function requestAid(state, id) {
+  const f = FACTIONS[id]; if (!f || !hasTradingHut(state)) return { ok: false, reason: 'Build a Trading Hut' };
+  const st = state.factions[id].standing;
+  if (st < TRADE.aidStanding) return { ok: false, reason: `Need +${TRADE.aidStanding} standing (allied)` };
+  state.factions[id].standing = clampStanding(st - TRADE.aidCost);
+  state.res.food = (state.res.food || 0) + 40; state.res.water = (state.res.water || 0) + 40;
+  state.res[f.offers] = (state.res[f.offers] || 0) + 25;
+  logMsg(state, `${f.icon} The ${f.name} sent aid! (+food, +water, +${f.offers})`);
   return { ok: true };
 }
 

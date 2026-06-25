@@ -79,6 +79,18 @@ export const BUILDINGS = {
     name: 'Vet Clinic', icon: '💉', desc: 'Treats wet tail & sickness; prevents deaths. Keep rodents healthy.',
     cost: { planks: 25, iron: 10 }, category: 'Wellbeing', vet: 1, health: 4,
   },
+  graveyard: {
+    name: 'Dirt Graves', icon: '✝️', desc: 'Simple graves with a cross. Buries the fallen and restores some morale.',
+    cost: { wood: 20, stone: 10 }, category: 'Wellbeing', graveyard: 1, buryRestore: 6, buryInterval: 8,
+  },
+  cryptyard: {
+    name: 'Stone Crypts', icon: '🪦', desc: 'Dignified stone crypts — a more respectful resting place restores more morale.',
+    cost: { stone: 45, planks: 15 }, category: 'Wellbeing', graveyard: 1, buryRestore: 12, buryInterval: 6,
+  },
+  mausoleum: {
+    name: 'Grand Mausoleum', icon: '🏛️', desc: 'An honoured tomb for the fallen. Deep respect — large morale recovery per burial.',
+    cost: { stone: 80, iron: 30, planks: 30 }, category: 'Wellbeing', graveyard: 1, buryRestore: 22, buryInterval: 5,
+  },
   well: {
     name: 'Well', icon: '⛲', desc: 'Draws Water for the colony (place near a pond).',
     cost: { wood: 20, stone: 20 }, category: 'Food', produces: { water: 0.6 }, needsWater: true, radius: 3,
@@ -129,6 +141,10 @@ export const BUILDINGS = {
   lab: {
     name: 'Research Lab', icon: '🔬', desc: 'Generates Research points.',
     cost: { planks: 30, iron: 10 }, category: 'Production', produces: { research: 0.3 },
+  },
+  tradinghut: {
+    name: 'Trading Hut', icon: '🏪', desc: 'Trade, gift & request materials with neighbouring animal groups. Shapes alliances.',
+    cost: { wood: 40, planks: 20 }, category: 'Production', trading: true,
   },
   irrigation: {
     name: 'Irrigation', icon: '🚿', desc: 'Channels water to farms; +food, +flood resistance.',
@@ -247,6 +263,24 @@ export const DISASTERS = {
   },
 };
 
+// ---- Factions / alliances --------------------------------------------------
+// Neighbouring animal groups you can trade with via a Trading Hut. Standing runs
+// -100 (hostile) .. +100 (allied). Each group COVETS certain resources: gifting
+// or trading those raises standing, but HOARDING a pile of them breeds envy and
+// invites raids that steal supplies and smash structures.
+export const FACTIONS = {
+  squirrels: { name: 'Squirrels',  icon: '🐿️', covets: ['food', 'seeds', 'pellets'], offers: 'planks', desc: 'Nut-hoarders who covet your food & seeds.' },
+  chipmunks: { name: 'Chipmunks',  icon: '🐿️', covets: ['seeds', 'grain', 'wheat'], offers: 'stone',  desc: 'Cheeky foragers; trade stone for grain.' },
+  fieldmice: { name: 'Field Mice', icon: '🐭', covets: ['wheat', 'grain', 'food'],   offers: 'research', desc: 'Scholars who trade knowledge for grain.' },
+  packrats:  { name: 'Pack Rats',  icon: '🐀', covets: ['iron', 'planks', 'pellets'], offers: 'coal',  desc: 'Scavengers who raid the rich for shiny loot.' },
+};
+export const TRADE = {
+  giftAmount: 20, giftStanding: 8,
+  barterGive: 20, barterGet: 14, barterStanding: 3,
+  aidStanding: 40, aidCost: 35,
+  hoardThreshold: 130, standingDecay: 0.2,
+};
+
 // ---- Per-creature needs ----------------------------------------------------
 // Every rodent carries its OWN meters (0..100). They drive that unit's personal
 // productivity and behaviour (eat / drink / sleep). The HUD shows colony
@@ -310,6 +344,19 @@ export const WETTAIL = {
 };
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
+
+// ---- Morale ----------------------------------------------------------------
+// The colony has a conscience. Unburied dead and untreated injuries crush
+// morale; so does violent killing of other animals by lethal defenses. Low
+// morale drags happiness & productivity and breeds deserters; graves & vets heal it.
+export const MORALE = {
+  bodyDrain: 0.16,    // morale lost per second per UNBURIED body
+  injuredDrain: 0.04, // per second per sick/badly-injured rodent
+  violenceCost: 3,    // morale lost each time a lethal defense kills attackers
+  recover: 0.4,       // morale regained per second when at peace & all buried
+  buryRestore: 6,     // morale regained when a body is laid to rest
+  buryInterval: 7,    // seconds a Graveyard takes to bury one body
+};
 
 // ---- Founder hamster: breeds & names ---------------------------------------
 // Players begin as a single "founder" hamster of a chosen breed. The breed

@@ -1,6 +1,14 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
 import { logMsg, population, addRes, addFx } from './state.js';
+
+// Killing other animals to defend the group is preservation — but it weighs on
+// the colony's kindness. Lethal defenses cost a little morale each time.
+function violenceToll(state, what) {
+  if ((totalOffense(state) || 0) <= 0) return;
+  state.morale = Math.max(0, (state.morale ?? 100) - MORALE.violenceCost);
+  logMsg(state, `⚖️ Your defenders drove off the ${what}, but the bloodshed weighs on morale.`);
+}
 
 // Total protection the colony currently has against a given disaster key.
 // Sums building `protect` values + per-species `protect` (scaled by count).
@@ -68,6 +76,7 @@ function fireDisaster(state, key, d, elapsed) {
 
   if (net <= 2) {
     logMsg(state, `${d.icon} ${d.name} approached but your defenses held! (def ${Math.round(protect)} ≥ ${Math.round(severity)})`);
+    if (d.kind === 'predator') violenceToll(state, d.name); // killing attackers costs morale
     return;
   }
 
@@ -78,6 +87,7 @@ function fireDisaster(state, key, d, elapsed) {
       const lost = removeUnits(state, taken);
       logMsg(state, `${d.icon} ${d.name} struck! Lost ${lost} rodent(s). Build defenses & keep guardian species!`);
       hurtHealth(state, 8);
+      state.morale = Math.max(0, (state.morale ?? 100) - lost * 4); // grief for the taken
       break;
     }
     case 'loot': {
@@ -98,6 +108,67 @@ function fireDisaster(state, key, d, elapsed) {
       break;
     }
   }
+}
+
+// ---- Factions: standing drift, hoard-envy, and raids -----------------------
+export function stepFactions(state, dt) {
+  if (!state.factions) return;
+  const lived = state.env?.lived || 0;
+  for (const [id, f] of Object.entries(FACTIONS)) {
+    const st = state.factions[id] || (state.factions[id] = { standing: 0, raidTimer: 150 });
+    // drift toward neutral
+    if (st.standing !== 0) { const d = Math.min(Math.abs(st.standing), TRADE.standingDecay * dt); st.standing += st.standing > 0 ? -d : d; }
+    // hoarding coveted goods breeds envy (lowers standing)
+    let hoard = 0;
+    for (const r of f.covets) { const over = (state.res[r] || 0) - TRADE.hoardThreshold; if (over > 0) hoard += over; }
+    if (hoard > 0) st.standing = Math.max(-100, st.standing - (0.06 + hoard * 0.0010) * dt);
+    st.hoard = hoard;
+    // raid cadence
+    st.raidTimer -= dt;
+    if (st.raidTimer <= 0) {
+      st.raidTimer = 150 + 120 * hash(id + Math.floor(lived));
+      if (lived < GRACE_SECONDS) continue;
+      const pressure = Math.max(0, -st.standing) + Math.min(45, hoard * 0.12);
+      if (pressure > 14) fireFactionRaid(state, id, f, pressure);
+    }
+  }
+}
+
+function fireFactionRaid(state, id, f, pressure) {
+  const severity = pressure * (1 + (state.env?.lived || 0) / 4000);
+  const protect = protectionAgainst(state, 'raid') + totalOffense(state);
+  if (severity - protect <= 2) {
+    logMsg(state, `${f.icon} ${f.name} raiders probed your defenses but were driven off!`);
+    state.factions[id].standing = Math.max(-100, state.factions[id].standing - 3);
+    violenceToll(state, `${f.name} raiders`);
+    return;
+  }
+  const net = severity - protect;
+  let stolen = 0;
+  for (const r of f.covets) { const take = Math.min(state.res[r] || 0, net * 1.6); if (take > 0) { state.res[r] -= take; stolen += take; } }
+  const wrecked = destroyTargeted(state, Math.max(1, Math.round(net / 14)));
+  for (const u of state.units) u.needs.health = Math.max(0, u.needs.health - 5);
+  state.factions[id].standing = Math.max(-100, state.factions[id].standing - 6);
+  addFx(state, state.world.spawn.x, state.world.spawn.y, f.icon, 2);
+  logMsg(state, `${f.icon} The ${f.name} RAIDED — stole ${Math.round(stolen)} supplies${wrecked ? ` & wrecked ${wrecked} structure(s)` : ''}! Build Walls or make peace.`);
+}
+
+// Raiders smash walls, housing, storage & facilities first.
+function destroyTargeted(state, n) {
+  const prefer = ['Defense', 'Housing', 'Storage', 'Production'];
+  let gone = 0;
+  for (let i = 0; i < n; i++) {
+    const targets = state.buildings.filter(b => {
+      const def = BUILDINGS[b.type];
+      if (def?.breed && state.buildings.filter(x => BUILDINGS[x.type]?.breed).length <= 1) return false;
+      return prefer.includes(def?.category);
+    });
+    if (!targets.length) break;
+    const b = targets[Math.floor(rand(state) * targets.length)];
+    if (b.nodeId != null) { const node = state.world.nodes.find(o => o.id === b.nodeId); if (node) node.claimedBy = null; }
+    state.buildings.splice(state.buildings.indexOf(b), 1); gone++;
+  }
+  return gone;
 }
 
 // Flood: always deposits seeds + leaves fertile soil; damages & drowns mines only

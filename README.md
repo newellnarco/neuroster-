@@ -69,6 +69,15 @@ opening `index.html` directly via `file://` won't work because it uses ES module
   need boost, reward feedback, and **bond** (affection) that lifts its productivity and
   loyalty. Cooldowns reward periodic check-ins; **caretaker huts & auto-waterers**
   automate care so big colonies stay manageable.
+- **Alliances & trade**: build a **Trading Hut** to **gift, barter, or request aid** from
+  four neighboring animal factions (Squirrels, Chipmunks, Field Mice, Pack Rats). Trades
+  raise/lower **standing** — but **hoarding what a faction covets invites raids** that steal
+  supplies and smash walls, houses, storage and facilities.
+- **Morale & ethics — kindness vs preservation**: the colony has a conscience. **Unburied
+  dead and untreated injuries crush morale**, and so does **violent killing by lethal
+  defenses**. Low morale saps Fun, productivity and loyalty (deserters). Bury the fallen in
+  tiered resting places — **Dirt Graves → Stone Crypts → Grand Mausoleum** — where grander
+  tombs restore more morale through respect; Vet Clinics heal the injured.
 - **Loyalty**: a thriving, well-bonded colony attracts wild joiners; a neglected one loses rodents.
 - **Persistent, login-gated time**: autosaves; there is **no offline progress** — the
   world is exactly as you left it.

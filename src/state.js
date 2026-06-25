@@ -1,5 +1,5 @@
 // state.js — the GameState model and core helpers.
-import { RESOURCES, STARTING, NEEDS, TRAITS, EVOLUTIONS, NODE_TYPES, BREEDS, HAMSTER_NAMES } from './config.js';
+import { RESOURCES, STARTING, NEEDS, TRAITS, EVOLUTIONS, NODE_TYPES, BREEDS, HAMSTER_NAMES, FACTIONS } from './config.js';
 import { generateWorld, reveal } from './world.js';
 import { makeRodent } from './entities.js';
 import { initEnv } from './environment.js';
@@ -25,8 +25,12 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     mods: { mineMul: 0, speedMul: 0, carryMul: 0, prodMul: 0, foodMul: 0, researchMul: 0, revealBonus: 0 },
     nextId: 1,
     fx: [],
+    factions: {},
+    morale: 100,
+    bodies: [],
     log: [],
   };
+  for (const id of Object.keys(FACTIONS)) state.factions[id] = { standing: 0, raidTimer: 120 + Math.random() * 120 };
 
   // Breed predisposes a colony-wide knack.
   for (const [k, v] of Object.entries(breed.colonyMod || {})) state.mods[k] = (state.mods[k] || 0) + v;
@@ -120,6 +124,14 @@ export function addFx(state, x, y, text, life = 1.6) {
   if (!state.fx) state.fx = [];
   state.fx.push({ x, y, text, born: state.env?.lived || 0, life });
   if (state.fx.length > 80) state.fx.shift();
+}
+
+// A rodent dies: remove it and leave a body that must be buried (or morale rots).
+export function killUnit(state, unit) {
+  const i = state.units.indexOf(unit);
+  if (i >= 0) state.units.splice(i, 1);
+  (state.bodies || (state.bodies = [])).push({ x: unit.x, y: unit.y, species: unit.species, born: state.env?.lived || 0 });
+  addFx(state, unit.x, unit.y, '💀', 2.2);
 }
 
 export function logMsg(state, msg) {

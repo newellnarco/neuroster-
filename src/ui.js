@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, TILE, xpForLevel } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, TILE, xpForLevel } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, giftFaction, barterFaction, requestAid, hasTradingHut } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight } from './environment.js';
 
@@ -32,6 +32,7 @@ export function createUI(state, ctx) {
       `<span class="env" title="Your highest rodent level — gates advanced content">🎖️ Main Lv.${mainLevel(state)}</span>` +
       `<span class="env" title="Population / cap">👥 ${population(state)}/${state.popCap}</span>` +
       `<span class="env" title="Overall wellbeing multiplier">😊 ×${wellbeingMul(state).toFixed(2)}</span>` +
+      `<span class="env" title="Colony morale — falls from unburied dead, injuries & violence; bury & heal to restore it">${moraleIcon(state.morale)} Morale ${Math.round(state.morale ?? 100)}${(state.bodies?.length) ? ` · ⚰️${state.bodies.length} unburied` : ''}</span>` +
       `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>`;
   }
 
@@ -179,6 +180,36 @@ export function createUI(state, ctx) {
       }).join('');
   }
 
+  // ---- Trade / alliances ----
+  function renderTrade() {
+    if (!hasTradingHut(state)) {
+      el('tab-trade').innerHTML = `<div class="hint">Build a 🏪 <b>Trading Hut</b> (Production) to trade, gift and request aid from neighbouring animal groups — and shape alliances. Beware: hoarding what they covet invites raids!</div>`;
+      return;
+    }
+    el('tab-trade').innerHTML = `<div class="hint">Gift or trade what they covet to build alliances. Allies (≥${TRADE.aidStanding}) will send aid. Hoarding their coveted goods (>${TRADE.hoardThreshold}) breeds envy and raids.</div>` +
+      Object.entries(FACTIONS).map(([id, f]) => {
+        const st = Math.round(state.factions[id]?.standing || 0);
+        const hoard = Math.round(state.factions[id]?.hoard || 0);
+        const cls = st >= TRADE.aidStanding ? 'gd' : st <= -30 ? 'bd' : '';
+        const mood = st >= TRADE.aidStanding ? 'Allied' : st <= -30 ? 'Hostile' : st <= -1 ? 'Wary' : 'Neutral';
+        const pct = (st + 100) / 2;
+        return `<div class="threat">
+          <div class="trow"><span>${f.icon} <b>${f.name}</b></span><span class="${cls}">${mood} ${st > 0 ? '+' : ''}${st}</span></div>
+          <div class="need ${st >= 40 ? 'ok' : st <= -30 ? 'low' : 'mid'}"><span class="bar" style="width:100%"><span style="width:${pct}%"></span></span></div>
+          <div class="ds">Covets ${f.covets.map(r => RESOURCES[r]?.icon || r).join(' ')} · offers ${RESOURCES[f.offers]?.icon || f.offers}${hoard > 0 ? ` · <span class="bd">envious of your hoard!</span>` : ''}</div>
+          <div class="care">
+            <button class="carebtn" data-tf="gift" data-fid="${id}" title="Gift ${TRADE.giftAmount} coveted → +standing">🎁 Gift</button>
+            <button class="carebtn" data-tf="barter" data-fid="${id}" title="Trade ${TRADE.barterGive} coveted → ${TRADE.barterGet} ${f.offers}">🔄 Trade</button>
+            <button class="carebtn ${st >= TRADE.aidStanding ? '' : 'cd'}" data-tf="aid" data-fid="${id}" title="Request aid (needs +${TRADE.aidStanding})">🆘 Aid</button>
+          </div></div>`;
+      }).join('');
+    bind('[data-tf]', (btn) => {
+      const id = btn.dataset.fid, k = btn.dataset.tf;
+      msg(k === 'gift' ? giftFaction(state, id) : k === 'barter' ? barterFaction(state, id) : requestAid(state, id));
+      renderTrade(); renderResbar();
+    });
+  }
+
   function renderLog() { el('log').innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join(''); }
 
   // ---- Tabs & controls ----
@@ -276,7 +307,7 @@ export function createUI(state, ctx) {
     clearTimeout(flashTimer); flashTimer = setTimeout(() => f.classList.remove('show'), 1600);
   }
 
-  function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); }
+  function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); }
 
   let acc = 0;
   function update(dt) {
@@ -287,6 +318,7 @@ export function createUI(state, ctx) {
       const active = (tab) => el('tab-' + tab).classList.contains('active');
       if (active('rodents')) renderRodents();
       if (active('threats')) renderThreats();
+      if (active('trade')) renderTrade();
       if (active('evo')) renderEvo();
       if (active('build')) refreshAfford();
     }
@@ -298,8 +330,9 @@ export function createUI(state, ctx) {
   }
 
   return { init, update, flash,
-    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderLog(); } };
+    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderLog(); } };
 }
 
+function moraleIcon(m) { m = m ?? 100; return m >= 70 ? '😊' : m >= 45 ? '😐' : m >= 25 ? '😟' : '😢'; }
 function fmt(n) { n = Math.floor(n); return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : '' + n; }
 function costStr(cost) { return Object.entries(cost || {}).map(([k, v]) => `${RESOURCES[k]?.icon || k}${v}`).join(' '); }

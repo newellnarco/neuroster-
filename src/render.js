@@ -39,6 +39,7 @@ export function createRenderer(canvas, state, getView) {
 
     drawNodes(t);
     drawBuildings(t);
+    drawBodies();
     drawRodents(t);
     drawFx();
     drawHover(getView());
@@ -301,6 +302,17 @@ export function createRenderer(canvas, state, getView) {
     ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
     for (let sx = x0 + 4 - gap; sx < x0 + w; sx += gap) { const ax = sx + off; ctx.beginPath(); ctx.moveTo(ax, cy - 3); ctx.lineTo(ax + 3, cy); ctx.lineTo(ax, cy + 3); ctx.stroke(); }
     if (b._flow) { const p = (t * 0.5) % 1; dot(x0 + 4 + p * (w - 8), cy - h / 2 - 2, 2.5, metal ? '#cfd6dd' : '#caa05a'); }
+  }
+
+  // Unburied dead — a sombre marker until a Graveyard lays them to rest.
+  function drawBodies() {
+    for (const b of state.bodies || []) {
+      if (!isSeen(state.world, Math.round(b.x), Math.round(b.y))) continue;
+      const cx = b.x * TILE + TILE / 2, cy = b.y * TILE + TILE / 2;
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(cx, cy + 4, 8, 3, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#8a8a8a'; ctx.beginPath(); ctx.ellipse(cx, cy + 2, 7, 4, 0, 0, 7); ctx.fill();
+      glyph('✝️', cx, cy - 7, 12);
+    }
   }
 
   // ---------- Rodents ----------
