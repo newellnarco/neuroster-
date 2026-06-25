@@ -162,4 +162,28 @@ console.log('Bridges:');
   ok('bridge upgrades wood→stone and gains HP');
 }
 
+// 7) Tower stances: WATCH (vision, gentle) vs DEFEND (stronger + offense, morale cost).
+console.log('Tower stances:');
+{
+  const { totalOffense } = await import('../src/events.js');
+  const s = newGame(7, 'prairie', 'syrian', 'Towers', {});
+  const sp = s.world.spawn;
+  s.buildings.push({ id: 500, type: 'watchtower', x: sp.x + 2, y: sp.y, active: true, mode: 'watch' });
+  const b = s.buildings[s.buildings.length - 1];
+  stepEconomy(s, 0.1);
+  const defWatch = s.defense, protWatch = protectionAgainst(s, 'wolf'), offWatch = totalOffense(s);
+  b.mode = 'defend';
+  stepEconomy(s, 0.1);
+  const defDefend = s.defense, protDefend = protectionAgainst(s, 'wolf'), offDefend = totalOffense(s);
+  assert(defDefend > defWatch, `DEFEND raises defense (${defWatch}→${defDefend})`);
+  assert(protDefend > protWatch, `DEFEND raises protection (${protWatch.toFixed(1)}→${protDefend.toFixed(1)})`);
+  assert(offDefend > offWatch, `DEFEND adds offense (${offWatch}→${offDefend})`);
+  ok(`WATCH→DEFEND raises defense/protection/offense (${defWatch}/${defDefend})`);
+  // Defend stance imposes a morale cost over time.
+  s.morale = 100;
+  for (let i = 0; i < 50; i++) stepEconomy(s, 0.2);
+  assert(s.morale < 100, `a militarised (DEFEND) stance costs morale (now ${s.morale.toFixed(1)})`);
+  ok('DEFEND stance weighs on morale');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

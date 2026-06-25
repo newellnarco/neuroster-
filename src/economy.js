@@ -156,14 +156,16 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0;
+  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
     popCap += (b.degraded ? 0 : def.popCap || 0); // degraded burrows house no one
     hygiene += def.hygiene || 0;
     storage += def.storage || 0;
-    defense += def.defense || 0;
+    // Towers: WATCH stance is gentler (×0.6 defense, wide vision); DEFEND is full + offense.
+    if (def.tower) { const defend = b.mode === 'defend'; defense += Math.round((def.defense || 0) * (defend ? 1 : 0.6)); if (defend) defendTowers++; else watchTowers++; }
+    else defense += def.defense || 0;
     fun += def.curiosity || 0;
     distract += def.distract || 0;
     health += def.health || 0;
@@ -181,6 +183,7 @@ function recomputeBuildings(state) {
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
   state._waterers = waterers; state._caretakers = caretakers; state._hygiene = hygiene;
   state._distract = Math.min(0.2, distract); // enrichment-for-fun trades a little output (capped)
+  state._defendTowers = defendTowers; state._watchTowers = watchTowers;
 }
 
 // A Mine attaches to one underground deposit, extracts it, and collapses when spent.
@@ -307,7 +310,8 @@ function updatePerUnitNeeds(state, dt, env) {
 function updateExploration(state, env) {
   const radius = Math.max(2, Math.round(3 * (1 + (env.revealMul || 0) + (state.mods.revealBonus || 0))));
   for (const u of state.units) reveal(state.world, Math.round(u.x), Math.round(u.y), radius);
-  for (const b of state.buildings) reveal(state.world, b.x, b.y, 3);
+  // Watch-stance towers see far (early warning); other structures reveal a little.
+  for (const b of state.buildings) reveal(state.world, b.x, b.y, (BUILDINGS[b.type]?.tower && b.mode !== 'defend' && !b.underConstruction) ? 7 : 3);
 }
 
 // Burrows accumulate filth; caretakers clean them; neglected ones degrade and
@@ -460,6 +464,13 @@ function updateMorale(state, dt) {
   const moraleRecover = MORALE.recover + (state._mega?.moraleRecover || 0); // Monument lifts spirits
   if (drain > 0) state.morale = Math.max(0, state.morale - drain * dt + (state._mega?.moraleRecover || 0) * dt);
   else state.morale = Math.min(100, state.morale + moraleRecover * dt);
+
+  // A militarised stance (towers set to DEFEND) weighs on the colony's spirit.
+  const defendTowers = state._defendTowers || 0;
+  if (defendTowers > 0) {
+    state.morale = Math.max(0, state.morale - Math.min(0.18, defendTowers * 0.04) * dt);
+    for (const u of state.units) u.needs.fun = Math.max(0, u.needs.fun - Math.min(0.12, defendTowers * 0.02) * dt);
+  }
 
   // Low morale drips away everyone's Fun (sad colony).
   if (state.morale < 60) {
