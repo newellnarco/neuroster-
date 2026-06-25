@@ -1,11 +1,13 @@
 name: Publish Docker image
 
 # Builds a multi-arch image (amd64 + arm64, so it runs on any Synology/NAS or
-# server) and pushes it to GitHub Container Registry on every push to main and
-# on version tags. Pull it on the NAS as ghcr.io/<owner>/neuroster-:latest
+# server) and pushes it to GitHub Container Registry. Runs on version tags and
+# on manual dispatch (not every push to main), so it doesn't fail noisily before
+# the package/registry permissions are set up. To enable on every push to main:
+# set Settings → Actions → General → Workflow permissions to "Read and write",
+# then add `push: { branches: [main] }` back to the triggers below.
 on:
   push:
-    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 

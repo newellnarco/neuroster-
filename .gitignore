@@ -1,0 +1,6 @@
+# Local-only files (never committed)
+update-log.txt      # written by the Windows auto-update task
+.env                # local deploy overrides (e.g. BIND_PORT)
+node_modules/
+.DS_Store
+*.log

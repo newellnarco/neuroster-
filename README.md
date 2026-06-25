@@ -53,9 +53,12 @@ docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neurost
 
 #### Prebuilt image (GHCR) — for a NAS / server with no build step
 
-CI publishes a **multi-arch** image (amd64 + arm64) to GitHub Container Registry on
-every push to `main`, so you can just pull and run — no cloning or building on the box
-(ideal for a Synology Container Manager / Docker API setup):
+CI can publish a **multi-arch** image (amd64 + arm64) to GitHub Container Registry so you
+can pull and run — no cloning or building on the box (ideal for a Synology Container
+Manager / Docker API setup). Publishing runs on a **version tag** (`git tag v0.1.0 && git
+push --tags`) or a **manual run** of the *Publish Docker image* workflow. (To auto-publish
+on every push to `main`, set **Settings → Actions → General → Workflow permissions** to
+*Read and write*, then add `push: { branches: [main] }` back to `docker-publish.yml`.)
 
 ```bash
 docker run -d -p 8080:8080 --restart unless-stopped \
@@ -67,6 +70,14 @@ On **Synology Container Manager**: *Registry* → add/search `ghcr.io/newellnarc
 auto-restart. Saves live in the browser, so the container is stateless (no volumes needed).
 The package must be **public** in GitHub (or log in to `ghcr.io` with a token) to pull
 without auth.
+
+### Keep a local clone auto-updated (Windows)
+
+If you deploy from a local Windows clone, `scripts/windows/` has a hidden background
+updater: `update-neuroster.vbs` runs `git` with no visible window to keep the clone
+matched to `main`, and `install-task.cmd` registers a Scheduled Task to run it every
+15 minutes. See [`scripts/windows/README.md`](scripts/windows/README.md). (Needs Git for
+Windows on `PATH` and credentials cached from your initial clone.)
 
 ### Controls
 - **Click** a building in the Build panel, then **click the map** to place it.
