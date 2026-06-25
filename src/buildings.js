@@ -1,5 +1,5 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
 
 // Labour-time for a project, from the total resources it costs (bigger = longer).
 export function buildTimeFor(cost) {
@@ -99,6 +99,7 @@ export function placeBuilding(state, type, x, y) {
   const b = { id: state.nextId++, type, x, y, active: true };
   if (def.tunnel) { b.tier = 0; b.hp = TUNNEL_TIERS[0].hp; } // tunnels start at wood
   if (def.bridge) { b.tier = 0; b.hp = BRIDGE_TIERS[0].hp; } // bridges start at wood
+  if (def.wall) { b.tier = 0; b.hp = WALL_TIERS[0].hp; }     // walls start at wood
   if (def.tower) b.mode = 'watch'; // towers start peaceful (vision), toggle to defend
   if (def.townhall) b.tier = 0;
   // Start as a construction site; rodents build it over time before it works.
@@ -167,7 +168,7 @@ export function requestAid(state, id) {
 export function upgradeTunnel(state, b) {
   const tiers = fortTiers(b.type);
   if (!tiers) return { ok: false };
-  const kind = BUILDINGS[b.type]?.bridge ? 'bridge' : 'tunnel';
+  const kind = BUILDINGS[b.type]?.bridge ? 'bridge' : BUILDINGS[b.type]?.wall ? 'wall' : 'tunnel';
   const tier = tiers[b.tier || 0];
   if ((b.hp ?? tier.hp) < tier.hp) {
     const repairCost = tier.repairCost || { wood: 8 };
