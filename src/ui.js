@@ -287,12 +287,23 @@ export function createUI(state, ctx) {
     el('btn-save').onclick = () => { ctx.onSave(); flash('Saved!'); };
     if (el('btn-export')) el('btn-export').onclick = () => ctx.onExport?.();
     if (el('btn-import')) el('btn-import').onclick = () => ctx.onImport?.();
+    if (el('btn-help')) el('btn-help').onclick = showHelp;
+    if (el('help-close')) el('help-close').onclick = hideHelp;
+    // Auto-open the guide on a player's very first visit.
+    try { if (!localStorage.getItem('neuroster.seenHelp')) showHelp(); } catch {}
     // Founder rename (delegated click on the env bar chip).
     el('envbar').onclick = (e) => {
       if (!e.target.closest('#founder-chip')) return;
       const n = prompt('Rename your founder hamster (once every 30 days):', state.founder?.name || '');
       if (n != null) msg(renameFounder(state, n));
     };
+  }
+
+  // ---- How-to-Play overlay ----
+  function showHelp() { el('help-modal').classList.remove('hidden'); }
+  function hideHelp() {
+    el('help-modal').classList.add('hidden');
+    try { localStorage.setItem('neuroster.seenHelp', '1'); } catch {}
   }
 
   // ---- Character creation: breed + name + biome ----

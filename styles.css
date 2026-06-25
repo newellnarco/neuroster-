@@ -162,6 +162,9 @@ body {
   border: 1px solid var(--line); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 .modal-card .cat { margin-top: 14px; }
 .card.breed.sel, .card.opt.sel { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(230,180,80,.3) inset; }
+ul.help { margin: 6px 0 4px; padding-left: 18px; color: var(--ink); }
+ul.help li { margin: 5px 0; font-size: 13px; line-height: 1.5; }
+ul.help b { color: var(--accent); font-weight: 600; }
 .namerow { display: flex; gap: 8px; }
 .namerow input { flex: 1; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
   border-radius: 8px; padding: 8px 12px; font-size: 15px; }

@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "serve": "node server.js"
+    "serve": "node server.js",
+    "check": "for f in src/*.js main.js server.js test/*.mjs; do node --check \"$f\" || exit 1; done",
+    "test": "npm run check && node test/smoke.mjs"
   },
   "engines": {
     "node": ">=16"

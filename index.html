@@ -12,6 +12,7 @@
     <div id="resbar" class="resbar"></div>
     <div class="spacer"></div>
     <div class="controls">
+      <button id="btn-help" title="How to play">❓ Help</button>
       <button id="btn-save" title="Save now">💾 Save</button>
       <button id="btn-export" title="Download your colony as a save file">⬆️ Export</button>
       <button id="btn-import" title="Load a colony from a save file">⬇️ Import</button>
@@ -53,6 +54,42 @@
       <div id="log" class="log"></div>
     </aside>
   </main>
+
+  <div id="help-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2>🐹 How to Play Neuroster</h2>
+      <p>You're the founder of a hamster colony. Explore, gather, build, automate, and keep your rodents thriving — there's no losing, only growing.</p>
+
+      <div class="cat">The core loop</div>
+      <ul class="help">
+        <li><b>Gather → Store → Refine → Build.</b> Rodents auto-gather nearby resources and haul them to storage. Build a <b>🪚 Sawmill</b>/<b>Smelter</b> to refine, then better buildings.</li>
+        <li><b>Place buildings</b> from the <b>🏗️ Build</b> tab: click a card, then click a map tile. Right-click cancels. Start with a <b>🕳️ Burrow</b> (housing + breeding) and a <b>🌾 Farm</b>.</li>
+        <li><b>Construction takes time</b> — awake rodents build it; more builders = faster.</li>
+      </ul>
+
+      <div class="cat">Keep them happy</div>
+      <ul class="help">
+        <li>Every rodent has its own <b>food, water, energy, fun &amp; health</b> (the bars up top are colony averages). Keep <b>Food</b> and <b>Water</b> stocked; build <b>Playgrounds</b> for fun and <b>Infirmaries</b> for health.</li>
+        <li><b>Select a rodent</b> (click it, or open the <b>🐹 Rodents</b> tab) to <b>Feed / Water / Play / Pet</b> it — an instant boost plus <b>bond</b> that lifts loyalty &amp; productivity.</li>
+        <li>Watch the <b>alert bar</b>: it flags whatever needs attention now. Click an alert to jump to the right panel.</li>
+      </ul>
+
+      <div class="cat">Grow &amp; defend</div>
+      <ul class="help">
+        <li><b>🔬 Skills</b> &amp; <b>🧬 Evolve</b> spend Research on permanent upgrades and new species. <b>🤝 Trade</b> with neighbouring factions for alliances (but don't hoard what they covet — it invites raids).</li>
+        <li><b>🛡️ Threats</b> shows predators &amp; disasters; counter them with defensive buildings and guardian species. Bury the fallen and heal the sick to protect <b>morale</b>.</li>
+        <li><b>🏛️ Mega</b> projects are long-term wonders — pour <b>surplus</b> resources in over time for huge permanent boosts.</li>
+      </ul>
+
+      <div class="cat">Controls &amp; time</div>
+      <ul class="help">
+        <li><b>Space</b> = pause · <b>1 / 2 / 3</b> = speed (1×/2×/4×). 1 in-game day = 15 real minutes. Hamsters are <b>nocturnal</b>.</li>
+        <li><b>No offline progress</b> — the world only advances while you're playing, and autosaves. Use <b>⬆️ Export / ⬇️ Import</b> to back up or move a colony.</li>
+      </ul>
+
+      <button id="help-close" class="modal-cancel">Got it — let's play! 🐹</button>
+    </div>
+  </div>
 
   <div id="biome-modal" class="modal hidden">
     <div class="modal-card">

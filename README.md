@@ -127,6 +127,8 @@ docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neurost
   morale). Level-gated; each grants a permanent, colony-wide payoff. See the **Mega** tab.
 - **Export / import saves**: back up or hand off a colony as a `.json` file (**⬆️ Export** /
   **⬇️ Import** in the top bar) — handy for moving between machines or sharing a test colony.
+- **Built-in How-to-Play guide**: a concise onboarding overlay opens on your first visit
+  (and any time from the **❓ Help** button) so new players know the loop at a glance.
 - **Persistent, login-gated time**: autosaves; there is **no offline progress** — the
   world is exactly as you left it.
 
@@ -155,3 +157,13 @@ src/
 
 The engine is **data-driven**: most new content (a building, resource, species, tech,
 or disaster) is added by editing `src/config.js`, not the engine code.
+
+### Tests / CI
+
+```bash
+npm test          # syntax-checks every module + runs the headless smoke suite
+```
+
+`test/smoke.mjs` drives the simulation across all 7 biomes and verifies alerts,
+megaprojects and save export/import — no browser needed. GitHub Actions
+(`.github/workflows/ci.yml`) runs it on every push and pull request.

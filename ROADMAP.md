@@ -174,8 +174,10 @@ autosave (no offline progress), and a **deployable server (Docker, configurable 
 **Shipped this session:** the live **alert bar** (Arc 17, `src/alerts.js` — purely derived,
 nothing persisted), **megaprojects** (Arc 16, `src/megaprojects.js` + `MEGAPROJECTS` in
 config; contribute-over-time, bonuses folded into economy/events/recompute via the
-`state._mega` per-tick cache), and **save export/import** (`save.js` + topbar buttons +
-`game.js` download/upload handlers).
+`state._mega` per-tick cache), **save export/import** (`save.js` + topbar buttons +
+`game.js` download/upload handlers), a first-run **How-to-Play overlay** (`#help-modal`,
+auto-opens once via a `neuroster.seenHelp` flag), and **CI** (`.github/workflows/ci.yml`
+running `npm test` → `test/smoke.mjs`, the committed headless verification).
 
 **Best next steps (highest value first):**
 1. **AI colonies as living neighbours** — the factions are economic only; give them a
