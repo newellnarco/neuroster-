@@ -74,6 +74,10 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] Balance pass: tune drains/yields once conveyors & more buildings land.
 
 ### ➕ Add
+- [x] **Names, families & inheritance** — every rodent has a name + **family surname**;
+      offspring are born to **two specific parents** and inherit a parent's surname, a **hint of
+      coat colour**, **blended traits** and a **head-start in the family's strongest skill**.
+      Every hamster wears its own (inherited) coat; **rename any rodent** (✏️) and see its parents.
 - [x] **Founder coat + creation polish** — choose **coat colour** (9 options) & **pattern**
       (classic/solid/patched) reflected on the founder rodent, a **🎲 Surprise me** randomiser,
       and a **predators & disasters On/Off** toggle (peaceful mode). Map-size option still pending

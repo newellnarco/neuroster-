@@ -143,7 +143,10 @@ export function createUI(state, ctx) {
         return `<button class="trait ${can ? '' : 'poor'}" data-unit="${u.id}" data-trait="${tid}"
           title="${td.name}: ${td.desc}\n${free ? 'Free with a skill point' : 'Next: ' + costStr(cost)}">${td.icon}${'•'.repeat(lvl) || '–'}</button>`;
       }).join('');
-      const name = u.founder ? `♛ ${u.name}` : `#${u.id}`;
+      const gname = escHtml(u.name || `#${u.id}`);
+      const fam = u.family ? ` <span class="fam">${escHtml(u.family)}</span>` : '';
+      const name = `${u.founder ? '♛ ' : ''}${gname}${fam}`;
+      const lineage = u.parentNames ? `<span class="kin" title="Parents">👪 ${escHtml(u.parentNames[0])} &amp; ${escHtml(u.parentNames[1])}</span>` : '';
       const bond = Math.round(u.bond ?? 45);
       const now = state.env?.lived || 0;
       const care = view.selUnit === u.id ? `<div class="care">${Object.entries(CARE).map(([k, c]) => {
@@ -155,9 +158,11 @@ export function createUI(state, ctx) {
       }).join('')}</div>` : '';
       return `<div class="unit ${sel}" data-selunit="${u.id}">
         <div class="uhead">${sp.icon} ${name} ${phase}${hybrid}
+          <button class="rename" data-rename="${u.id}" title="Rename this rodent">✏️</button>
           <span class="lvl">Lv.${u.level}${u.skillPoints ? ` · ⭐${u.skillPoints}` : ''}</span>
           <span class="xpbar"><span style="width:${Math.min(100, 100 * u.xp / xpForLevel(u.level))}%"></span></span>
           <span class="sub">❤️${bond} · ${sleepInfo}</span></div>
+        ${lineage ? `<div class="kinrow">${lineage}</div>` : ''}
         <div class="traits">${traits}</div>${care}</div>`;
     }).join('');
 
@@ -177,6 +182,12 @@ export function createUI(state, ctx) {
       const u = state.units.find(x => x.id == btn.dataset.cu);
       if (u) { const r = careFor(state, u, btn.dataset.care); msg(r); if (r?.ok) sfx('care'); }
       renderRodents();
+    });
+    bind('[data-rename]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.rename);
+      if (!u) return;
+      const n = prompt('Name this rodent:', u.name || '');
+      if (n != null && n.trim()) { u.name = n.trim().slice(0, 16); if (u.founder && state.founder) state.founder.name = u.name; sfx('care'); renderRodents(); }
     });
     bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
   }
@@ -563,5 +574,6 @@ export function createUI(state, ctx) {
 }
 
 function moraleIcon(m) { m = m ?? 100; return m >= 70 ? '😊' : m >= 45 ? '😐' : m >= 25 ? '😟' : '😢'; }
+function escHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function fmt(n) { n = Math.floor(n); return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : '' + n; }
 function costStr(cost) { return Object.entries(cost || {}).map(([k, v]) => `${RESOURCES[k]?.icon || k}${v}`).join(' '); }

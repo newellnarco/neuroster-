@@ -579,14 +579,14 @@ export function createRenderer(canvas, state, getView) {
     }
   }
 
-  // The founder wears its chosen coat (colour + pattern); everyone else uses
-  // their species defaults.
+  // Each hamster wears its own coat (chosen for the founder, inherited by
+  // offspring); other species use their defaults.
   function coatFor(u) {
-    if (u && u.founder && state.founder?.coat) {
-      const c = COAT_COLORS[state.founder.coat.color] || COAT_COLORS.golden;
-      const pat = state.founder.coat.pattern;
-      const belly = pat === 'solid' ? c.body : c.belly;
-      const patch = pat === 'patched' ? (isLight(c.body) ? '#5a5560' : '#f0ead8') : null;
+    const coat = u && (u.coat || (u.founder ? state.founder?.coat : null));
+    if (u && u.species === 'hamster' && coat) {
+      const c = COAT_COLORS[coat.color] || COAT_COLORS.golden;
+      const belly = coat.pattern === 'solid' ? c.body : c.belly;
+      const patch = coat.pattern === 'patched' ? (isLight(c.body) ? '#5a5560' : '#f0ead8') : null;
       return { ...VIS.hamster, body: c.body, belly, patch };
     }
     return VIS[u.species] || VIS.hamster;

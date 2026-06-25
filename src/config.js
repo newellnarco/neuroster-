@@ -521,6 +521,14 @@ export const HAMSTER_NAMES = [
 ];
 export const NAME_CHANGE_DAYS = 30; // founder may be renamed once every 30 in-game days
 
+// Family surnames — every rodent belongs to a family line; offspring inherit a
+// parent's surname, so you can trace lineages across the colony.
+export const FAMILY_NAMES = [
+  'Whiskerton', 'Nibbleby', 'Pawsworth', 'Tuftley', 'Burrows', 'Acornfield', 'Hazelnut',
+  'Thistledown', 'Dandelion', 'Cloverleaf', 'Barleycorn', 'Snugglesworth', 'Cheekfull',
+  'Pebblebrook', 'Meadowsweet', 'Brambleton', 'Wheatley', 'Mossfoot', 'Cobblewick', 'Honeydew',
+];
+
 // Start-of-game options for replayability: difficulty scales danger & starting
 // stock; density scales how abundant resource nodes are in the generated world.
 export const DIFFICULTIES = {
