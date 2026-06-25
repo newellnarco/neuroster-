@@ -128,6 +128,10 @@ export const BUILDINGS = {
     name: 'Sand Bath', icon: '🏖️', desc: 'Hamsters roll in sand to clean themselves — boosts Health and cuts wet-tail risk.',
     cost: { wood: 12, stone: 18 }, category: 'Wellbeing', health: 5, hygiene: 1,
   },
+  sanctuary: {
+    name: 'Sanctuary', icon: '🏡', desc: 'A refuge for lost & hurt animals. Stray creatures arrive more often to be taken in, and caring for them steadily raises colony Compassion.',
+    cost: { wood: 30, planks: 15, seeds: 10 }, category: 'Wellbeing', sanctuary: true, health: 3,
+  },
   autowater: {
     name: 'Auto-Waterer', icon: '🚰', desc: 'Pipes water to rodents; slows the Water need drain.',
     cost: { planks: 15, iron: 5 }, category: 'Wellbeing', waterer: 0.4,
@@ -655,6 +659,18 @@ export const STARTING = {
   resources: { wood: 90, stone: 45, food: 80, seeds: 50, water: 80 },
   hamsters: 5,
   storageCap: 300,
+};
+
+// ---- Rescues (kindness) ----------------------------------------------------
+// Lost / hurt animals wander to the edge of your colony; take them in for a
+// Compassion & morale boost. A Sanctuary makes them arrive far more often.
+export const RESCUE = {
+  baseInterval: 240,     // seconds between chances when you have no Sanctuary
+  sanctuaryFactor: 0.4,  // ×interval per Sanctuary (faster arrivals)
+  life: 70,              // seconds a stray waits before wandering off
+  species: ['mouse', 'gerbil', 'hamster', 'gopher', 'guineapig'], // who might need help
+  compassionTakeIn: 6,   // Compassion gained for taking one in
+  moraleTakeIn: 4,
 };
 
 // ---- Founder coat (cosmetic) ----------------------------------------------

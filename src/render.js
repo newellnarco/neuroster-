@@ -47,6 +47,7 @@ export function createRenderer(canvas, state, getView) {
     drawBodies();
     drawRodents(t);
     drawCaravans();
+    drawRescue(t);
     drawFx();
     drawHover(getView());
     drawDayNight();
@@ -550,6 +551,20 @@ export function createRenderer(canvas, state, getView) {
       glyph(FACTIONS[c.fac]?.icon || '🐾', px, py - 1 + bob, 14);
       glyph(c.kind === 'raid' ? '⚔️' : c.kind === 'aid' ? '🆘' : '🎁', px + 9, py - 6 + bob, 11);
     }
+  }
+
+  // A lost/hurt animal waiting at the edge to be taken in (click to rescue).
+  function drawRescue(t) {
+    const r = state.rescue; if (!r || !isSeen(state.world, r.x, r.y)) return;
+    const cx = r.x * TILE + TILE / 2, cy = r.y * TILE + TILE / 2;
+    const pulse = 0.5 + 0.5 * Math.sin(t * 3);
+    ctx.strokeStyle = `rgba(240,130,150,${0.35 + 0.45 * pulse})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 12 + pulse * 4, 0, 7); ctx.stroke();
+    drawCreatureRaw(cx, cy, 1, VIS[r.species] || VIS.hamster, t * 6, false, false, false, t, null);
+    glyph('💗', cx + 9, cy - 12, 13);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(cx - 27, cy + 9, 54, 11, 3); ctx.fill();
+    ctx.fillStyle = '#ffd9e0'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('click: take in', cx, cy + 14.5);
   }
 
   // Unburied dead — a sombre marker until a Graveyard lays them to rest.

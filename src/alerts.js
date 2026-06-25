@@ -4,7 +4,7 @@
 // stays correct after a load. The UI recomputes these a few times a second,
 // shows the most pressing ones as a banner, and pings when a new critical one
 // appears — the nudge that pulls a player back to a need before it cascades.
-import { BUILDINGS, FACTIONS, DISASTERS, BIOMES, EDIBLES } from './config.js';
+import { BUILDINGS, FACTIONS, DISASTERS, BIOMES, EDIBLES, SPECIES } from './config.js';
 import { colonyNeeds, population, totalStored } from './state.js';
 import { protectionAgainst, totalOffense } from './events.js';
 
@@ -89,6 +89,9 @@ export function computeAlerts(state) {
 
   // ---- Desertion risk (low wellbeing) ----
   if ((state._unrest || 0) > 0.4 && pop > 1) push('warning', 'unrest', '💔', 'Rodents are unhappy and may desert — meet their needs.', 'build');
+
+  // ---- Kindness: a stray waiting to be taken in ----
+  if (state.rescue) push('info', 'rescue', '💗', `A lost ${SPECIES[state.rescue.species]?.name || 'animal'} needs a home — click it on the map to take it in.`);
 
   // ---- Engagement nudge (lowest priority) ----
   const sp = state.units.reduce((a, u) => a + (u.skillPoints || 0), 0);

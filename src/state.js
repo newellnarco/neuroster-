@@ -31,6 +31,7 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     fx: [],
     factions: {},
     morale: 100,
+    compassion: 50, // colony virtue: kindness, generosity & care raise it
     bodies: [],
     log: [],
   };
@@ -141,6 +142,12 @@ export function killUnit(state, unit) {
   if (i >= 0) state.units.splice(i, 1);
   (state.bodies || (state.bodies = [])).push({ x: unit.x, y: unit.y, species: unit.species, born: state.env?.lived || 0 });
   addFx(state, unit.x, unit.y, '💀', 2.2);
+}
+
+// Colony Compassion (0..100): rises with kindness, generosity & care; falls
+// with cruelty & neglect. High compassion calms the wild and draws joiners.
+export function addCompassion(state, n) {
+  state.compassion = Math.max(0, Math.min(100, (state.compassion ?? 50) + n));
 }
 
 export function logMsg(state, msg) {
