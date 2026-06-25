@@ -152,11 +152,23 @@ body {
    live in #board and stay pinned regardless of scroll. */
 #viewport { flex: 1; min-width: 0; display: flex; align-items: safe center; justify-content: safe center;
   overflow: auto; padding: 10px; }
-/* Draggable dividers */
-.vsplit { flex: 0 0 6px; cursor: ew-resize; background: var(--line); position: relative; z-index: 6; }
-.vsplit:hover, .vsplit.dragging { background: var(--accent); }
-.hsplit { flex: 0 0 6px; cursor: ns-resize; background: var(--line); }
-.hsplit:hover, .hsplit.dragging { background: var(--accent); }
+/* Draggable dividers — with grip dots (drag) and a collapse button (hide) */
+.vsplit { flex: 0 0 10px; cursor: ew-resize; background: var(--line); position: relative; z-index: 6;
+  display: flex; align-items: center; justify-content: center; }
+.hsplit { flex: 0 0 10px; cursor: ns-resize; background: var(--line); position: relative; z-index: 6;
+  display: flex; align-items: center; justify-content: center; }
+.vsplit:hover, .vsplit.dragging, .hsplit:hover, .hsplit.dragging { background: #4a4550; }
+.grip { background-image: radial-gradient(var(--muted) 1px, transparent 1.4px); opacity: .9; pointer-events: none; }
+.vgrip { width: 4px; height: 28px; background-size: 4px 5px; }
+.hgrip { height: 4px; width: 28px; background-size: 5px 4px; }
+.split-btn { position: absolute; background: var(--panel2); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 6px; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; z-index: 7; }
+.vsplit .split-btn { width: 18px; height: 34px; top: 14px; left: 50%; transform: translateX(-50%); }
+.hsplit .split-btn { width: 34px; height: 18px; right: 14px; top: 50%; transform: translateY(-50%); }
+.split-btn:hover { border-color: var(--accent); color: var(--accent); }
+#sidebar.collapsed { width: 0 !important; min-width: 0; overflow: hidden; border-left: none; }
+#log.collapsed { height: 0 !important; padding-top: 0; padding-bottom: 0; overflow: hidden; border: none; }
+#viewport.panning { cursor: grabbing; }
 /* Click-pinned tooltip */
 .pin-tip { position: fixed; z-index: 200; max-width: 320px; background: rgba(20,18,15,.97);
   color: var(--ink); border: 1px solid var(--accent); border-radius: 8px; padding: 9px 12px;
