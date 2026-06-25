@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
 import { logMsg, population, addRes, addFx } from './state.js';
 import { makeRodent } from './entities.js';
 
@@ -108,8 +108,9 @@ function fireDisaster(state, key, d, elapsed) {
   const biome = BIOMES[state.world?.biome];
   const biomeMul = (biome?.hazardMul?.[key]) ?? 1;
   const envMul = 1 + (state._envMods?.hazardMul?.[key] || 0);
-  const difficulty = BREEDS[state.founder?.breed]?.difficulty ?? 1; // founder breed sets the stakes
-  const severity = d.baseSeverity * grow * biomeMul * Math.max(0.2, envMul) * difficulty;
+  const breedDiff = BREEDS[state.founder?.breed]?.difficulty ?? 1; // founder breed sets the stakes
+  const gameDiff = DIFFICULTIES[state.difficulty]?.disasterMul ?? 1; // chosen difficulty
+  const severity = d.baseSeverity * grow * biomeMul * Math.max(0.2, envMul) * breedDiff * gameDiff;
   const offenseBonus = (d.kind === 'predator') ? totalOffense(state) : 0;
   const protect = protectionAgainst(state, key) + offenseBonus;
   const net = severity - protect;

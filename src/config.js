@@ -469,6 +469,19 @@ export const HAMSTER_NAMES = [
 ];
 export const NAME_CHANGE_DAYS = 30; // founder may be renamed once every 30 in-game days
 
+// Start-of-game options for replayability: difficulty scales danger & starting
+// stock; density scales how abundant resource nodes are in the generated world.
+export const DIFFICULTIES = {
+  relaxed: { name: 'Relaxed', icon: '😌', disasterMul: 0.55, startMul: 1.4, desc: 'Gentle threats, generous start. Build & relax.' },
+  normal:  { name: 'Normal',  icon: '⚖️', disasterMul: 1.0,  startMul: 1.0, desc: 'The intended balance.' },
+  harsh:   { name: 'Harsh',   icon: '🔥', disasterMul: 1.6,  startMul: 0.8, desc: 'Frequent, fierce dangers and a lean start.' },
+};
+export const DENSITIES = {
+  sparse: { name: 'Sparse', icon: '🍂', mul: 0.6, desc: 'Scarce resources — expand & explore to survive.' },
+  normal: { name: 'Normal', icon: '🌿', mul: 1.0, desc: 'A balanced spread of resources.' },
+  rich:   { name: 'Rich',   icon: '🌳', mul: 1.6, desc: 'Abundant resources for a builder\'s paradise.' },
+};
+
 // ---- Biomes ----------------------------------------------------------------
 // Each biome shapes the procedurally generated world: terrain mix, how much
 // water, resource-node abundance (nodeMul), and hazard modifiers (hazardMul).

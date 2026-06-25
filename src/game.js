@@ -16,7 +16,7 @@ export function startGame(canvas) {
     localStorage.removeItem(START_KEY);
     clearSave();
     const opt = JSON.parse(pending);
-    state = newGame(undefined, opt.biome || 'woodland', opt.breed || 'syrian', opt.name || null);
+    state = newGame(undefined, opt.biome || 'woodland', opt.breed || 'syrian', opt.name || null, { difficulty: opt.difficulty, density: opt.density });
   } else {
     state = loadGame() || newGame();
   }

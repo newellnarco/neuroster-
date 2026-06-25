@@ -25,7 +25,7 @@ function weightedTerrain(rng, weights) {
   return TERRAIN.grass;
 }
 
-export function generateWorld(seed = 12345, biomeKey = 'woodland') {
+export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 1) {
   const biome = BIOMES[biomeKey] || BIOMES.woodland;
   const rng = makeRng(seed);
   const terrain = new Uint8Array(GRID_W * GRID_H);
@@ -61,7 +61,7 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland') {
   const baseClusters = { trees: 5, rock: 3, orevein: 2, coalseam: 2, bush: 3 };
 
   for (const kind of Object.keys(NODE_TYPES)) {
-    const mul = (biome.nodeMul && biome.nodeMul[kind]) || 1;
+    const mul = ((biome.nodeMul && biome.nodeMul[kind]) || 1) * densityMul;
     const clusters = Math.max(1, Math.round((baseClusters[kind] || 2) * mul));
     for (let c = 0; c < clusters; c++) {
       const bx = 1 + Math.floor(rng() * (GRID_W - 2));

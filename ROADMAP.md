@@ -86,8 +86,9 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
       (marsh already flags `hazardMul` hooks; add the event types).
 - [ ] **AI colonies** — neighboring rodent settlements: predatory (raid you),
       competing (race for nodes), cooperative (alliances, trade caravans).
-- [ ] **New-game difficulty & density options** — sliders for resource density,
-      disaster frequency, map size; surfaced in character creation.
+- [x] **New-game difficulty & density options** — Relaxed/Normal/Harsh (scales danger &
+      starting stock) and Sparse/Normal/Rich resource density, in character creation.
+- [x] **Biome-unique disasters** — tsunami/avalanche/blight/sandstorm/wildfire per biome.
 - [ ] **Job assignment UI** — let players assign specific rodents to resources/buildings
       (currently auto by `prefKind`).
 - [ ] **True movement/pathfinding** — so Tunnels can physically gate/route movement and

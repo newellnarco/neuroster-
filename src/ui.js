@@ -1,5 +1,5 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, TILE, xpForLevel } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, TILE, xpForLevel } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
 import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
@@ -241,15 +241,19 @@ export function createUI(state, ctx) {
 
   // ---- Character creation: breed + name + biome ----
   function showCharacterCreation() {
-    const sel = { breed: 'syrian', name: HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)], biome: null };
+    const sel = { breed: 'syrian', difficulty: 'normal', density: 'normal', name: HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)] };
     const card = el('biome-modal').querySelector('.modal-card');
+    const optRow = (group, data) => `<div class="grid" id="cc-${group}">${Object.entries(data).map(([k, v]) =>
+      `<button class="card opt" data-${group}="${k}"><div class="ico">${v.icon}</div><div class="nm">${v.name}</div><div class="ds">${v.desc}</div></button>`).join('')}</div>`;
     card.innerHTML = `
       <h2>🐹 Found a New Colony</h2>
-      <p>Create your founder hamster, then choose a biome. Every choice changes your starting traits, map and challenges.</p>
+      <p>Create your founder hamster, set the challenge, then choose a biome to begin.</p>
       <div class="cat">Breed</div>
-      <div class="grid" id="cc-breeds">${Object.entries(BREEDS).map(([k, b]) =>
-        `<button class="card breed" data-breed="${k}"><div class="ico">${b.icon}</div>
+      <div class="grid" id="cc-breed">${Object.entries(BREEDS).map(([k, b]) =>
+        `<button class="card opt" data-breed="${k}"><div class="ico">${b.icon}</div>
           <div class="nm">${b.name}</div><div class="ds">${b.desc}</div></button>`).join('')}</div>
+      <div class="cat">Difficulty</div>${optRow('difficulty', DIFFICULTIES)}
+      <div class="cat">Resource density</div>${optRow('density', DENSITIES)}
       <div class="cat">Name</div>
       <div class="namerow"><input id="cc-name" value="${sel.name}" maxlength="16" />
         <button id="cc-roll" title="Random name">🎲</button></div>
@@ -260,14 +264,17 @@ export function createUI(state, ctx) {
       <button id="cc-cancel" class="modal-cancel">Cancel</button>`;
     el('biome-modal').classList.remove('hidden');
 
-    const breeds = card.querySelectorAll('[data-breed]');
-    const markBreed = () => breeds.forEach(b => b.classList.toggle('sel', b.dataset.breed === sel.breed));
-    breeds.forEach(b => b.onclick = () => { sel.breed = b.dataset.breed; markBreed(); });
-    markBreed();
+    const wire = (group) => {
+      const btns = card.querySelectorAll(`[data-${group}]`);
+      const mark = () => btns.forEach(b => b.classList.toggle('sel', b.dataset[group] === sel[group]));
+      btns.forEach(b => b.onclick = () => { sel[group] = b.dataset[group]; mark(); });
+      mark();
+    };
+    wire('breed'); wire('difficulty'); wire('density');
     card.querySelector('#cc-roll').onclick = () => { sel.name = HAMSTER_NAMES[Math.floor(Math.random() * HAMSTER_NAMES.length)]; card.querySelector('#cc-name').value = sel.name; };
     card.querySelector('#cc-cancel').onclick = () => el('biome-modal').classList.add('hidden');
     card.querySelectorAll('[data-biome]').forEach(btn => {
-      btn.onclick = () => ctx.onNewGame({ biome: btn.dataset.biome, breed: sel.breed, name: card.querySelector('#cc-name').value.trim() || sel.name });
+      btn.onclick = () => ctx.onNewGame({ biome: btn.dataset.biome, breed: sel.breed, name: card.querySelector('#cc-name').value.trim() || sel.name, difficulty: sel.difficulty, density: sel.density });
     });
   }
 

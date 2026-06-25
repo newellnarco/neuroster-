@@ -135,7 +135,7 @@ body {
 .modal-cancel { margin-top: 14px; background: var(--panel2); color: var(--ink);
   border: 1px solid var(--line); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 .modal-card .cat { margin-top: 14px; }
-.card.breed.sel { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(230,180,80,.3) inset; }
+.card.breed.sel, .card.opt.sel { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(230,180,80,.3) inset; }
 .namerow { display: flex; gap: 8px; }
 .namerow input { flex: 1; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
   border-radius: 8px; padding: 8px 12px; font-size: 15px; }

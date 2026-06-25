@@ -1,16 +1,18 @@
 // state.js — the GameState model and core helpers.
-import { RESOURCES, STARTING, NEEDS, TRAITS, EVOLUTIONS, NODE_TYPES, BREEDS, HAMSTER_NAMES, FACTIONS } from './config.js';
+import { RESOURCES, STARTING, NEEDS, TRAITS, EVOLUTIONS, NODE_TYPES, BREEDS, HAMSTER_NAMES, FACTIONS, DIFFICULTIES, DENSITIES } from './config.js';
 import { generateWorld, reveal } from './world.js';
 import { makeRodent } from './entities.js';
 import { initEnv } from './environment.js';
 
-export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), biome = 'woodland', breedKey = 'syrian', founderName = null) {
-  const world = generateWorld(seed, biome);
+export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), biome = 'woodland', breedKey = 'syrian', founderName = null, opts = {}) {
+  const difficulty = DIFFICULTIES[opts.difficulty] ? opts.difficulty : 'normal';
+  const density = DENSITIES[opts.density] ? opts.density : 'normal';
+  const world = generateWorld(seed, biome, DENSITIES[density].mul);
   const breed = BREEDS[breedKey] || BREEDS.syrian;
   const name = founderName || HAMSTER_NAMES[seed % HAMSTER_NAMES.length];
   const state = {
     version: 3,
-    seed, biome,
+    seed, biome, difficulty, density,
     founder: { breed: breedKey, name, lastRenameDay: 0 },
     world,
     res: {},
@@ -36,7 +38,8 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
   for (const [k, v] of Object.entries(breed.colonyMod || {})) state.mods[k] = (state.mods[k] || 0) + v;
 
   for (const k of Object.keys(RESOURCES)) state.res[k] = 0;
-  Object.assign(state.res, STARTING.resources);
+  const startMul = DIFFICULTIES[difficulty].startMul;
+  for (const [k, v] of Object.entries(STARTING.resources)) state.res[k] = Math.round(v * startMul);
   initEnv(state);
   reveal(world, world.spawn.x, world.spawn.y, 6);
 
