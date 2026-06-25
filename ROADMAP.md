@@ -36,7 +36,8 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 3 | Rodent species + recruiting + hybrids | ✅ Shipped | 6 species, hybrid breeding blends traits |
 | 4 | Per-creature needs (food/water/energy/fun/health) | ✅ Shipped | Drives per-unit productivity & loyalty |
 | 5 | Sleep cycles per species/level | ✅ Shipped | Nocturnal/diurnal/crepuscular phases |
-| 6 | Predators & natural disasters | ✅ Shipped | Wolf/Hawk/Raid/Flood/Quake + counters |
+| 6 | Predators & natural disasters | ✅ Shipped | Wolf/Hawk/Raid/Flood/Quake + counters; **floods are double-edged** (seeds+fertility vs damage/drowned mines, gated by levees) |
+| 6c | Surface vs underground resources | ✅ Shipped | Trees/rocks/bushes harvested by rodents & **recede visually** (2.5D sprites); iron/coal need a placed **Mine** showing remaining until it **collapses**; mines can **flood & need repair** |
 | 7 | Loyalty (join / desert, no rebelling) | ✅ Shipped | Thriving → joiners; neglected → desertion |
 | 8 | Biomes & selectable maps | ✅ Shipped | 7 biomes w/ terrain, resource & hazard profiles |
 | 9 | Day/night cycle (1 day = 15 min) | ✅ Shipped | Tints world; shifts predator/species activity |

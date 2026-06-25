@@ -56,9 +56,15 @@ opening `index.html` directly via `file://` won't work because it uses ES module
   rodent is your **Main Hamster level**, which gates advanced content.
 - **Species & hybrids**: recruit guinea pigs, gerbils, mice, rats, beavers; some
   protect against specific threats. New rodents can be **hybrids** blending parents' best traits.
-- **Predators & natural disasters**: wolves, hawks, raiders, floods, earthquakes —
-  countered by defensive buildings and protective species; scaled by biome, weather,
-  night, and your breed's difficulty.
+- **Surface vs underground resources**: rodents harvest **trees, rocks & bushes**
+  directly (which **recede** as 2.5D sprites as they're used up); **iron ore & coal**
+  are underground and need a placed **Mine**, which shows the **remaining** amount and
+  **collapses** when the seam runs out.
+- **Predators & natural disasters**: wolves, hawks, raiders, earthquakes, and
+  **double-edged floods** — floods leave **seeds & fertile soil** (a temporary farm
+  boost) but, if your **levees/irrigation** can't hold them, they damage stores, hurt
+  rodents and **flood mines** (which must be **repaired** with materials + time).
+  Threats scale by biome, weather, night, and your breed's difficulty.
 - **Hands-on care**: select any rodent to **Feed / Water / Play / Pet** it for an instant
   need boost, reward feedback, and **bond** (affection) that lifts its productivity and
   loyalty. Cooldowns reward periodic check-ins; **caretaker huts & auto-waterers**

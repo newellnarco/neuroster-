@@ -25,13 +25,16 @@ export const RESOURCES = {
   research: { name: 'Research', icon: '🔬', kind: 'abstract', color: '#7e9cff' },
 };
 
-// Resource nodes scattered in the world (raw materials a hamster can mine).
+// Resource nodes scattered in the world.
+//  surface:true  → harvested directly by roaming rodents; recede visually as used.
+//  surface:false → underground: invisible deposit until you place a Mine on it,
+//                  which extracts it (showing remaining) until the seam collapses.
 export const NODE_TYPES = {
-  trees:    { resource: 'wood',    icon: '🌳', amount: 400, color: '#2e7d32' },
-  rock:     { resource: 'stone',   icon: '🪨', amount: 500, color: '#78838d' },
-  orevein:  { resource: 'ironore', icon: '⛰️', amount: 300, color: '#8d6e63' },
-  coalseam: { resource: 'coal',    icon: '⚫', amount: 300, color: '#37474f' },
-  bush:     { resource: 'seeds',   icon: '🌿', amount: 200, color: '#558b2f' },
+  trees:    { resource: 'wood',    icon: '🌳', amount: 400, color: '#2e7d32', surface: true },
+  rock:     { resource: 'stone',   icon: '🪨', amount: 500, color: '#78838d', surface: true },
+  bush:     { resource: 'seeds',   icon: '🌿', amount: 200, color: '#558b2f', surface: true },
+  orevein:  { resource: 'ironore', icon: '⛰️', amount: 300, color: '#8d6e63', surface: false },
+  coalseam: { resource: 'coal',    icon: '⚫', amount: 300, color: '#37474f', surface: false },
 };
 
 // ---- Buildings -------------------------------------------------------------
@@ -80,8 +83,8 @@ export const BUILDINGS = {
     produces: { iron: 0.3 }, consumes: { ironore: 0.5, coal: 0.3 },
   },
   mine: {
-    name: 'Mine', icon: '⛏️', desc: 'Automated extraction; place near ore/coal/stone.',
-    cost: { wood: 40, planks: 10 }, category: 'Extraction', autoMine: true, radius: 3,
+    name: 'Mine', icon: '⛏️', desc: 'Digs an underground iron-ore or coal deposit. Shows remaining until it collapses. Can flood — repair with materials & time.',
+    cost: { wood: 40, planks: 10 }, category: 'Extraction', mine: true, radius: 1, rate: 1.2,
   },
   wheel: {
     name: 'Wheel Generator', icon: '🎡', desc: 'Rodents run wheels: Food → Power.',
@@ -195,7 +198,8 @@ export const DISASTERS = {
   },
   flood: {
     name: 'Flood', icon: '🌊', kind: 'disaster', baseSeverity: 14, interval: 140,
-    desc: 'Rising water damages buildings & food.', effect: 'damage',
+    desc: 'Brings seeds & fertile soil — but unchecked it wrecks buildings, drowns mines & hurts rodents. Levees help.',
+    effect: 'flood', seeds: 45, fertileSeconds: 150,
   },
   quake: {
     name: 'Earthquake', icon: '🌋', kind: 'disaster', baseSeverity: 16, interval: 200,
@@ -245,6 +249,9 @@ export const CARE = {
   pet:   { name: 'Pet',   icon: '❤️', need: 'health', amount: 18, cost: {},            xp: 2, bond: 16, cd: 14, fx: '❤️' },
 };
 export const BOND_DECAY = 0.04;   // per second; gentle, so daily care keeps it up
+
+// Flooded mines must be repaired (materials + time) before they work again.
+export const MINE_REPAIR = { cost: { planks: 15, wood: 15 }, seconds: 35 };
 
 // ---- Founder hamster: breeds & names ---------------------------------------
 // Players begin as a single "founder" hamster of a chosen breed. The breed

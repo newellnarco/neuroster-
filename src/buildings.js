@@ -1,5 +1,5 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
 import { canAfford, spend, logMsg, addFx } from './state.js';
 import { getTile, TERRAIN, inBounds } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
@@ -59,10 +59,10 @@ export function canPlace(state, type, x, y) {
   // Wells need water nearby; mines need a depleting node in range.
   if (def.needsWater && !hasWaterNear(state, x, y, def.radius || 3))
     return { ok: false, reason: 'Place near water (a pond/river)' };
-  if (def.autoMine && !hasNodeNear(state, x, y, def.radius || 3))
-    return { ok: false, reason: 'Place near ore/coal/stone to mine' };
-  if (def.needsNode && !hasNodeNear(state, x, y, def.radius || 2))
-    return { ok: false, reason: 'Place near a resource node to feed the belt' };
+  if (def.mine && !undergroundNear(state, x, y, def.radius || 1))
+    return { ok: false, reason: 'Place on an underground iron-ore or coal seam' };
+  if (def.needsNode && !surfaceNodeNear(state, x, y, def.radius || 2))
+    return { ok: false, reason: 'Place near trees/rocks to feed the belt' };
   if (!canAfford(state, def.cost))
     return { ok: false, reason: 'Not enough resources' };
   return { ok: true };
@@ -73,8 +73,11 @@ function hasWaterNear(state, x, y, r) {
     if (getTile(state.world.terrain, x + dx, y + dy) === TERRAIN.water) return true;
   return false;
 }
-function hasNodeNear(state, x, y, r) {
-  return state.world.nodes.some(n => n.amount > 0 && Math.abs(n.x - x) <= r && Math.abs(n.y - y) <= r);
+function surfaceNodeNear(state, x, y, r) {
+  return state.world.nodes.some(n => n.amount > 0 && NODE_TYPES[n.kind].surface !== false && Math.abs(n.x - x) <= r && Math.abs(n.y - y) <= r);
+}
+function undergroundNear(state, x, y, r) {
+  return state.world.nodes.some(n => n.amount > 0 && !n.claimedBy && NODE_TYPES[n.kind].surface === false && Math.abs(n.x - x) <= r && Math.abs(n.y - y) <= r);
 }
 
 export function placeBuilding(state, type, x, y) {
@@ -87,10 +90,23 @@ export function placeBuilding(state, type, x, y) {
   return { ok: true };
 }
 
+// Begin repairing a flooded mine: pay materials, then it works again after a delay.
+export function repairMine(state, b) {
+  if (!b || !BUILDINGS[b.type]?.mine || !b.flooded) return { ok: false, reason: 'Not a flooded mine' };
+  if (b.repairUntil != null) return { ok: false, reason: 'Already being repaired' };
+  if (!canAfford(state, MINE_REPAIR.cost)) return { ok: false, reason: `Repair needs ${Object.entries(MINE_REPAIR.cost).map(([k, v]) => k + ' ' + v).join(', ')}` };
+  spend(state, MINE_REPAIR.cost);
+  b.repairUntil = (state.env?.lived || 0) + MINE_REPAIR.seconds;
+  logMsg(state, `🔧 Repairing a flooded mine (~${MINE_REPAIR.seconds}s)…`);
+  return { ok: true };
+}
+
 export function demolish(state, building) {
   const i = state.buildings.indexOf(building);
   if (i >= 0) {
     state.buildings.splice(i, 1);
+    // release any deposit this building had claimed (e.g. a mine)
+    if (building.nodeId != null) { const n = state.world.nodes.find(o => o.id === building.nodeId); if (n) n.claimedBy = null; }
     // refund half (rounded down)
     const def = BUILDINGS[building.type];
     for (const [k, v] of Object.entries(def.cost || {})) state.res[k] = (state.res[k] || 0) + Math.floor(v / 2);

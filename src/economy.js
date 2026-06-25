@@ -27,11 +27,13 @@ export function stepEconomy(state, dt) {
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.active === false) continue;
-    if (def.autoMine) { runAutoMine(state, b, def, dt, wb); continue; }
+    if (def.mine) { runMine(state, b, def, dt, wb); continue; }
     if (def.belt) { runBelt(state, b, def, dt, wb); continue; }
 
     let rate = dt * wb * powerMul;
-    if (def.category === 'Food') rate *= (1 + state.mods.foodMul + env.foodMul);
+    // Fertile soil left by a recent flood temporarily boosts farms.
+    const fertile = (state.fertileUntil || 0) > (state.env.lived || 0) ? 0.6 : 0;
+    if (def.category === 'Food') rate *= (1 + state.mods.foodMul + env.foodMul + fertile);
     if (def.category === 'Production') rate *= (1 + state.mods.prodMul);
     if (def.produces?.power) rate *= (1 + env.powerGain);
     if (def.produces?.research) rate *= (1 + (state.mods.researchMul || 0) + evoBonus(state, 'all', 'research'));
@@ -42,6 +44,11 @@ export function stepEconomy(state, dt) {
       for (const [k, v] of Object.entries(def.consumes)) state.res[k] -= v * rate;
     }
     if (def.produces) for (const [k, v] of Object.entries(def.produces)) addRes(state, k, v * rate);
+  }
+  // Remove any mines that collapsed this tick (deposit exhausted).
+  if (state._collapse && state._collapse.length) {
+    for (const b of state._collapse) { const i = state.buildings.indexOf(b); if (i >= 0) state.buildings.splice(i, 1); }
+    state._collapse.length = 0;
   }
 
   // 4) Per-creature needs (food, water, energy, fun, health).
@@ -84,24 +91,50 @@ function recomputeBuildings(state) {
   state._waterers = waterers; state._caretakers = caretakers;
 }
 
-function runAutoMine(state, b, def, dt, wb) {
-  const r = def.radius || 3;
-  for (const n of state.world.nodes) {
-    if (n.amount <= 0) continue;
-    if (Math.abs(n.x - b.x) > r || Math.abs(n.y - b.y) > r) continue;
-    const got = Math.min(n.amount, 1.2 * dt * wb * (1 + state.mods.mineMul));
-    n.amount -= got;
-    addRes(state, NODE_TYPES[n.kind].resource, got);
-    break;
+// A Mine attaches to one underground deposit, extracts it, and collapses when spent.
+function runMine(state, b, def, dt, wb) {
+  // Flooded mines are idle until repaired (materials paid + repair time elapses).
+  if (b.flooded) {
+    if (b.repairUntil != null && (state.env.lived || 0) >= b.repairUntil) {
+      b.flooded = false; b.repairUntil = null;
+      addFx(state, b.x, b.y, '🔧', 1.6);
+      logMsg(state, '🔧 A flooded mine was repaired and is working again.');
+    }
+    return;
   }
+  if (b.nodeId == null) {
+    // claim the nearest unclaimed underground deposit in range
+    const r = def.radius || 1;
+    let pick = null, bd = Infinity;
+    for (const n of state.world.nodes) {
+      if (n.amount <= 0 || n.claimedBy || NODE_TYPES[n.kind].surface !== false) continue;
+      const d = Math.abs(n.x - b.x) + Math.abs(n.y - b.y);
+      if (d <= r && d < bd) { bd = d; pick = n; }
+    }
+    if (!pick) return;
+    pick.claimedBy = b.id; b.nodeId = pick.id; b.resKind = pick.kind;
+  }
+  const n = state.world.nodes.find(o => o.id === b.nodeId);
+  if (!n || n.amount <= 0) { collapseMine(state, b, n); return; }
+  const got = Math.min(n.amount, (def.rate || 1.2) * dt * wb * (1 + state.mods.mineMul));
+  n.amount -= got;
+  b._remaining = Math.ceil(n.amount);
+  addRes(state, NODE_TYPES[n.kind].resource, got);
+  if (n.amount <= 0) collapseMine(state, b, n);
+}
+function collapseMine(state, b, n) {
+  (state._collapse || (state._collapse = [])).push(b);
+  if (n) n.claimedBy = null;
+  addFx(state, b.x, b.y, '💥', 1.8);
+  logMsg(state, `⛏️ A mine collapsed — its ${n ? NODE_TYPES[n.kind].resource : 'ore'} seam ran out.`);
 }
 
-// Conveyor belts auto-transport from the nearest in-range node to storage.
+// Conveyor belts auto-transport from the nearest in-range SURFACE node to storage.
 function runBelt(state, b, def, dt, wb) {
   const r = def.radius || 2;
   let target = null, bd = Infinity;
   for (const n of state.world.nodes) {
-    if (n.amount <= 0) continue;
+    if (n.amount <= 0 || NODE_TYPES[n.kind].surface === false) continue;
     const d = Math.abs(n.x - b.x) + Math.abs(n.y - b.y);
     if (d <= r && d < bd) { bd = d; target = n; }
   }
@@ -109,7 +142,7 @@ function runBelt(state, b, def, dt, wb) {
   const got = Math.min(target.amount, def.belt.rate * dt * wb);
   target.amount -= got;
   addRes(state, NODE_TYPES[target.kind].resource, got);
-  b._flow = 1; // marks the belt as actively moving (for animation)
+  b._flow = 1;
 }
 
 function powerMultiplier(state) {

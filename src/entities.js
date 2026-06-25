@@ -164,6 +164,8 @@ function nearestNode(state, u) {
   let best = null, bd = Infinity, bestPref = null, bdPref = Infinity;
   for (const n of state.world.nodes) {
     if (n.amount <= 0) continue;
+    if (NODE_TYPES[n.kind].surface === false) continue; // underground needs a Mine
+    if (n.claimedBy) continue;                            // belt/mine already on it
     const d = (n.x - u.x) ** 2 + (n.y - u.y) ** 2;
     if (d < bd) { bd = d; best = n; }
     if (n.kind === u.prefKind && d < bdPref) { bdPref = d; bestPref = n; }

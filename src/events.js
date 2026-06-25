@@ -1,6 +1,6 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
 import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
-import { logMsg, population } from './state.js';
+import { logMsg, population, addRes, addFx } from './state.js';
 
 // Total protection the colony currently has against a given disaster key.
 // Sums building `protect` values + per-species `protect` (scaled by count).
@@ -61,6 +61,10 @@ function fireDisaster(state, key, d, elapsed) {
   const protect = protectionAgainst(state, key) + offenseBonus;
   const net = severity - protect;
 
+  // Floods are double-edged: they always bring seeds & fertile soil, and only
+  // damage/drown things when protection (levees/irrigation) can't hold them back.
+  if (d.effect === 'flood') { handleFlood(state, d, net); return; }
+
   if (net <= 2) {
     logMsg(state, `${d.icon} ${d.name} approached but your defenses held! (def ${Math.round(protect)} ≥ ${Math.round(severity)})`);
     return;
@@ -93,6 +97,33 @@ function fireDisaster(state, key, d, elapsed) {
       break;
     }
   }
+}
+
+// Flood: always deposits seeds + leaves fertile soil; damages & drowns mines only
+// when it overwhelms your protection (levees, irrigation, beavers).
+function handleFlood(state, d, net) {
+  addRes(state, 'seeds', d.seeds || 40);
+  state.fertileUntil = (state.env?.lived || 0) + (d.fertileSeconds || 120);
+  addFx(state, state.world.spawn.x, state.world.spawn.y, '🌱', 2);
+  if (net <= 2) {
+    logMsg(state, `${d.icon} Floodwaters rose but your levees held — fertile silt left behind (+${d.seeds || 40} seeds, richer farms).`);
+    return;
+  }
+  // Overwhelmed: damage stores, hurt rodents, and drown a working mine.
+  lootResources(state, net * 2.5);
+  hurtHealth(state, 9);
+  const drowned = floodAMine(state);
+  logMsg(state, `${d.icon} Flood broke through! Stores damaged${drowned ? ', a mine flooded' : ''} — but it left fertile soil (+${d.seeds || 40} seeds). Build Levees/Irrigation.`);
+}
+
+// Disable a random working mine; it must be repaired before it works again.
+function floodAMine(state) {
+  const mines = state.buildings.filter(b => BUILDINGS[b.type]?.mine && !b.flooded);
+  if (!mines.length) return false;
+  const m = mines[Math.floor(rand(state) * mines.length)];
+  m.flooded = true; m.repairUntil = null;
+  addFx(state, m.x, m.y, '🌊', 2);
+  return true;
 }
 
 // Reduce every rodent's health (disasters are stressful & injurious).
