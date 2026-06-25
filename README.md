@@ -133,6 +133,8 @@ docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neurost
   **⬇️ Import** in the top bar) — handy for moving between machines or sharing a test colony.
 - **Built-in How-to-Play guide**: a concise onboarding overlay opens on your first visit
   (and any time from the **❓ Help** button) so new players know the loop at a glance.
+- **Getting-started checklist**: a small on-map checklist of first steps (build a burrow,
+  farm, well…) that **auto-ticks as you play** and tucks itself away once you're set up.
 - **Sound effects** (synthesised, no asset files): satisfying cues for caring for a rodent,
   placing/finishing buildings, level-ups, milestones, trades, births, and warnings (raids /
   critical needs). Toggle with the **🔊** button — your choice is remembered.

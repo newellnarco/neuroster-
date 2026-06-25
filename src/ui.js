@@ -255,6 +255,34 @@ export function createUI(state, ctx) {
 
   function renderLog() { el('log').innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join(''); }
 
+  // ---- Getting-started guide — a few first steps that auto-tick as you play ----
+  const GUIDE_STEPS = [
+    { icon: '🏠', label: 'Build a Burrow (housing + breeding)', done: (s) => s.buildings.some(b => b.type === 'burrow') },
+    { icon: '🌾', label: 'Build a Farm for food', done: (s) => s.buildings.some(b => b.type === 'farm') },
+    { icon: '💧', label: 'Build a Well for water', done: (s) => s.buildings.some(b => b.type === 'well') },
+    { icon: '📦', label: 'Build Storage to hold more', done: (s) => s.buildings.some(b => b.type === 'storage') },
+    { icon: '🐹', label: 'Grow to 8 rodents', done: (s) => population(s) >= 8 },
+    { icon: '⚡', label: 'Build a Wheel for power', done: (s) => s.buildings.some(b => b.type === 'wheel') },
+  ];
+  let guideDone = -1;
+  function guideDismissed() { try { return localStorage.getItem('neuroster.guideDone') === '1'; } catch { return false; } }
+  function renderGuide() {
+    const box = el('guide'); if (!box) return;
+    const doneCount = GUIDE_STEPS.filter(st => { try { return st.done(state); } catch { return false; } }).length;
+    if (guideDismissed() || doneCount >= GUIDE_STEPS.length) {
+      box.classList.add('hidden');
+      if (doneCount >= GUIDE_STEPS.length && !guideDismissed()) { try { localStorage.setItem('neuroster.guideDone', '1'); } catch {} }
+      return;
+    }
+    box.classList.remove('hidden');
+    if (guideDone >= 0 && doneCount > guideDone) sfx('complete'); // a step just ticked
+    guideDone = doneCount;
+    box.innerHTML = `<div class="ghead"><span>🚀 Getting started · ${doneCount}/${GUIDE_STEPS.length}</span><button class="gx" id="guide-x" title="Dismiss">✕</button></div>
+      <ul>${GUIDE_STEPS.map(st => { let ok = false; try { ok = st.done(state); } catch {}
+        return `<li class="${ok ? 'done' : ''}"><span class="gck">${ok ? '✅' : st.icon}</span><span>${st.label}</span></li>`; }).join('')}</ul>`;
+    const x = el('guide-x'); if (x) x.onclick = () => { try { localStorage.setItem('neuroster.guideDone', '1'); } catch {} box.classList.add('hidden'); };
+  }
+
   // ---- Alerts banner — the live "what needs attention now" retention hook ----
   const MAX_ALERTS = 5;
   let lastCritical = new Set();
@@ -430,7 +458,7 @@ export function createUI(state, ctx) {
     audioCues();
     acc += dt;
     if (acc > 0.5) {
-      acc = 0; renderLog(); renderAlerts();
+      acc = 0; renderLog(); renderAlerts(); renderGuide();
       const active = (tab) => el('tab-' + tab).classList.contains('active');
       if (active('rodents')) renderRodents();
       if (active('threats')) renderThreats();
@@ -447,7 +475,7 @@ export function createUI(state, ctx) {
   }
 
   return { init, update, flash,
-    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderLog(); renderAlerts(); } };
+    renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderLog(); renderAlerts(); renderGuide(); } };
 }
 
 function moraleIcon(m) { m = m ?? 100; return m >= 70 ? '😊' : m >= 45 ? '😐' : m >= 25 ? '😟' : '😢'; }
