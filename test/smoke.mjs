@@ -429,4 +429,18 @@ console.log('Doctrines (skill trees):');
   ok('Honoured Sacrifice steels the colony on a death');
 }
 
+// 15) Palette (procedural-texture colour system).
+console.log('Palette:');
+{
+  const { PAL, quantize, rampAt, RAMPS } = await import('../src/palette.js');
+  assert(PAL.length === 64, `palette is exactly 64 colours (got ${PAL.length})`);
+  assert(PAL.every(c => /^#[0-9a-fA-F]{6}$/.test(c)), 'every palette entry is a #rrggbb hex');
+  assert(PAL.length === new Set(PAL).size, 'palette has no duplicate colours');
+  // quantize snaps an off-palette colour to a real palette member.
+  const q = quantize('#010203');
+  assert(PAL.includes(q), 'quantize returns an on-palette colour');
+  assert(rampAt('grass', 1) === RAMPS.grass[RAMPS.grass.length - 1], 'rampAt(…,1) is the darkest ramp step');
+  ok(`64-colour palette: ${PAL.length} unique, quantises & ramps correctly`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

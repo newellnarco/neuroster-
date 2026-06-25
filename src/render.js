@@ -3,6 +3,7 @@
 import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather, seasonKey } from './environment.js';
+import { buildTextures } from './textures.js';
 
 const VIS = {
   hamster:   { body: '#dcab68', belly: '#f4e2bd', size: 15, ear: 4, tail: 3, tailW: 3 },
@@ -30,6 +31,16 @@ export function createRenderer(canvas, state, getView) {
   terr.width = VW * DPR; terr.height = VH * DPR;
   const tg = terr.getContext('2d');
   tg.scale(DPR, DPR);
+
+  // Procedural material textures (fur, grass, bark, stone, brick, wood…) built
+  // once on the client from the 64-colour palette — no assets downloaded.
+  const TEX = buildTextures(ctx, DPR);
+  // Which texture clothes each terrain type, and how strongly it shows.
+  const TERRAIN_TEX = {
+    [TERRAIN.grass]: ['grass', 0.30], [TERRAIN.dirt]: ['dirt', 0.34], [TERRAIN.sand]: ['sand', 0.34],
+    [TERRAIN.rock]: ['stone', 0.40], [TERRAIN.mountain]: ['stone', 0.34], [TERRAIN.marsh]: ['marsh', 0.30],
+    [TERRAIN.water]: ['water', 0.22],
+  };
   let g = ctx;            // current drawing target for helpers
   let bakedSeen = -1;
   let bmap = new Map();   // "x,y" -> building, rebuilt each frame for adjacency
@@ -143,10 +154,18 @@ export function createRenderer(canvas, state, getView) {
     const water = type === TERRAIN.water;
     // base with smooth top-to-bottom shading (implies a high angle, not a hard block)
     const grad = g.createLinearGradient(0, py, 0, py + TILE);
-    grad.addColorStop(0, shade(base, 0.03 + (rnd(h, 1) - 0.5) * 0.08));
-    grad.addColorStop(1, shade(base, -0.05));
+    grad.addColorStop(0, shade(base, 0.02 + (rnd(h, 1) - 0.5) * 0.03));
+    grad.addColorStop(1, shade(base, -0.04));
     g.fillStyle = grad;
     g.fillRect(px - 1, py - 1, TILE + 2, TILE + 2); // slight overlap so blur hides seams
+
+    // Procedural material texture overlay (fur/grass/stone/…) — synthesised on
+    // the client, so detail is free of network cost.
+    const tx = TERRAIN_TEX[type];
+    if (tx && TEX[tx[0]]) {
+      g.save(); g.globalAlpha = tx[1]; g.fillStyle = TEX[tx[0]];
+      g.fillRect(px, py, TILE, TILE); g.restore();
+    }
 
     // Blend toward differing neighbours so terrain transitions are seamless.
     blendEdges(px, py, type, x, y);
@@ -704,6 +723,9 @@ export function createRenderer(canvas, state, getView) {
     // plush body (rounder), with belly, optional coat patch, and a glossy highlight
     ctx.fillStyle = plushGrad(vis.body, 8 * s);
     ctx.beginPath(); ctx.ellipse(0, 0, 8.2 * s, 6.4 * s, 0, 0, 7); ctx.fill();
+    // procedural fur texture, clipped to the body & blended so it adds strands
+    // without changing the coat colour
+    if (TEX.fur) { ctx.save(); ctx.clip(); ctx.globalAlpha = 0.55; ctx.globalCompositeOperation = 'soft-light'; ctx.fillStyle = TEX.fur; ctx.fillRect(-9 * s, -8 * s, 18 * s, 16 * s); ctx.restore(); }
     if (vis.patch) { ctx.fillStyle = vis.patch; ctx.beginPath(); ctx.ellipse(-2 * s, -1.5 * s, 3.4 * s, 2.6 * s, 0, 0, 7); ctx.fill(); }
     ctx.fillStyle = vis.belly; ctx.globalAlpha = 0.92; ctx.beginPath(); ctx.ellipse(1.6 * s, 2.2 * s, 4.6 * s, 3.4 * s, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
     softHighlight(-3 * s, -2.4 * s, 4.2 * s);
