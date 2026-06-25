@@ -1,0 +1,14 @@
+{
+  "name": "neuroster",
+  "version": "0.1.0",
+  "description": "A web-based, world-building hamster colony game.",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT"
+}

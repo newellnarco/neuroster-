@@ -21,6 +21,36 @@ python3 -m http.server 8099
 (Any static server works, e.g. `npx serve`. It must be served over `http://` —
 opening `index.html` directly via `file://` won't work because it uses ES modules.)
 
+### Deploy on a server / LAN / WAN (configurable IP & port)
+
+A tiny zero-dependency Node server is included. **Host/IP and port are configurable**
+via environment variables (`HOST`/`NEUROSTER_HOST`, `PORT`/`NEUROSTER_PORT`):
+
+```bash
+# all interfaces (reachable from other devices on your LAN/WAN) on port 8080
+npm start
+# or pick a specific bind IP and port:
+HOST=192.168.1.50 PORT=80 node server.js
+```
+
+Then open `http://<server-ip>:<port>` from any device that can reach it.
+There's a `/healthz` endpoint for load balancers/uptime checks.
+
+### Docker
+
+```bash
+# build & run, exposed on all interfaces, port 8080
+docker compose up -d --build
+# or bind to a specific host IP / port via env:
+BIND_IP=192.168.1.50 BIND_PORT=80 docker compose up -d --build
+```
+
+Or with plain Docker:
+```bash
+docker build -t neuroster .
+docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neuroster
+```
+
 ### Controls
 - **Click** a building in the Build panel, then **click the map** to place it.
 - **Right-click** cancels placement. **Click an existing structure** to demolish it (50% refund).
