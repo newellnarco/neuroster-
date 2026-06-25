@@ -1,7 +1,7 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
 import { canAfford, spend, logMsg, addFx } from './state.js';
-import { getTile, TERRAIN, inBounds } from './world.js';
+import { getTile, TERRAIN, inBounds, wasteAt } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
 
 // Hands-on care: tend a single rodent for an instant need boost + bond + XP.
@@ -52,6 +52,8 @@ export function canPlace(state, type, x, y) {
   if (!def) return { ok: false, reason: 'Unknown building' };
   if (getTile(state.world.terrain, x, y) === TERRAIN.water)
     return { ok: false, reason: 'Cannot build on water' };
+  if (wasteAt(state.world, x, y) >= WASTE.blockAt)
+    return { ok: false, reason: 'Too soiled — compost the droppings here first' };
   if (state.buildings.some(b => b.x === x && b.y === y))
     return { ok: false, reason: 'Tile occupied' };
   if (state.world.nodes.some(n => n.x === x && n.y === y && n.amount > 0))

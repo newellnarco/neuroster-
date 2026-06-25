@@ -32,7 +32,8 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 |---|-----|--------|-------|
 | 1 | Core loop: gather → store → refine → build | ✅ Shipped | Workers auto-gather/haul; refining via Sawmill/Smelter |
 | 2 | Buildings & power automation | 🟡 Partial | Wheel→Power done; **animated conveyor belts (wood + metal) ship & auto-haul from nodes**; plastic tier + belt networks pending |
-| 2b | Animated, pixel-art top-angle rendering | ✅ Shipped | Procedural animated rodents (walk cycle, facing, sleep), spinning wheel + runner, scrolling conveyors, textured 3/4 terrain w/ depth, weather particles |
+| 2b | Animated, pixel-art top-angle rendering | ✅ Shipped | Animated rodents, wheel, conveyors; **blended/feathered terrain edges** (seamless, no hard squares); soft blur; fertile-soil tint; waste specks; sick markers |
+| 2c | Fertility, food chain & sanitation | ✅ Shipped | **Fertile ground near water** boosts farms; food chain **wheat→grain→pellets** (premium nourishment); **droppings → wet tail disease + Vet Clinic**; **Composter → fertilizer** speeds/upgrades food; waste blocks building |
 | 3 | Rodent species + recruiting + hybrids | ✅ Shipped | 6 species, hybrid breeding blends traits |
 | 4 | Per-creature needs (food/water/energy/fun/health) | ✅ Shipped | Drives per-unit productivity & loyalty |
 | 5 | Sleep cycles per species/level | ✅ Shipped | Nocturnal/diurnal/crepuscular phases |

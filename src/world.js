@@ -85,11 +85,27 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland') {
   for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++)
     if (getTile(terrain, cx + x, cy + y) === TERRAIN.water) setTile(terrain, cx + x, cy + y, TERRAIN.grass);
 
-  // Fog of war: nothing seen yet (revealed around spawn by state.js).
-  const seen = new Uint8Array(GRID_W * GRID_H);
+  // Fertility: richest growing soil sits next to water (lakes/rivers), plus a
+  // few scattered patches. Farms thrive on fertile tiles.
+  const fertile = new Uint8Array(GRID_W * GRID_H);
+  for (let y = 0; y < GRID_H; y++) for (let x = 0; x < GRID_W; x++) {
+    if (getTile(terrain, x, y) === TERRAIN.water) continue;
+    let nearWater = false;
+    for (let dy = -1; dy <= 1 && !nearWater; dy++) for (let dx = -1; dx <= 1; dx++)
+      if (getTile(terrain, x + dx, y + dy) === TERRAIN.water) { nearWater = true; break; }
+    if (nearWater || rng() < 0.05) fertile[idx(x, y)] = 1;
+  }
 
-  return { terrain, seen, nodes, spawn: { x: cx, y: cy }, seed, biome: biomeKey };
+  const seen = new Uint8Array(GRID_W * GRID_H);   // fog of war
+  const waste = new Float32Array(GRID_W * GRID_H); // droppings per tile
+
+  return { terrain, seen, fertile, waste, nodes, spawn: { x: cx, y: cy }, seed, biome: biomeKey };
 }
+
+export const isFertile = (world, x, y) => inBounds(x, y) && world.fertile && world.fertile[idx(x, y)] === 1;
+export function setFertile(world, x, y, v = 1) { if (inBounds(x, y) && world.fertile) world.fertile[idx(x, y)] = v; }
+export function addWaste(world, x, y, amt) { if (inBounds(x, y) && world.waste) world.waste[idx(x, y)] = Math.max(0, world.waste[idx(x, y)] + amt); }
+export const wasteAt = (world, x, y) => (inBounds(x, y) && world.waste) ? world.waste[idx(x, y)] : 0;
 
 // Reveal a circular area as permanently "seen".
 export function reveal(world, cx, cy, radius) {

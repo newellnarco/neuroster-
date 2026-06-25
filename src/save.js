@@ -21,12 +21,13 @@ export function loadGame() {
 
 export function clearSave() { localStorage.removeItem(KEY); }
 
-// JSON loses Uint8Array typing; restore terrain & fog layers.
+// JSON loses typed-array typing; restore terrain/fog/fertile (Uint8) & waste (Float32).
 function reattachTyped(state) {
   if (!state.world) return;
-  for (const field of ['terrain', 'seen']) {
-    const v = state.world[field];
-    if (!v) continue;
+  for (const field of ['terrain', 'seen', 'fertile']) {
+    const v = state.world[field]; if (!v) continue;
     state.world[field] = Array.isArray(v) ? Uint8Array.from(v) : Uint8Array.from(Object.values(v));
   }
+  const w = state.world.waste;
+  if (w) state.world.waste = Array.isArray(w) ? Float32Array.from(w) : Float32Array.from(Object.values(w));
 }

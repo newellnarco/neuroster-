@@ -1,7 +1,7 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
 import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES } from './config.js';
-import { terrainColor, idx, isSeen, getTile, TERRAIN } from './world.js';
+import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather } from './environment.js';
 
 const VIS = {
@@ -32,8 +32,9 @@ export function createRenderer(canvas, state, getView) {
     if (seenCount !== bakedSeen) { bakeTerrain(); bakedSeen = seenCount; }
 
     // soft, less-blocky terrain via a gentle blur on the blit
-    ctx.save(); ctx.filter = 'blur(0.8px)'; ctx.drawImage(terr, 0, 0); ctx.restore();
+    ctx.save(); ctx.filter = 'blur(0.5px)'; ctx.drawImage(terr, 0, 0); ctx.restore();
     drawWaterShimmer(t);
+    drawWaste();
 
     drawNodes(t);
     drawBuildings(t);
@@ -71,6 +72,16 @@ export function createRenderer(canvas, state, getView) {
     g.fillStyle = grad;
     g.fillRect(px - 1, py - 1, TILE + 2, TILE + 2); // slight overlap so blur hides seams
 
+    // Blend toward differing neighbours so terrain transitions are seamless.
+    blendEdges(px, py, type, x, y);
+
+    // Fertile soil reads as a richer, darker loam (best for farming).
+    if (!water && isFertile(state.world, x, y)) {
+      g.fillStyle = 'rgba(70,45,20,0.20)'; g.fillRect(px, py, TILE, TILE);
+      g.fillStyle = 'rgba(120,90,40,0.18)';
+      for (let i = 0; i < 4; i++) dot(px + rnd(h, 90 + i) * TILE, py + rnd(h, 95 + i) * TILE, 1.4);
+    }
+
     if (water) {
       g.fillStyle = 'rgba(0,0,0,0.15)'; g.fillRect(px, py, TILE, 3);
     } else if (type === TERRAIN.grass) {
@@ -101,6 +112,39 @@ export function createRenderer(canvas, state, getView) {
       const n = [[0, -1, 0, 0, TILE, 2], [0, 1, 0, TILE - 2, TILE, 2], [-1, 0, 0, 0, 2, TILE], [1, 0, TILE - 2, 0, 2, TILE]];
       for (const [dx, dy, ex, ey, ew, eh] of n)
         if (getTile(state.world.terrain, x + dx, y + dy) === TERRAIN.water) { g.fillStyle = 'rgba(228,208,150,0.55)'; g.fillRect(px + ex, py + ey, ew, eh); }
+    }
+  }
+
+  // Feather a neighbouring terrain's colour inward from each shared edge.
+  function blendEdges(px, py, type, x, y) {
+    const F = TILE * 0.55;
+    const edges = [
+      [0, -1, px, py, TILE, F, 0, 1],     // top
+      [0, 1, px, py + TILE - F, TILE, F, 0, -1], // bottom
+      [-1, 0, px, py, F, TILE, 1, 0],     // left
+      [1, 0, px + TILE - F, py, F, TILE, -1, 0], // right
+    ];
+    for (const [dx, dy, rx, ry, rw, rh, gx, gy] of edges) {
+      const nt = getTile(state.world.terrain, x + dx, y + dy);
+      if (nt < 0 || nt === type || !isSeen(state.world, x + dx, y + dy)) continue;
+      const nc = terrainColor(nt);
+      const x0 = dx < 0 ? px : dx > 0 ? px + TILE : px, y0 = dy < 0 ? py : dy > 0 ? py + TILE : py;
+      const grad = g.createLinearGradient(x0, y0, x0 + gx * F, y0 + gy * F);
+      grad.addColorStop(0, rgba(nc, 0.55)); grad.addColorStop(1, rgba(nc, 0));
+      g.fillStyle = grad; g.fillRect(rx, ry, rw, rh);
+    }
+  }
+
+  // Droppings: brown specks that pile up (dynamic — drawn over the baked terrain).
+  function drawWaste() {
+    const w = state.world.waste; if (!w) return;
+    for (let y = 0; y < GRID_H; y++) for (let x = 0; x < GRID_W; x++) {
+      const amt = w[idx(x, y)]; if (amt <= 0.2 || !isSeen(state.world, x, y)) continue;
+      const px = x * TILE, py = y * TILE, h = hash(x, y);
+      const n = Math.min(6, Math.ceil(amt));
+      ctx.fillStyle = 'rgba(60,40,20,0.5)';
+      for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.arc(px + 5 + rnd(h, 200 + i) * (TILE - 10), py + 6 + rnd(h, 210 + i) * (TILE - 12), 1.8, 0, 7); ctx.fill(); }
+      if (amt >= 4) { ctx.fillStyle = 'rgba(90,70,30,0.18)'; ctx.fillRect(px, py, TILE, TILE); } // soiled
     }
   }
 
@@ -269,6 +313,7 @@ export function createRenderer(canvas, state, getView) {
       u._rx = u.x; u._ry = u.y;
       const cx = u.x * TILE + TILE / 2, cy = u.y * TILE + TILE / 2;
       drawCreatureRaw(cx, cy, u._face || 1, VIS[u.species] || VIS.hamster, t * 12 + u.id * 1.7, moved > 0.0015 && u.phase !== 'sleep', u.phase === 'sleep', !!u.carrying, t, u);
+      if (u.sick) glyph('🤢', cx + 9, cy - 11, 12); // wet tail
       if (view.selUnit === u.id) { ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, (VIS[u.species]?.size || 15) + 3, 0, 7); ctx.stroke(); }
     }
   }
@@ -361,6 +406,12 @@ export function createRenderer(canvas, state, getView) {
   return { draw };
 }
 
+// Add an alpha to a "#rrggbb" or "rgb(...)" colour string.
+function rgba(c, a) {
+  if (c[0] === '#') { const n = c.slice(1); return `rgba(${parseInt(n.slice(0, 2), 16)},${parseInt(n.slice(2, 4), 16)},${parseInt(n.slice(4, 6), 16)},${a})`; }
+  if (c.startsWith('rgb(')) return c.replace('rgb(', 'rgba(').replace(')', `,${a})`);
+  return c;
+}
 function hash(x, y) { let h = (x * 73856093) ^ (y * 19349663); h = (h ^ (h >>> 13)) >>> 0; return h; }
 function rnd(h, salt) { let v = (h ^ (salt * 2654435761)) >>> 0; v = (v ^ (v >>> 15)) >>> 0; return (v % 10000) / 10000; }
 function shade(hex, amt) {

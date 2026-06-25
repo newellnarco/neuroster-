@@ -27,6 +27,8 @@ export function makeRodent(state, species, x, y) {
     needs: { food: 85, water: 85, energy: 90, fun: 75, health: 100 },
     bond: 45,          // affection toward the player; raised by hands-on care
     careCd: {},        // per-action cooldown timestamps (lived seconds)
+    sick: false, sickT: 0, // wet tail illness
+    pooT: 5 + Math.random() * 15, // countdown to next droppings
     level: 1, xp: 0, skillPoints: 0,
     traits: {},
     prefKind: PREF_ORDER[count % PREF_ORDER.length],
@@ -40,7 +42,8 @@ export function productivity(state, u) {
   const base = 0.3 + 0.7 * (sustenance / 100);
   const health = 0.5 + 0.5 * (n.health / 100);
   const bond = 1 + ((u.bond ?? 50) - 50) / 600; // affection gives a small lift
-  return Math.max(0.12, base * health * bond);
+  const ill = u.sick ? 0.45 : 1;                // wet tail saps a rodent
+  return Math.max(0.1, base * health * bond * ill);
 }
 // Day/night alignment with the species' natural active phase.
 export function activityMul(state, u) {

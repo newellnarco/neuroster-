@@ -18,12 +18,19 @@ export const RESOURCES = {
   coal:     { name: 'Coal',     icon: '⚫', kind: 'raw',     color: '#444b52' },
   seeds:    { name: 'Seeds',    icon: '🌱', kind: 'raw',     color: '#7cb342' },
   water:    { name: 'Water',    icon: '💧', kind: 'raw',     color: '#42a5f5' },
-  food:     { name: 'Food',     icon: '🌾', kind: 'refined', color: '#e6c34d' },
+  food:     { name: 'Food',     icon: '🌾', kind: 'refined', color: '#e6c34d', nourish: 1.0 },
+  wheat:    { name: 'Wheat',    icon: '🌾', kind: 'refined', color: '#d9b44a' },
+  grain:    { name: 'Grain',    icon: '🟡', kind: 'refined', color: '#e0c060', nourish: 1.5 },
+  pellets:  { name: 'Pellets',  icon: '🟤', kind: 'refined', color: '#b9853f', nourish: 2.4 },
+  fertilizer:{ name: 'Fertilizer', icon: '💩', kind: 'raw',  color: '#7a5a36' },
   planks:   { name: 'Planks',   icon: '🟫', kind: 'refined', color: '#caa05a' },
   iron:     { name: 'Iron',     icon: '🔩', kind: 'refined', color: '#cfd6dd' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
   research: { name: 'Research', icon: '🔬', kind: 'abstract', color: '#7e9cff' },
 };
+
+// What rodents will eat, best first (premium foods nourish more per unit).
+export const EDIBLES = ['pellets', 'grain', 'food'];
 
 // Resource nodes scattered in the world.
 //  surface:true  → harvested directly by roaming rodents; recede visually as used.
@@ -49,8 +56,28 @@ export const BUILDINGS = {
     cost: { wood: 25 }, category: 'Storage', storage: 200,
   },
   farm: {
-    name: 'Farm', icon: '🌾', desc: 'Turns Seeds into Food over time.',
-    cost: { wood: 30 }, category: 'Food', produces: { food: 0.5 }, consumes: { seeds: 0.25 },
+    name: 'Farm', icon: '🌾', desc: 'Turns Seeds into Food. Much better on fertile ground (near water).',
+    cost: { wood: 30 }, category: 'Food', produces: { food: 0.5 }, consumes: { seeds: 0.25 }, fertileBonus: true,
+  },
+  wheatfield: {
+    name: 'Wheat Field', icon: '🌾', desc: 'Grows Wheat from seeds & water. Loves fertile soil by lakes/rivers.',
+    cost: { wood: 35, planks: 10 }, category: 'Food', produces: { wheat: 0.7 }, consumes: { seeds: 0.3, water: 0.2 }, fertileBonus: true,
+  },
+  mill: {
+    name: 'Mill', icon: '🏯', desc: 'Mills Wheat into Grain (better food).',
+    cost: { wood: 30, stone: 30 }, category: 'Food', produces: { grain: 0.5 }, consumes: { wheat: 0.7 },
+  },
+  pelletpress: {
+    name: 'Pellet Press', icon: '🟤', desc: 'Presses Grain into nourishing Hamster Pellets (best food).',
+    cost: { planks: 30, iron: 15 }, category: 'Food', produces: { pellets: 0.4 }, consumes: { grain: 0.6 },
+  },
+  composter: {
+    name: 'Composter', icon: '♻️', desc: 'Collects droppings nearby and turns them into Fertilizer.',
+    cost: { wood: 30, planks: 10 }, category: 'Food', composter: 1, radius: 5,
+  },
+  vet: {
+    name: 'Vet Clinic', icon: '💉', desc: 'Treats wet tail & sickness; prevents deaths. Keep rodents healthy.',
+    cost: { planks: 25, iron: 10 }, category: 'Wellbeing', vet: 1, health: 4,
   },
   well: {
     name: 'Well', icon: '⛲', desc: 'Draws Water for the colony (place near a pond).',
@@ -252,6 +279,24 @@ export const BOND_DECAY = 0.04;   // per second; gentle, so daily care keeps it 
 
 // Flooded mines must be repaired (materials + time) before they work again.
 export const MINE_REPAIR = { cost: { planks: 15, wood: 15 }, seconds: 35 };
+
+// Sanitation: healthy rodents poop/pee. Droppings pile up, spoil food, block
+// building, and — near burrows/food — risk WET TAIL, which kills if untreated.
+// Composters turn droppings into fertilizer; Vet Clinics cure & prevent deaths.
+export const WASTE = {
+  interval: 20,      // seconds between a healthy rodent's droppings
+  decay: 0.02,       // droppings slowly break down on their own
+  blockAt: 4,        // tile too soiled to build on
+  composterRate: 0.5,// droppings -> fertilizer per second per composter
+};
+export const WETTAIL = {
+  riskPerFilth: 0.0009, // infection chance per tick per unit of nearby filth
+  healthDrain: 5,       // health lost per second while sick
+  dieAfter: 55,         // seconds sick & untreated before it's fatal
+  vetCureRate: 1.6,     // recovery per second per vet clinic
+};
+// Fertilizer auto-feeds Food buildings for a big yield boost.
+export const FERTILIZER_BOOST = 0.7;
 
 // ---- Founder hamster: breeds & names ---------------------------------------
 // Players begin as a single "founder" hamster of a chosen breed. The breed

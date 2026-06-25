@@ -1,11 +1,11 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY } from './config.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx } from './state.js';
 import { makeRodent, stepRodent, combineRodents } from './entities.js';
 import { stepEvents } from './events.js';
 import { stepEnvironment, envMods } from './environment.js';
-import { reveal } from './world.js';
+import { reveal, isFertile, addWaste, wasteAt } from './world.js';
 
 // Run one simulation tick. dt is seconds per tick.
 export function stepEconomy(state, dt) {
@@ -31,9 +31,14 @@ export function stepEconomy(state, dt) {
     if (def.belt) { runBelt(state, b, def, dt, wb); continue; }
 
     let rate = dt * wb * powerMul;
-    // Fertile soil left by a recent flood temporarily boosts farms.
-    const fertile = (state.fertileUntil || 0) > (state.env.lived || 0) ? 0.6 : 0;
-    if (def.category === 'Food') rate *= (1 + state.mods.foodMul + env.foodMul + fertile);
+    if (def.category === 'Food') {
+      // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
+      let bonus = state.mods.foodMul + env.foodMul;
+      if ((state.fertileUntil || 0) > (state.env.lived || 0)) bonus += 0.6;
+      if (def.fertileBonus && isFertile(state.world, b.x, b.y)) bonus += 0.8;
+      if ((state.res.fertilizer || 0) > 0) { bonus += FERTILIZER_BOOST; state.res.fertilizer = Math.max(0, state.res.fertilizer - 0.05 * dt); }
+      rate *= (1 + bonus);
+    }
     if (def.category === 'Production') rate *= (1 + state.mods.prodMul);
     if (def.produces?.power) rate *= (1 + env.powerGain);
     if (def.produces?.research) rate *= (1 + (state.mods.researchMul || 0) + evoBonus(state, 'all', 'research'));
@@ -57,6 +62,10 @@ export function stepEconomy(state, dt) {
   // 5) Exploration: rodents & buildings reveal nearby fog.
   updateExploration(state, env);
 
+  // 5b) Sanitation: droppings, composting, fertilizer, and wet-tail disease.
+  updateWaste(state, dt);
+  updateDisease(state, dt);
+
   // 6) Breeding, 7) Loyalty, 8) Disasters.
   updateBreeding(state, dt);
   updateLoyalty(state, dt);
@@ -70,7 +79,7 @@ export function stepEconomy(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0;
+  let popCap = 0, storage = 300, defense = 0, fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def) continue;
@@ -82,7 +91,9 @@ function recomputeBuildings(state) {
     feeders += def.feeder || 0;
     waterers += def.waterer || 0;
     caretakers += def.caretaker || 0;
+    vets += def.vet || 0;
   }
+  state._vets = vets;
   // Caretaker huts auto-tend energy, fun & health — easing larger settlements.
   fun += caretakers * 4; health += caretakers * 4;
   defense = Math.round(defense * (1 + evoBonus(state, 'all', 'defense')));
@@ -166,18 +177,25 @@ function updatePerUnitNeeds(state, dt, env) {
     const retain = Math.max(0.4, 1 - evoBonus(state, u.species, 'needRetain'));
     u.bond = Math.max(0, (u.bond ?? 45) - BOND_DECAY * dt); // affection gently fades
 
-    // Food & water: drain, then eat/drink from colony stores if running low.
-    for (const key of ['food', 'water']) {
-      const def = NEEDS[key];
-      let drain = def.drain * dt * envDrain * retain;
-      if (key === 'food') drain *= feederFactor;
-      if (key === 'water') drain *= watererFactor;
-      n[key] = Math.max(0, n[key] - drain);
-      if (n[key] < def.eatAt) {
-        const want = dt * 0.9;
-        const used = Math.min(state.res[def.from] || 0, want);
-        state.res[def.from] -= used;
-        n[key] = Math.min(100, n[key] + used * 7);
+    // Water: drain, then drink from stores if low.
+    {
+      const def = NEEDS.water;
+      n.water = Math.max(0, n.water - def.drain * dt * envDrain * retain * watererFactor);
+      if (n.water < def.eatAt) { const used = Math.min(state.res.water || 0, dt * 0.9); state.res.water -= used; n.water = Math.min(100, n.water + used * 7); }
+    }
+    // Food: drain, then eat the best available edible (pellets > grain > food).
+    {
+      const def = NEEDS.food;
+      n.food = Math.max(0, n.food - def.drain * dt * envDrain * retain * feederFactor);
+      if (n.food < def.eatAt) {
+        let want = dt * 0.9;
+        for (const ed of EDIBLES) {
+          if (want <= 0) break;
+          const used = Math.min(state.res[ed] || 0, want);
+          if (used <= 0) continue;
+          state.res[ed] -= used; want -= used;
+          n.food = Math.min(100, n.food + used * 7 * (RESOURCES[ed].nourish || 1));
+        }
       }
     }
     // Energy: gentle base drain while awake (work/sleep handled in entities);
@@ -199,6 +217,81 @@ function updateExploration(state, env) {
   const radius = Math.max(2, Math.round(3 * (1 + (env.revealMul || 0) + (state.mods.revealBonus || 0))));
   for (const u of state.units) reveal(state.world, Math.round(u.x), Math.round(u.y), radius);
   for (const b of state.buildings) reveal(state.world, b.x, b.y, 3);
+}
+
+// Healthy rodents poop; droppings decay slowly; composters turn them to fertilizer.
+function updateWaste(state, dt) {
+  const world = state.world;
+  // rodents leave droppings on a timer (only when reasonably healthy)
+  for (const u of state.units) {
+    u.pooT -= dt;
+    if (u.pooT <= 0) {
+      u.pooT = WASTE.interval * (0.7 + Math.random() * 0.6);
+      if (u.needs.health > 35 && u.phase !== 'sleep') addWaste(world, Math.round(u.x), Math.round(u.y), 1);
+    }
+  }
+  // composters convert nearby droppings into fertilizer
+  for (const b of state.buildings) {
+    const def = BUILDINGS[b.type];
+    if (!def?.composter) continue;
+    const r = def.radius || 5;
+    let want = WASTE.composterRate * dt;
+    for (let dy = -r; dy <= r && want > 0; dy++) for (let dx = -r; dx <= r && want > 0; dx++) {
+      const wx = b.x + dx, wy = b.y + dy, have = wasteAt(world, wx, wy);
+      if (have <= 0) continue;
+      const take = Math.min(have, want);
+      addWaste(world, wx, wy, -take); want -= take;
+      addRes(state, 'fertilizer', take * 1.5);
+    }
+  }
+  // natural decay (sparse scan for performance)
+  if (world.waste) {
+    const dec = WASTE.decay * dt;
+    const off = (state._wscan = ((state._wscan || 0) + 1) % 4);
+    for (let i = off; i < world.waste.length; i += 4)
+      if (world.waste[i] > 0) world.waste[i] = Math.max(0, world.waste[i] - dec);
+  }
+}
+
+// Wet tail: filth near burrows/food infects rodents; vets cure & prevent death.
+function updateDisease(state, dt) {
+  const world = state.world;
+  // total filth adjacent to burrows & food buildings
+  let filth = 0;
+  for (const b of state.buildings) {
+    const def = BUILDINGS[b.type];
+    if (!def?.breed && def?.category !== 'Food') continue;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) filth += wasteAt(world, b.x + dx, b.y + dy);
+  }
+  const vets = state._vets || 0;
+  // infection chance scales with filth (vets suppress it)
+  const healthy = state.units.filter(u => !u.sick);
+  if (healthy.length && filth > 1) {
+    const risk = WETTAIL.riskPerFilth * filth * dt * (vets ? 0.4 : 1);
+    if (Math.random() < risk) {
+      const u = healthy[Math.floor(Math.random() * healthy.length)];
+      u.sick = true; u.sickT = 0;
+      addFx(state, u.x, u.y, '🤢', 2);
+      logMsg(state, `🤢 A rodent caught wet tail from filth! ${vets ? 'The vet is treating it.' : 'Build a Vet Clinic & a Composter!'}`);
+    }
+  }
+  // progress illnesses: vets heal; without care it worsens and can be fatal
+  for (let i = state.units.length - 1; i >= 0; i--) {
+    const u = state.units[i];
+    if (!u.sick) continue;
+    u.needs.health = Math.max(0, u.needs.health - WETTAIL.healthDrain * dt);
+    if (vets > 0) {
+      u.sickT -= WETTAIL.vetCureRate * vets * dt;
+      if (u.sickT <= 0) { u.sick = false; u.sickT = 0; u.needs.health = Math.max(u.needs.health, 40); addFx(state, u.x, u.y, '❤️', 1.6); logMsg(state, '💉 The vet cured a rodent of wet tail.'); }
+    } else {
+      u.sickT += dt;
+      if (u.sickT > WETTAIL.dieAfter && state.units.length > 1) {
+        state.units.splice(i, 1);
+        addFx(state, u.x, u.y, '💀', 2.2);
+        logMsg(state, '💀 A rodent died of untreated wet tail. Build a Vet Clinic!');
+      }
+    }
+  }
 }
 
 function updateBreeding(state, dt) {
