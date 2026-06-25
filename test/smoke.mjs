@@ -276,4 +276,31 @@ console.log('Compassion & rescue:');
   ok(`rescue: took in "Lost One" → joins, compassion ${s.compassion}`);
 }
 
+// 12) Seasons & festivals (recurring return hook).
+console.log('Seasons & festivals:');
+{
+  const { seasonKey, currentSeason, envMods } = await import('../src/environment.js');
+  const { DAY_SECONDS, DAYS_PER_SEASON } = await import('../src/config.js');
+  const s = newGame(70, 'woodland', 'syrian', 'Seasons', {});
+  // Day 1 → spring; advancing a season's worth of days → summer.
+  s.env.dayTime = 0.3 * DAY_SECONDS;
+  assert(seasonKey(s) === 'spring', `starts in spring (got ${seasonKey(s)})`);
+  s.env.dayTime = DAYS_PER_SEASON * DAY_SECONDS + 10; // into the 2nd season
+  assert(seasonKey(s) === 'summer', `turns to summer (got ${seasonKey(s)})`);
+  // winter raises need drain; spring boosts food — seasonal envMods differ.
+  s.env.dayTime = 3 * DAYS_PER_SEASON * DAY_SECONDS + 10; // winter
+  assert(seasonKey(s) === 'winter', `reaches winter (got ${seasonKey(s)})`);
+  assert(envMods(s).needDrain > 0 && envMods(s).foodMul < 0, 'winter is harsher (needs up, food down)');
+  ok('seasons cycle spring→summer→…→winter with distinct modifiers');
+
+  // A festival fires when the season changes (morale lifts).
+  const s2 = newGame(71, 'prairie', 'syrian', 'Fest', {});
+  s2.env.dayTime = 0.3 * DAY_SECONDS; stepEconomy(s2, 0.1); // seeds _seasonKey = spring
+  s2.morale = 50;
+  s2.env.dayTime = DAYS_PER_SEASON * DAY_SECONDS + 5; // cross into summer
+  stepEconomy(s2, 0.1);
+  assert(s2.morale > 50, `a festival lifted morale on the season change (now ${s2.morale.toFixed(1)})`);
+  ok('a festival fires (and lifts morale) when the season turns');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
