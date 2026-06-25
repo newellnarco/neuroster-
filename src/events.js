@@ -101,6 +101,7 @@ export function totalOffense(state) {
     if (def?.tower && b.mode === 'defend') o += def.towerOffense || 0; // towers fight only when set to DEFEND
   }
   for (const u of state.units) o += SPECIES[u.species]?.atk || 0; // soldiers (guinea pigs)
+  o += state._doc?.offense || 0; // War Strategy doctrine
   return o;
 }
 
@@ -148,7 +149,7 @@ function fireDisaster(state, key, d, elapsed) {
   const offenseBonus = (d.kind === 'predator') ? totalOffense(state) : 0;
   let protect = protectionAgainst(state, key) + offenseBonus;
   // Firm, fair Order deters raiders; a raised predator cub guards against beasts.
-  if (key === 'raid') protect += Math.max(0, (state.justice ?? 50) - 50) * JUSTICE.raidDeter;
+  if (key === 'raid') protect += Math.max(0, (state.justice ?? 50) - 50) * JUSTICE.raidDeter + (state._doc?.raidDeter || 0);
   if (d.kind === 'predator') protect += (state.guardian || 0) * 2;
   const net = severity - protect;
 
@@ -253,7 +254,7 @@ function fireFactionRaid(state, id, f, pressure) {
   spawnCaravan(state, id, 'raid'); // a war party visibly marches from their camp
   const severity = pressure * (1 + (state.env?.lived || 0) / 4000);
   let protect = protectionAgainst(state, 'raid') + totalOffense(state);
-  protect += Math.max(0, (state.justice ?? 50) - 50) * JUSTICE.raidDeter; // Order on the gates
+  protect += Math.max(0, (state.justice ?? 50) - 50) * JUSTICE.raidDeter + (state._doc?.raidDeter || 0); // Order + Negotiation on the gates
   protect += (state.guardian || 0) * 2;
   if (severity - protect <= 2) {
     logMsg(state, `${f.icon} ${f.name} raiders probed your defenses but were driven off!`);
