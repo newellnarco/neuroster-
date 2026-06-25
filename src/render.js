@@ -1,6 +1,6 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather } from './environment.js';
 
@@ -240,10 +240,28 @@ export function createRenderer(canvas, state, getView) {
       if (b.type === 'wheel') { drawWheel(cx, cy - 3, t, b); continue; }
       if (b.type === 'conveyor' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }
+      if (BUILDINGS[b.type].tunnel) { drawTunnel(cx, cy, b); continue; }
       ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(b.x * TILE + 4, b.y * TILE + 10, TILE - 8, TILE - 11, 6); ctx.fill();
       ctx.fillStyle = '#bcab8b'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.20)'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, 3, 3); ctx.fill();
       glyph(BUILDINGS[b.type].icon, cx, cy - 3, TILE * 0.78);
+    }
+  }
+
+  // Covered tunnel section: colour by tier (wood/iron/steel) with an HP bar.
+  function drawTunnel(cx, cy, b) {
+    const tier = TUNNEL_TIERS[b.tier || 0];
+    const w = TILE - 4, h = TILE * 0.5, x0 = cx - w / 2, y0 = cy - h / 2;
+    ctx.fillStyle = shade(tier.color, -0.18); roundRect(x0, y0 + h * 0.5, w, h * 0.6, 4); ctx.fill();
+    ctx.fillStyle = tier.color; roundRect(x0, y0, w, h, 6); ctx.fill();           // arched roof
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; roundRect(x0, y0, w, 3, 3); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;                       // ribs
+    for (let i = 1; i < 4; i++) { const rx = x0 + (w / 4) * i; ctx.beginPath(); ctx.moveTo(rx, y0 + 2); ctx.lineTo(rx, y0 + h - 2); ctx.stroke(); }
+    // HP bar
+    const frac = Math.max(0, (b.hp ?? tier.hp) / tier.hp);
+    if (frac < 1) {
+      ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x0, y0 - 5, w, 3);
+      ctx.fillStyle = frac > 0.5 ? '#7cdc6a' : frac > 0.25 ? '#e6c34d' : '#e06b6b'; ctx.fillRect(x0, y0 - 5, w * frac, 3);
     }
   }
 

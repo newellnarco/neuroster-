@@ -25,6 +25,7 @@ export const RESOURCES = {
   fertilizer:{ name: 'Fertilizer', icon: '💩', kind: 'raw',  color: '#7a5a36' },
   planks:   { name: 'Planks',   icon: '🟫', kind: 'refined', color: '#caa05a' },
   iron:     { name: 'Iron',     icon: '🔩', kind: 'refined', color: '#cfd6dd' },
+  steel:    { name: 'Steel',    icon: '⚙️', kind: 'refined', color: '#9fb0c4' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
   research: { name: 'Research', icon: '🔬', kind: 'abstract', color: '#7e9cff' },
 };
@@ -121,6 +122,11 @@ export const BUILDINGS = {
     cost: { wood: 30, stone: 40 }, category: 'Production',
     produces: { iron: 0.3 }, consumes: { ironore: 0.5, coal: 0.3 },
   },
+  steelworks: {
+    name: 'Steelworks', icon: '🏭', desc: 'Forges Iron + Coal into Steel for the toughest structures.',
+    cost: { stone: 50, iron: 20 }, category: 'Production',
+    produces: { steel: 0.25 }, consumes: { iron: 0.4, coal: 0.3 },
+  },
   mine: {
     name: 'Mine', icon: '⛏️', desc: 'Digs an underground iron-ore or coal deposit. Shows remaining until it collapses. Can flood — repair with materials & time.',
     cost: { wood: 40, planks: 10 }, category: 'Extraction', mine: true, radius: 1, rate: 1.2,
@@ -165,8 +171,8 @@ export const BUILDINGS = {
     protect: { wolf: 3, hawk: 4, raid: 4 },
   },
   tunnel: {
-    name: 'Tunnel', icon: '🛤️', desc: 'Above-ground covered run: rodents move protected; shields against predators.',
-    cost: { wood: 15, planks: 8 }, category: 'Defense', defense: 3, protect: { wolf: 3, hawk: 3 },
+    name: 'Tunnel (Wood)', icon: '🛤️', desc: 'Covered run: rodents travel protected; blocks other animals crossing. Has HP, takes damage, and upgrades wood→iron→steel (click to upgrade/repair).',
+    cost: { wood: 15, planks: 8 }, category: 'Defense', tunnel: true,
   },
   dam: {
     name: 'Beaver Dam', icon: '🦫', desc: 'Beavers dam the water to collect & hold it: lots of Water + strong flood protection (cuts flow upstream).',
@@ -187,6 +193,17 @@ export const BUILDINGS = {
     cost: { stone: 35, planks: 20 }, category: 'Defense', protect: { quake: 8 },
   },
 };
+
+// ---- Tunnel tiers ----------------------------------------------------------
+// Tunnels protect rodent travel and bar other animals from crossing. Each tier
+// is tougher (more HP & protection); upgrade a section by spending materials —
+// wood → iron → refined steel. Damaged sections protect less and can collapse.
+export const TUNNEL_TIERS = [
+  { name: 'Wood',  hp: 30,  protect: { wolf: 2, hawk: 2, raid: 1 }, color: '#7a5a36', upgradeCost: null },
+  { name: 'Iron',  hp: 75,  protect: { wolf: 4, hawk: 4, raid: 3 }, color: '#8a929a', upgradeCost: { iron: 20, planks: 10 } },
+  { name: 'Steel', hp: 150, protect: { wolf: 7, hawk: 7, raid: 5 }, color: '#aebfd0', upgradeCost: { steel: 25, iron: 10 } },
+];
+export const TUNNEL_REPAIR = { steel: 0, iron: 0 }; // repair cost is a fraction of upgrade (computed)
 
 // ---- Rodent species --------------------------------------------------------
 // `protect` = which disaster/predator this species helps defend against.

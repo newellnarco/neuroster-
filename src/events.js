@@ -1,13 +1,48 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
 import { logMsg, population, addRes, addFx } from './state.js';
+import { makeRodent } from './entities.js';
 
-// Killing other animals to defend the group is preservation — but it weighs on
-// the colony's kindness. Lethal defenses cost a little morale each time.
-function violenceToll(state, what) {
-  if ((totalOffense(state) || 0) <= 0) return;
-  state.morale = Math.max(0, (state.morale ?? 100) - MORALE.violenceCost);
-  logMsg(state, `⚖️ Your defenders drove off the ${what}, but the bloodshed weighs on morale.`);
+// Repelling is a choice between kindness and preservation:
+//  • With a Vet Clinic you HEAL the injured attacker — morale rises, and a
+//    spared raider may even join your colony (and the faction warms to you).
+//  • Otherwise lethal offense drives them off, but the bloodshed costs morale.
+//  • Walls-only deterrence (no offense, no vet) is bloodless — no morale change.
+function handleRepel(state, what, factionId = null) {
+  const vets = state.buildings.reduce((s, b) => s + (BUILDINGS[b.type]?.vet || 0), 0);
+  if (vets > 0) {
+    state.morale = Math.min(100, (state.morale ?? 100) + 3);
+    let joined = false;
+    if (factionId) {
+      state.factions[factionId].standing = Math.min(100, state.factions[factionId].standing + 6);
+      if (Math.random() < 0.5 && state.units.length < state.popCap) { recruitMercy(state); joined = true; }
+    } else if (Math.random() < 0.25 && state.units.length < state.popCap) { recruitMercy(state); joined = true; }
+    logMsg(state, `🕊️ Your vets healed the injured ${what} instead of killing — morale rises${joined ? ', and a grateful newcomer joined the colony!' : '.'}`);
+  } else if ((totalOffense(state) || 0) > 0) {
+    state.morale = Math.max(0, (state.morale ?? 100) - MORALE.violenceCost);
+    logMsg(state, `⚖️ Your defenders drove off the ${what}, but the bloodshed weighs on morale.`);
+  }
+}
+function recruitMercy(state) {
+  const sp = state.world.spawn;
+  const u = makeRodent(state, 'hamster', sp.x, sp.y);
+  u.bond = 60;
+  state.units.push(u);
+  addFx(state, sp.x, sp.y, '🤝', 2);
+}
+
+// Attacks, raids & disasters batter tunnel sections (HP); spent ones collapse.
+function damageTunnels(state, amount) {
+  const tunnels = state.buildings.filter(b => BUILDINGS[b.type]?.tunnel);
+  if (!tunnels.length || amount <= 0) return;
+  const hit = tunnels[Math.floor(rand(state) * tunnels.length)];
+  const tier = TUNNEL_TIERS[hit.tier || 0];
+  hit.hp = (hit.hp ?? tier.hp) - amount;
+  if (hit.hp <= 0) {
+    state.buildings.splice(state.buildings.indexOf(hit), 1);
+    addFx(state, hit.x, hit.y, '💥', 1.6);
+    logMsg(state, '💥 A tunnel section collapsed under the assault. Rebuild & upgrade to steel!');
+  }
 }
 
 // Total protection the colony currently has against a given disaster key.
@@ -17,6 +52,12 @@ export function protectionAgainst(state, key) {
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (def?.protect?.[key]) p += def.protect[key];
+    // Tunnels bar other animals from crossing — protection scales with tier & HP.
+    if (def?.tunnel) {
+      const tier = TUNNEL_TIERS[b.tier || 0];
+      const frac = (b.hp ?? tier.hp) / tier.hp;
+      if (tier.protect[key]) p += tier.protect[key] * frac;
+    }
   }
   for (const u of state.units) {
     const sp = SPECIES[u.species];
@@ -76,7 +117,7 @@ function fireDisaster(state, key, d, elapsed) {
 
   if (net <= 2) {
     logMsg(state, `${d.icon} ${d.name} approached but your defenses held! (def ${Math.round(protect)} ≥ ${Math.round(severity)})`);
-    if (d.kind === 'predator') violenceToll(state, d.name); // killing attackers costs morale
+    if (d.kind === 'predator') handleRepel(state, d.name); // kill or show mercy (with a Vet)
     return;
   }
 
@@ -103,6 +144,7 @@ function fireDisaster(state, key, d, elapsed) {
     }
     case 'destroy': {
       const gone = destroyRandomBuilding(state, Math.max(1, Math.round(sev / 12)));
+      damageTunnels(state, sev);
       logMsg(state, `${d.icon} ${d.name}! ${gone} structure(s) collapsed. Build Quake Shelters.`);
       hurtHealth(state, 6);
       break;
@@ -139,14 +181,14 @@ function fireFactionRaid(state, id, f, pressure) {
   const protect = protectionAgainst(state, 'raid') + totalOffense(state);
   if (severity - protect <= 2) {
     logMsg(state, `${f.icon} ${f.name} raiders probed your defenses but were driven off!`);
-    state.factions[id].standing = Math.max(-100, state.factions[id].standing - 3);
-    violenceToll(state, `${f.name} raiders`);
+    handleRepel(state, `${f.name} raiders`, id); // heal them (Vet) to win them over, or fight
     return;
   }
   const net = severity - protect;
   let stolen = 0;
   for (const r of f.covets) { const take = Math.min(state.res[r] || 0, net * 1.6); if (take > 0) { state.res[r] -= take; stolen += take; } }
   const wrecked = destroyTargeted(state, Math.max(1, Math.round(net / 14)));
+  damageTunnels(state, net);
   for (const u of state.units) u.needs.health = Math.max(0, u.needs.health - 5);
   state.factions[id].standing = Math.max(-100, state.factions[id].standing - 6);
   addFx(state, state.world.spawn.x, state.world.spawn.y, f.icon, 2);
@@ -184,6 +226,7 @@ function handleFlood(state, d, net) {
   // Overwhelmed: damage stores, hurt rodents, and drown a working mine.
   lootResources(state, net * 2.5);
   hurtHealth(state, 9);
+  damageTunnels(state, net);
   const drowned = floodAMine(state);
   logMsg(state, `${d.icon} Flood broke through! Stores damaged${drowned ? ', a mine flooded' : ''} — but it left fertile soil (+${d.seeds || 40} seeds). Build Levees/Irrigation.`);
 }

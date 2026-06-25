@@ -77,7 +77,13 @@ opening `index.html` directly via `file://` won't work because it uses ES module
   dead and untreated injuries crush morale**, and so does **violent killing by lethal
   defenses**. Low morale saps Fun, productivity and loyalty (deserters). Bury the fallen in
   tiered resting places — **Dirt Graves → Stone Crypts → Grand Mausoleum** — where grander
-  tombs restore more morale through respect; Vet Clinics heal the injured.
+  tombs restore more morale through respect. And with a **Vet Clinic** you can **heal
+  repelled raiders instead of killing them** — morale rises and the spared newcomer may even
+  **join your colony** (the faction warms to you too).
+- **Upgradeable tunnels**: covered runs that protect rodent travel and **bar other animals
+  from crossing**. They have **HP** and take damage from attacks, raids and disasters, and
+  you **upgrade each section wood → iron → steel** (steel is forged from iron at a
+  **Steelworks**) — click a tunnel to upgrade or repair it.
 - **Loyalty**: a thriving, well-bonded colony attracts wild joiners; a neglected one loses rodents.
 - **Persistent, login-gated time**: autosaves; there is **no offline progress** — the
   world is exactly as you left it.

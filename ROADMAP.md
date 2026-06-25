@@ -48,7 +48,8 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 13 | Founder hamster (breeds + name) | ✅ Shipped | Syrian/Russian/Robo/Chinese; rename / 30 days |
 | 14 | Login-gated time (no offline progress) | ✅ Shipped | World is exactly as left |
 | 15 | Competing/cooperative AI factions (diplomacy) | ✅ Shipped | **Trading Hut**: gift/barter/request-aid with 4 animal factions; standing shifts alliances; **hoarding coveted goods invites raids** that steal supplies & smash walls/houses/storage |
-| 15b | Morale & ethics ("kindness vs preservation") | ✅ Shipped | Unburied dead & untreated injuries crush **morale**; **violent lethal defenses cost morale**; low morale saps Fun/productivity & breeds deserters; **Graveyard** buries the fallen to heal grief |
+| 15b | Morale & ethics ("kindness vs preservation") | ✅ Shipped | Unburied dead & untreated injuries crush **morale**; **lethal defenses cost morale** — but a **Vet Clinic lets you heal repelled raiders** (morale up, they may **join you**, faction warms); **tiered burials** (Dirt→Crypts→Mausoleum) restore morale by respect |
+| 15c | Upgradeable tunnels + steel | ✅ Shipped | Tunnels protect travel & bar other animals; have **HP**, take damage from attacks/raids/disasters, and **upgrade wood→iron→steel** (new **Steel** from a **Steelworks**); click to upgrade/repair |
 | 16 | Megaprojects & long-horizon goals | 🔴 Planned | Grand Wheel, Citadel; retention anchors |
 | 16b | Gamified care + engagement loop | ✅ Shipped | Hands-on Feed/Water/Play/Pet with reward FX, **bond** (affection→productivity+loyalty), caretaker/auto-waterer automation to ease scale |
 | 17 | Quests / achievements / notifications | 🔴 Planned | The "neurotic check-in" hook |

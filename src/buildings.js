@@ -1,5 +1,5 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
 import { canAfford, spend, logMsg, addFx } from './state.js';
 import { getTile, TERRAIN, inBounds, wasteAt } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
@@ -89,7 +89,9 @@ export function placeBuilding(state, type, x, y) {
   if (!check.ok) return check;
   const def = BUILDINGS[type];
   spend(state, def.cost);
-  state.buildings.push({ id: state.nextId++, type, x, y, active: true });
+  const b = { id: state.nextId++, type, x, y, active: true };
+  if (def.tunnel) { b.tier = 0; b.hp = TUNNEL_TIERS[0].hp; } // tunnels start at wood
+  state.buildings.push(b);
   logMsg(state, `${def.icon} Built a ${def.name}.`);
   return { ok: true };
 }
@@ -144,6 +146,28 @@ export function requestAid(state, id) {
   logMsg(state, `${f.icon} The ${f.name} sent aid! (+food, +water, +${f.offers})`);
   return { ok: true };
 }
+
+// Click a tunnel to upgrade its section (wood→iron→steel) or repair its damage.
+export function upgradeTunnel(state, b) {
+  if (!BUILDINGS[b.type]?.tunnel) return { ok: false };
+  const tier = TUNNEL_TIERS[b.tier || 0];
+  // If damaged, repairing comes first (cheap: a few planks/the tier material).
+  if ((b.hp ?? tier.hp) < tier.hp) {
+    const repairCost = b.tier === 0 ? { wood: 8 } : b.tier === 1 ? { iron: 6 } : { steel: 6 };
+    if (!canAfford(state, repairCost)) return { ok: false, reason: `Repair needs ${costText(repairCost)}` };
+    spend(state, repairCost); b.hp = tier.hp;
+    logMsg(state, `🛠️ Repaired a ${tier.name} tunnel section.`);
+    return { ok: true };
+  }
+  const next = TUNNEL_TIERS[(b.tier || 0) + 1];
+  if (!next) return { ok: false, reason: 'Already steel (max tier)' };
+  if (!canAfford(state, next.upgradeCost)) return { ok: false, reason: `Upgrade needs ${costText(next.upgradeCost)}` };
+  spend(state, next.upgradeCost);
+  b.tier = (b.tier || 0) + 1; b.hp = next.hp;
+  logMsg(state, `⬆️ Upgraded a tunnel section to ${next.name}!`);
+  return { ok: true };
+}
+const costText = (c) => Object.entries(c).map(([k, v]) => `${k} ${v}`).join(', ');
 
 export function demolish(state, building) {
   const i = state.buildings.indexOf(building);
