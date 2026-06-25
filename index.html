@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Neuroster — Hamster Colony</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="apple-touch-icon" href="assets/icon.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -30,17 +32,12 @@
     <div id="resbar" class="resbar"></div>
     <div class="spacer"></div>
     <div class="controls">
+      <span id="autosave-ind" class="autosave hidden">💾 Auto-saving…</span>
+      <button id="btn-menu" title="Menu — save, load, settings & more">☰ Menu</button>
+      <button id="btn-update" title="Save &amp; reload to get the newest version of the game">🔄 Update</button>
+      <button id="btn-help" class="helpbtn" title="Help &amp; game guide — story, what things are, progression, choices, how to play">❓</button>
       <button id="btn-mute" title="Toggle sound">🔊</button>
       <button id="btn-labels" title="Toggle resource name labels">🏷️</button>
-      <button id="btn-save" title="Save now">💾 Save</button>
-      <button id="btn-saveas" title="Save as a new hamster (fork this colony)">💾＋</button>
-      <button id="btn-export" title="Download your colony as a save file">⬆️ Export</button>
-      <button id="btn-import" title="Load a colony from a save file">⬇️ Import</button>
-      <button id="btn-new" title="New colony">🆕 New</button>
-      <button id="btn-update" title="Save &amp; reload to get the newest version of the game">🔄 Update</button>
-      <button id="btn-settings" title="Settings — adjust difficulty &amp; disasters (saved with your colony)">⚙️</button>
-      <button id="btn-help" class="helpbtn" title="Help &amp; game guide — story, what things are, progression, choices, how to play">❓</button>
-      <input id="import-file" type="file" accept=".json,application/json" hidden />
     </div>
   </header>
 
@@ -201,6 +198,25 @@
 
   <div id="settings-modal" class="modal hidden">
     <div class="modal-card"></div>
+  </div>
+
+  <div id="menu-modal" class="modal hidden">
+    <div class="modal-card menu-card">
+      <h2>☰ Menu</h2>
+      <div class="menu-list">
+        <button id="btn-settings" title="Adjust difficulty &amp; disasters (saved with your colony)">⚙️ Settings</button>
+        <button id="btn-save" title="Save now">💾 Save</button>
+        <button id="btn-saveas" title="Save as a new hamster (fork this colony)">💾＋ Save as new hamster</button>
+        <button id="btn-load" title="Switch to another colony / load a save slot">📂 Load / switch colony</button>
+        <button id="btn-new" title="Start a brand-new colony">🆕 New colony</button>
+        <button id="btn-export" title="Download your colony as a save file">⬆️ Export save</button>
+        <button id="btn-import" title="Load a colony from a save file">⬇️ Import save</button>
+        <button data-click="btn-update" title="Save &amp; reload to get the newest version">🔄 Update game</button>
+        <button data-click="btn-help" title="Help &amp; game guide">❓ Help &amp; guide</button>
+      </div>
+      <input id="import-file" type="file" accept=".json,application/json" hidden />
+      <button id="menu-close" class="modal-cancel">Close</button>
+    </div>
   </div>
 
   <div id="decree-modal" class="modal hidden">

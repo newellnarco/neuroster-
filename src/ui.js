@@ -35,6 +35,7 @@ export function createUI(state, ctx) {
   function renderEnv() {
     const biome = BIOMES[state.world.biome] || BIOMES.woodland;
     const w = currentWeather(state);
+    const L = !!view.showLabels; // also label the virtue chips when labels are on
     const f = state.founder || { name: 'Founder', breed: 'syrian' };
     el('envbar').innerHTML =
       `<span class="env founder" id="founder-chip" title="Your founder hamster — click to rename (once every 30 days)">🐹 ${f.name} · ${BREEDS[f.breed]?.name || ''}</span>` +
@@ -46,12 +47,12 @@ export function createUI(state, ctx) {
       `<span class="env" title="Population / cap">👥 ${population(state)}/${state.popCap}</span>` +
       `<span class="env" title="Overall wellbeing multiplier">😊 ×${wellbeingMul(state).toFixed(2)}</span>` +
       `<span class="env" title="Colony morale — falls from unburied dead, injuries & violence; bury & heal to restore it">${moraleIcon(state.morale)} Morale ${Math.round(state.morale ?? 100)}${(state.bodies?.length) ? ` · ⚰️${state.bodies.length} unburied` : ''}</span>` +
-      `<span class="env" title="Compassion — kindness, generosity & care raise it; cruelty & neglect lower it. A kind colony calms predators and draws joiners.">💗 ${Math.round(state.compassion ?? 50)}</span>` +
-      `<span class="env${state.decree ? ' decree-due' : ''}" title="Justice / Order — fair, firm rule raises it; wrongs left unanswered lower it. High Justice deters raiders. Decrees trade Justice against Compassion.">⚖️ ${Math.round(state.justice ?? 50)}</span>` +
+      `<span class="env" title="Compassion — kindness, generosity & care raise it; cruelty & neglect lower it. A kind colony calms predators and draws joiners.">💗 ${L ? 'Compassion ' : ''}${Math.round(state.compassion ?? 50)}</span>` +
+      `<span class="env${state.decree ? ' decree-due' : ''}" title="Justice / Order — fair, firm rule raises it; wrongs left unanswered lower it. High Justice deters raiders. Decrees trade Justice against Compassion.">⚖️ ${L ? 'Justice ' : ''}${Math.round(state.justice ?? 50)}</span>` +
       (((state.truceUntil || 0) > (state.env?.lived || 0)) ? `<span class="env" title="A brokered truce — raiders & predators hold off until it lapses.">🕊️ Truce ${Math.max(0, Math.ceil((state.truceUntil - (state.env?.lived || 0)) / 60))}m</span>` : '') +
-      `<span class="env" title="Valor — martial pride, morally neutral. Rises by standing and winning fights. A proud, battle-hardened colony is fierce & happy in its strength (the Spartan path).">🦁 ${Math.round(state.valor ?? 20)}</span>` +
-      (((state.pollution ?? 0) > 8) ? `<span class="env${(state.pollution > 45) ? ' decree-due' : ''}" title="Pollution — coal industry (coal plant, smelter, steelworks, refinery, electric wheel) emits smog. It poisons farm yield and, when high, sickens rodents. Forests scrub it; clean power (wheels, solar, hydro) emits none.">🏭 ${Math.round(state.pollution)}</span>` : '') +
-      `<span class="env" title="Defense / Offense">🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
+      `<span class="env" title="Valor — martial pride, morally neutral. Rises by standing and winning fights. A proud, battle-hardened colony is fierce & happy in its strength (the Spartan path).">🦁 ${L ? 'Valor ' : ''}${Math.round(state.valor ?? 20)}</span>` +
+      (((state.pollution ?? 0) > 8) ? `<span class="env${(state.pollution > 45) ? ' decree-due' : ''}" title="Pollution — coal industry (coal plant, smelter, steelworks, refinery, electric wheel) emits smog. It poisons farm yield and, when high, sickens rodents. Forests scrub it; clean power (wheels, solar, hydro) emits none.">🏭 ${L ? 'Pollution ' : ''}${Math.round(state.pollution)}</span>` : '') +
+      `<span class="env" title="Defense / Offense">${L ? 'Defense ' : ''}🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
       `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>` +
       (megaCount(state) ? `<span class="env" title="Megaprojects completed — permanent colony-wide wonders">🏛️ ${megaCount(state)}</span>` : '');
   }
@@ -424,8 +425,16 @@ export function createUI(state, ctx) {
       el('btn-labels').onclick = () => {
         view.showLabels = !view.showLabels;
         try { localStorage.setItem('neuroster.resLabels', view.showLabels ? '1' : '0'); } catch {}
-        syncL(); renderResbar(); sfx('click');
+        syncL(); renderResbar(); renderEnv(); sfx('click');
       };
+    }
+    // ☰ Menu: opens the moved Save/Load/Settings/etc.; header keeps the quick ones.
+    const menuM = el('menu-modal');
+    if (el('btn-menu') && menuM) el('btn-menu').onclick = () => menuM.classList.remove('hidden');
+    if (el('menu-close') && menuM) el('menu-close').onclick = () => menuM.classList.add('hidden');
+    if (menuM) {
+      menuM.querySelectorAll('[data-click]').forEach(b => b.onclick = () => { document.getElementById(b.dataset.click)?.click(); menuM.classList.add('hidden'); });
+      menuM.querySelectorAll('.menu-list button:not([data-click])').forEach(b => b.addEventListener('click', () => menuM.classList.add('hidden')));
     }
     // Auto-open the guide on a player's very first visit.
     try { if (!localStorage.getItem('neuroster.seenHelp')) showHelp(); } catch {}
