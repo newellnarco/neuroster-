@@ -103,6 +103,10 @@ docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neurost
   four neighboring animal factions (Squirrels, Chipmunks, Field Mice, Pack Rats). Trades
   raise/lower **standing** — but **hoarding what a faction covets invites raids** that steal
   supplies and smash walls, houses, storage and facilities.
+- **Living neighbours on the map**: each faction has a **camp** at the world's edge
+  (coloured by your standing — green allied, red hostile), and **caravans visibly travel**
+  between their camp and your colony — friendly deliveries (🎁/🆘) when you trade or call
+  for aid, and war parties (⚔️) when they raid.
 - **Morale & ethics — kindness vs preservation**: the colony has a conscience. **Unburied
   dead and untreated injuries crush morale**, and so does **violent killing by lethal
   defenses**. Low morale saps Fun, productivity and loyalty (deserters). Bury the fallen in
@@ -146,6 +150,7 @@ src/
   economy.js     # per-tick simulation (production, needs, breeding, loyalty, exploration)
   events.js      # predators & natural disasters
   buildings.js   # placement, costs, skill/evolution trees, traits, founder rename
+  factions.js    # neighbour camps on the map + trade/raid caravans
   alerts.js      # live, derived HUD notifications ("what needs attention now")
   megaprojects.js# long-horizon wonders: contribute-over-time + permanent bonuses
   milestones.js  # achievements / goals with a reward drip

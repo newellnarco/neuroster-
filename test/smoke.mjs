@@ -17,7 +17,9 @@ const { computeAlerts } = await import('../src/alerts.js');
 const { contributeMega, megaProgress, megaBonuses } = await import('../src/megaprojects.js');
 const { protectionAgainst } = await import('../src/events.js');
 const { exportSave, importSaveString } = await import('../src/save.js');
-const { MEGAPROJECTS } = await import('../src/config.js');
+const { ensureCamps, spawnCaravan, stepCaravans } = await import('../src/factions.js');
+const { giftFaction } = await import('../src/buildings.js');
+const { MEGAPROJECTS, FACTIONS } = await import('../src/config.js');
 
 const BIOMES = ['woodland', 'prairie', 'mountains', 'lakes', 'rivers', 'marsh', 'beach'];
 let pass = 0;
@@ -78,6 +80,44 @@ console.log('Save export/import:');
   assert(!importSaveString('not json').ok, 'garbage should be rejected');
   assert(!importSaveString(JSON.stringify({ foo: 1 })).ok, 'non-colony JSON should be rejected');
   ok('invalid saves are rejected');
+}
+
+// 4) Faction camps & caravans (living neighbours).
+console.log('Faction camps & caravans:');
+{
+  const s = newGame(99, 'prairie', 'syrian', 'Neighbours', {});
+  ensureCamps(s);
+  for (const id of Object.keys(FACTIONS)) {
+    const camp = s.factions[id]?.camp;
+    assert(camp && Number.isInteger(camp.x) && Number.isInteger(camp.y), `faction ${id} should have an integer camp`);
+  }
+  ok('every faction gets a camp on new game');
+
+  // Old-save back-fill: strip camps, ensureCamps should restore them.
+  for (const id of Object.keys(FACTIONS)) delete s.factions[id].camp;
+  ensureCamps(s);
+  assert(Object.keys(FACTIONS).every(id => s.factions[id].camp), 'camps back-filled for pre-camp saves');
+  ok('camps back-fill on load when missing');
+
+  // A gift should dispatch a caravan; it should expire after its lifetime.
+  s.res.food = 999; // ensure a coveted resource is available to gift
+  // need a trading hut for giftFaction
+  s.buildings.push({ id: 1, type: 'tradinghut', x: s.world.spawn.x, y: s.world.spawn.y, active: true });
+  const fid = Object.keys(FACTIONS)[0];
+  const r = giftFaction(s, fid);
+  assert(r.ok, `gift should succeed (${r.reason || ''})`);
+  assert((s.caravans || []).some(c => c.fac === fid && c.kind === 'trade'), 'gift dispatches a trade caravan');
+  ok('trading dispatches a caravan');
+
+  s.env.lived += 100; stepCaravans(s); // long after its lifetime
+  assert((s.caravans || []).length === 0, 'caravans expire and are pruned');
+  ok('caravans expire and are pruned');
+
+  // Caravans survive an export/import roundtrip.
+  spawnCaravan(s, fid, 'raid');
+  const back = importSaveString(exportSave(s));
+  assert(back.ok && (back.state.factions[fid].camp), 'camp survives save roundtrip');
+  ok('camps & caravans persist through save/load');
 }
 
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

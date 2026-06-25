@@ -8,6 +8,7 @@ import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods } from './environment.js';
 import { megaBonuses } from './megaprojects.js';
+import { ensureCamps, stepCaravans } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
 
 // Run one simulation tick. dt is seconds per tick.
@@ -18,6 +19,7 @@ export function stepEconomy(state, dt) {
   // Completed megaprojects grant permanent, colony-wide bonuses (cached per tick).
   const mega = state._mega = megaBonuses(state);
   if (mega.power) addRes(state, 'power', mega.power * dt);
+  ensureCamps(state); // idempotent — also back-fills camps for pre-camp saves
 
   // 1) Rodent AI (gather/haul/sleep).
   for (const u of state.units) stepRodent(state, u, dt);
@@ -100,11 +102,12 @@ export function stepEconomy(state, dt) {
     }
   }
 
-  // 10) Age out floating reward feedback.
+  // 10) Age out floating reward feedback & finished caravans.
   if (state.fx && state.fx.length) {
     const t = state.env.lived;
     state.fx = state.fx.filter(f => t - f.born < f.life);
   }
+  stepCaravans(state);
 }
 
 // Rodents build placed structures & upgrades over time. More awake builders =

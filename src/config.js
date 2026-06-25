@@ -340,6 +340,7 @@ export const FACTIONS = {
   chipmunks: { name: 'Chipmunks',  icon: '🐿️', covets: ['seeds', 'grain', 'wheat'], offers: 'stone',  desc: 'Cheeky foragers; trade stone for grain.' },
   fieldmice: { name: 'Field Mice', icon: '🐭', covets: ['wheat', 'grain', 'food'],   offers: 'research', desc: 'Scholars who trade knowledge for grain.' },
   packrats:  { name: 'Pack Rats',  icon: '🐀', covets: ['iron', 'planks', 'pellets'], offers: 'coal',  desc: 'Scavengers who raid the rich for shiny loot.' },
+  // (each faction also gets a camp on the map — see factions.js)
 };
 export const TRADE = {
   giftAmount: 20, giftStanding: 8,

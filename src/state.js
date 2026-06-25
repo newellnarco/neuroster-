@@ -3,6 +3,7 @@ import { RESOURCES, STARTING, NEEDS, TRAITS, EVOLUTIONS, NODE_TYPES, BREEDS, HAM
 import { generateWorld, reveal } from './world.js';
 import { makeRodent } from './entities.js';
 import { initEnv } from './environment.js';
+import { ensureCamps } from './factions.js';
 
 export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), biome = 'woodland', breedKey = 'syrian', founderName = null, opts = {}) {
   const difficulty = DIFFICULTIES[opts.difficulty] ? opts.difficulty : 'normal';
@@ -33,6 +34,8 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     log: [],
   };
   for (const id of Object.keys(FACTIONS)) state.factions[id] = { standing: 0, raidTimer: 120 + Math.random() * 120 };
+  state.caravans = [];
+  ensureCamps(state); // give every neighbour a camp on the map (and reveal them)
 
   // Breed predisposes a colony-wide knack.
   for (const [k, v] of Object.entries(breed.colonyMod || {})) state.mods[k] = (state.mods[k] || 0) + v;

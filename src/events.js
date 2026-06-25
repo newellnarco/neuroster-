@@ -2,6 +2,7 @@
 import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS } from './config.js';
 import { logMsg, population, addRes, addFx } from './state.js';
 import { makeRodent } from './entities.js';
+import { spawnCaravan } from './factions.js';
 
 // Repelling is a choice between kindness and preservation:
 //  • With a Vet Clinic you HEAL the injured attacker — morale rises, and a
@@ -210,6 +211,7 @@ export function stepFactions(state, dt) {
 }
 
 function fireFactionRaid(state, id, f, pressure) {
+  spawnCaravan(state, id, 'raid'); // a war party visibly marches from their camp
   const severity = pressure * (1 + (state.env?.lived || 0) / 4000);
   const protect = protectionAgainst(state, 'raid') + totalOffense(state);
   if (severity - protect <= 2) {

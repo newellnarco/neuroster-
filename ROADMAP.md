@@ -47,7 +47,7 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 12 | Levels + Skill tree + Evolution tree | ✅ Shipped | XP→levels→skill points; species evolutions |
 | 13 | Founder hamster (breeds + name) | ✅ Shipped | Syrian/Russian/Robo/Chinese; rename / 30 days |
 | 14 | Login-gated time (no offline progress) | ✅ Shipped | World is exactly as left |
-| 15 | Competing/cooperative AI factions (diplomacy) | ✅ Shipped | **Trading Hut**: gift/barter/request-aid with 4 animal factions; standing shifts alliances; **hoarding coveted goods invites raids** that steal supplies & smash walls/houses/storage |
+| 15 | Competing/cooperative AI factions (diplomacy) | ✅ Shipped | **Trading Hut**: gift/barter/request-aid with 4 animal factions; standing shifts alliances; **hoarding coveted goods invites raids** that steal supplies & smash walls/houses/storage. **Living neighbours (`factions.js`)**: each faction has a **camp on the map** (revealed from the start, coloured by standing), and **caravans visibly travel camp→colony** on trades/aid (🎁/🆘) and raids (⚔️) |
 | 15b | Morale & ethics ("kindness vs preservation") | ✅ Shipped | Unburied dead & untreated injuries crush **morale**; **lethal defenses cost morale** — but a **Vet Clinic lets you heal repelled raiders** (morale up, they may **join you**, faction warms); **tiered burials** (Dirt→Crypts→Mausoleum) restore morale by respect |
 | 15c | Upgradeable tunnels + steel | ✅ Shipped | Tunnels protect travel & bar other animals; have **HP**, take damage from attacks/raids/disasters, and **upgrade wood→iron→steel** (new **Steel** from a **Steelworks**); click to upgrade/repair |
 | 15d | Leader / Town Hall (equity) | ✅ Shipped | The leader rules by example — Town Hall (Meeting Burrow→Town Hall→Grand Hall) gives a colony-wide **leadership** boost (output, teaching XP, breeding), but a hall too lavish for everyone's **amenities breeds resentment** (morale/fun/output fall). Tunnels & conveyors now **visually connect** into networks (with a gap for the traveling hamster). |
@@ -84,8 +84,9 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] **Tunnels / underground levels** — dig burrow networks; vertical expansion.
 - [ ] **Biome-unique disasters** — beach tsunami, mountain avalanche, marsh disease
       (marsh already flags `hazardMul` hooks; add the event types).
-- [ ] **AI colonies** — neighboring rodent settlements: predatory (raid you),
-      competing (race for nodes), cooperative (alliances, trade caravans).
+- [~] **AI colonies** — neighboring settlements now have **camps on the map + caravans**
+      (predatory raids & cooperative trade/aid deliveries are visible). Still to add:
+      **competing** for nodes (race you to resources) and richer on-map diplomacy/combat.
 - [x] **New-game difficulty & density options** — Relaxed/Normal/Harsh (scales danger &
       starting stock) and Sparse/Normal/Rich resource density, in character creation.
 - [x] **Biome-unique disasters** — tsunami/avalanche/blight/sandstorm/wildfire per biome.
@@ -176,13 +177,15 @@ nothing persisted), **megaprojects** (Arc 16, `src/megaprojects.js` + `MEGAPROJE
 config; contribute-over-time, bonuses folded into economy/events/recompute via the
 `state._mega` per-tick cache), **save export/import** (`save.js` + topbar buttons +
 `game.js` download/upload handlers), a first-run **How-to-Play overlay** (`#help-modal`,
-auto-opens once via a `neuroster.seenHelp` flag), and **CI** (`.github/workflows/ci.yml`
-running `npm test` → `test/smoke.mjs`, the committed headless verification).
+auto-opens once via a `neuroster.seenHelp` flag), **CI** (`.github/workflows/ci.yml`
+running `npm test` → `test/smoke.mjs`, the committed headless verification), and
+**living-neighbour factions** (`factions.js` — camps on the map + trade/raid caravans,
+back-filled onto old saves via `ensureCamps`).
 
 **Best next steps (highest value first):**
-1. **AI colonies as living neighbours** — the factions are economic only; give them a
-   presence on the map (camps, caravans, visible raids) and richer diplomacy. Biggest
-   "turns a builder into a world" multiplier.
+1. **Deepen AI colonies** — camps & caravans now exist (`factions.js`); next give camps
+   real behaviour: **compete for resource nodes**, grow/shrink with their standing, and
+   let players send their own caravans (trade missions) or war parties back.
 2. **True pathfinding** (bigger refactor) — makes tunnels physically gate movement,
    gophers travel underground, and dams use real river geography (currently abstracted).
 3. **Audio + tutorial/onboarding** — once systems settle, polish converts curiosity to
