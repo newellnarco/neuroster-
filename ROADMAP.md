@@ -58,7 +58,7 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 | 17c | Milestones / achievements | ✅ Shipped | 16 goals with reward drip + HUD tracker (retention) |
 | 17d | Sand Bath + burrow upkeep | ✅ Shipped | Sand Bath cleans hamsters (health + anti-wet-tail hygiene); **burrows degrade if not cleaned** (lose housing/breeding) — caretakers auto-clean or click to clean |
 | 17e | Deployment | ✅ Shipped | Zero-dep configurable server (HOST/IP/PORT), Docker + compose, /healthz |
-| 18 | Animation & realism polish | 🟡 Ongoing | Swaying trees/crops, chimney smoke, water droplets, lab glow, fireflies/pollen, rodent ear-twitch/sniff. More to add (audio, more building anims). |
+| 18 | Animation & realism polish | 🟡 Ongoing | Swaying trees/crops, chimney smoke, water droplets, lab glow, fireflies/pollen, rodent ear-twitch/sniff. **Synthesised audio cues** (`audio.js`) for care/build/level/milestone/trade/birth/raid/alarm + a 🔊 mute toggle. More to add (ambient loop, more building anims). |
 
 ---
 
@@ -188,8 +188,9 @@ back-filled onto old saves via `ensureCamps`).
    let players send their own caravans (trade missions) or war parties back.
 2. **True pathfinding** (bigger refactor) — makes tunnels physically gate movement,
    gophers travel underground, and dams use real river geography (currently abstracted).
-3. **Audio + tutorial/onboarding** — once systems settle, polish converts curiosity to
-   retention; an onboarding pass pairs well with the new alert bar.
+3. **Audio + tutorial/onboarding** — ✅ both shipped (synthesised `audio.js` cues + 🔊
+   toggle; first-run How-to-Play overlay). Next polish: an ambient day/night soundscape
+   and a guided first-session "do this next" flow.
 4. **Multiple named save slots** — export/import landed; per-slot management is the
    remaining piece (UI for naming/listing/switching colonies).
 5. **More megaprojects & a megaproject site on the map** — currently abstract (contribute

@@ -133,6 +133,9 @@ docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neurost
   **⬇️ Import** in the top bar) — handy for moving between machines or sharing a test colony.
 - **Built-in How-to-Play guide**: a concise onboarding overlay opens on your first visit
   (and any time from the **❓ Help** button) so new players know the loop at a glance.
+- **Sound effects** (synthesised, no asset files): satisfying cues for caring for a rodent,
+  placing/finishing buildings, level-ups, milestones, trades, births, and warnings (raids /
+  critical needs). Toggle with the **🔊** button — your choice is remembered.
 - **Persistent, login-gated time**: autosaves; there is **no offline progress** — the
   world is exactly as you left it.
 
@@ -151,6 +154,7 @@ src/
   events.js      # predators & natural disasters
   buildings.js   # placement, costs, skill/evolution trees, traits, founder rename
   factions.js    # neighbour camps on the map + trade/raid caravans
+  audio.js       # synthesised sound effects (Web Audio, no asset files)
   alerts.js      # live, derived HUD notifications ("what needs attention now")
   megaprojects.js# long-horizon wonders: contribute-over-time + permanent bonuses
   milestones.js  # achievements / goals with a reward drip

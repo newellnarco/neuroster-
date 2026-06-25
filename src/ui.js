@@ -12,6 +12,8 @@ import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount,
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
   const view = ctx.view;
+  const audio = ctx.audio || { play() {}, toggle() { return false; }, isMuted() { return false; } };
+  const sfx = (name) => audio.play(name);
 
   // ---- Resource bar ----
   function renderResbar() {
@@ -161,7 +163,7 @@ export function createUI(state, ctx) {
     });
     bind('[data-care]', (btn) => {
       const u = state.units.find(x => x.id == btn.dataset.cu);
-      if (u) msg(careFor(state, u, btn.dataset.care));
+      if (u) { const r = careFor(state, u, btn.dataset.care); msg(r); if (r?.ok) sfx('care'); }
       renderRodents();
     });
     bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
@@ -216,7 +218,8 @@ export function createUI(state, ctx) {
       }).join('');
     bind('[data-tf]', (btn) => {
       const id = btn.dataset.fid, k = btn.dataset.tf;
-      msg(k === 'gift' ? giftFaction(state, id) : k === 'barter' ? barterFaction(state, id) : requestAid(state, id));
+      const r = k === 'gift' ? giftFaction(state, id) : k === 'barter' ? barterFaction(state, id) : requestAid(state, id);
+      msg(r); if (r?.ok) sfx('trade');
       renderTrade(); renderResbar();
     });
   }
@@ -242,7 +245,12 @@ export function createUI(state, ctx) {
           ${isDone ? '' : `<div class="care"><button class="carebtn ${canContribute ? '' : 'cd'}" data-mega="${id}" title="Contribute surplus resources toward this project">🤝 Contribute surplus</button></div>`}
         </div>`;
       }).join('');
-    bind('[data-mega]', (btn) => { msg(contributeMega(state, btn.dataset.mega)); renderMega(); renderResbar(); });
+    bind('[data-mega]', (btn) => {
+      const wasDone = megaCount(state);
+      const r = contributeMega(state, btn.dataset.mega); msg(r);
+      if (r?.ok) sfx(megaCount(state) > wasDone ? 'milestone' : 'complete');
+      renderMega(); renderResbar();
+    });
   }
 
   function renderLog() { el('log').innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join(''); }
@@ -264,7 +272,7 @@ export function createUI(state, ctx) {
     // Ping (flash) the first time a NEW critical alert appears, then remember it.
     const crit = new Set(alerts.filter(a => a.sev === 'critical').map(a => a.id));
     for (const a of alerts) {
-      if (a.sev === 'critical' && !lastCritical.has(a.id)) { flash(`${a.icon} ${a.msg}`); break; }
+      if (a.sev === 'critical' && !lastCritical.has(a.id)) { flash(`${a.icon} ${a.msg}`); sfx('alarm'); break; }
     }
     lastCritical = crit;
   }
@@ -289,6 +297,11 @@ export function createUI(state, ctx) {
     if (el('btn-import')) el('btn-import').onclick = () => ctx.onImport?.();
     if (el('btn-help')) el('btn-help').onclick = showHelp;
     if (el('help-close')) el('help-close').onclick = hideHelp;
+    if (el('btn-mute')) {
+      const sync = () => { el('btn-mute').textContent = audio.isMuted() ? '🔇' : '🔊'; };
+      sync();
+      el('btn-mute').onclick = () => { audio.toggle(); sync(); if (!audio.isMuted()) sfx('click'); };
+    }
     // Auto-open the guide on a player's very first visit.
     try { if (!localStorage.getItem('neuroster.seenHelp')) showHelp(); } catch {}
     // Founder rename (delegated click on the env bar chip).
@@ -362,7 +375,7 @@ export function createUI(state, ctx) {
       const t = toTile(e);
       if (view.placing) {
         const r = placeBuilding(state, view.placing, t.x, t.y);
-        if (!r.ok) flash(r.reason); else { renderBuild(); renderResbar(); }
+        if (!r.ok) flash(r.reason); else { sfx('place'); renderBuild(); renderResbar(); }
         return;
       }
       // select a rodent under the cursor
@@ -393,9 +406,28 @@ export function createUI(state, ctx) {
 
   function init() { setupTabs(); setupCanvas(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); }
 
+  // Track a few sim values to fire celebratory/warning cues on change.
+  let prev = null;
+  function audioCues() {
+    const cur = {
+      miles: Object.keys(state.milestones || {}).length,
+      lvl: mainLevel(state),
+      pop: population(state),
+      raidId: Math.max(0, ...(state.caravans || []).filter(c => c.kind === 'raid').map(c => c.id)),
+    };
+    if (prev) {
+      if (cur.miles > prev.miles) sfx('milestone');
+      else if (cur.lvl > prev.lvl) sfx('level');
+      else if (cur.pop > prev.pop) sfx('born');
+      if (cur.raidId > prev.raidId) sfx('raid');
+    }
+    prev = cur;
+  }
+
   let acc = 0;
   function update(dt) {
     renderResbar(); renderEnv(); renderNeeds();
+    audioCues();
     acc += dt;
     if (acc > 0.5) {
       acc = 0; renderLog(); renderAlerts();
