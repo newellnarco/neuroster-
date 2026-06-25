@@ -432,7 +432,7 @@ export function createUI(state, ctx) {
       if (u) { view.selUnit = u.id; document.querySelector('[data-tab="rodents"]').click(); renderRodents(); return; }
       const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
       if (b && b.flooded) { const r = repairMine(state, b); if (!r.ok) flash(r.reason); return; }
-      if (b && BUILDINGS[b.type].tunnel) { const r = upgradeTunnel(state, b); flash(r.ok ? 'Tunnel improved' : r.reason || ''); return; }
+      if (b && (BUILDINGS[b.type].tunnel || BUILDINGS[b.type].bridge)) { const r = upgradeTunnel(state, b); flash(r.ok ? '🔧 Improved!' : r.reason || ''); return; }
       if (b && BUILDINGS[b.type].townhall) { const r = upgradeTownhall(state, b); flash(r.ok ? 'Town Hall upgraded' : r.reason || ''); return; }
       if (b && BUILDINGS[b.type].breed && (b.dirt || 0) >= 1) { const r = cleanBurrow(state, b); flash(r.ok ? '🧹 Burrow cleaned' : r.reason || ''); return; }
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }

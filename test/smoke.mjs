@@ -133,4 +133,33 @@ console.log('Enrichment / distraction:');
   ok(`enrichment raises fun (${s._funBld}) and distraction caps at ${s._distract.toFixed(2)}`);
 }
 
+// 6) Bridges: water-placeable, tiered, flood protection, upgradeable.
+console.log('Bridges:');
+{
+  const { placeBuilding, canPlace, upgradeTunnel } = await import('../src/buildings.js');
+  const { BRIDGE_TIERS, GRID_W, GRID_H } = await import('../src/config.js');
+  const { getTile, TERRAIN } = await import('../src/world.js');
+  const s = newGame(2024, 'lakes', 'syrian', 'Bridgey', {});
+  let wx = -1, wy = -1;
+  outer: for (let y = 0; y < GRID_H; y++) for (let x = 0; x < GRID_W; x++) {
+    if (getTile(s.world.terrain, x, y) === TERRAIN.water && !s.world.nodes.some(n => n.x === x && n.y === y && n.amount > 0)) { wx = x; wy = y; break outer; }
+  }
+  assert(wx >= 0, 'lakes biome should have a water tile');
+  assert(!canPlace(s, 'wall', wx, wy).ok, 'a wall cannot be placed on water');
+  for (const k of ['wood', 'planks', 'stone', 'iron', 'steel']) s.res[k] = 999;
+  const r = placeBuilding(s, 'bridge', wx, wy);
+  assert(r.ok, 'bridge places on water: ' + (r.reason || ''));
+  ok('bridge builds on a water tile (others cannot)');
+  const b = s.buildings.find(x => x.type === 'bridge');
+  b.underConstruction = false; // pretend finished for protection/upgrade checks
+  const prot = protectionAgainst(s, 'flood');
+  assert(prot >= 2, `bridge adds flood protection (got ${prot})`);
+  ok(`bridge contributes flood protection (${prot.toFixed(1)})`);
+  const up = upgradeTunnel(s, b);
+  assert(up.ok, 'bridge upgrade starts: ' + (up.reason || ''));
+  for (let i = 0; i < 500 && b.upgrading; i++) stepEconomy(s, 0.1);
+  assert((b.tier || 0) === 1 && b.hp === BRIDGE_TIERS[1].hp, `bridge upgraded to stone (tier ${b.tier}, hp ${b.hp})`);
+  ok('bridge upgrades wood→stone and gains HP');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

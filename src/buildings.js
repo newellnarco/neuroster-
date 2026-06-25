@@ -1,5 +1,5 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS } from './config.js';
 
 // Labour-time for a project, from the total resources it costs (bigger = longer).
 export function buildTimeFor(cost) {
@@ -57,8 +57,8 @@ export function canPlace(state, type, x, y) {
   if (!inBounds(x, y)) return { ok: false, reason: 'Out of bounds' };
   const def = BUILDINGS[type];
   if (!def) return { ok: false, reason: 'Unknown building' };
-  if (getTile(state.world.terrain, x, y) === TERRAIN.water)
-    return { ok: false, reason: 'Cannot build on water' };
+  if (getTile(state.world.terrain, x, y) === TERRAIN.water && !def.bridge)
+    return { ok: false, reason: 'Only bridges can be built on water' };
   if (wasteAt(state.world, x, y) >= WASTE.blockAt)
     return { ok: false, reason: 'Too soiled — compost the droppings here first' };
   if (state.buildings.some(b => b.x === x && b.y === y))
@@ -98,6 +98,7 @@ export function placeBuilding(state, type, x, y) {
   spend(state, def.cost);
   const b = { id: state.nextId++, type, x, y, active: true };
   if (def.tunnel) { b.tier = 0; b.hp = TUNNEL_TIERS[0].hp; } // tunnels start at wood
+  if (def.bridge) { b.tier = 0; b.hp = BRIDGE_TIERS[0].hp; } // bridges start at wood
   if (def.townhall) b.tier = 0;
   // Start as a construction site; rodents build it over time before it works.
   b.underConstruction = true; b.progress = 0; b.buildTime = buildTimeFor(def.cost);
@@ -160,26 +161,28 @@ export function requestAid(state, id) {
   return { ok: true };
 }
 
-// Click a tunnel to upgrade its section (wood→iron→steel) or repair its damage.
+// Click a tiered fortification (tunnel or bridge) to repair its damage or
+// upgrade it a tier (wood→iron/stone→steel). Repair always comes first.
 export function upgradeTunnel(state, b) {
-  if (!BUILDINGS[b.type]?.tunnel) return { ok: false };
-  const tier = TUNNEL_TIERS[b.tier || 0];
-  // If damaged, repairing comes first (cheap: a few planks/the tier material).
+  const tiers = fortTiers(b.type);
+  if (!tiers) return { ok: false };
+  const kind = BUILDINGS[b.type]?.bridge ? 'bridge' : 'tunnel';
+  const tier = tiers[b.tier || 0];
   if ((b.hp ?? tier.hp) < tier.hp) {
-    const repairCost = b.tier === 0 ? { wood: 8 } : b.tier === 1 ? { iron: 6 } : { steel: 6 };
+    const repairCost = tier.repairCost || { wood: 8 };
     if (!canAfford(state, repairCost)) return { ok: false, reason: `Repair needs ${costText(repairCost)}` };
     spend(state, repairCost); b.hp = tier.hp;
-    logMsg(state, `🛠️ Repaired a ${tier.name} tunnel section.`);
+    logMsg(state, `🛠️ Repaired a ${tier.name} ${kind} section.`);
     return { ok: true };
   }
   if (b.underConstruction) return { ok: false, reason: 'Still under construction' };
   if (b.upgrading) return { ok: false, reason: 'Already upgrading' };
-  const next = TUNNEL_TIERS[(b.tier || 0) + 1];
+  const next = tiers[(b.tier || 0) + 1];
   if (!next) return { ok: false, reason: 'Already steel (max tier)' };
   if (!canAfford(state, next.upgradeCost)) return { ok: false, reason: `Upgrade needs ${costText(next.upgradeCost)}` };
   spend(state, next.upgradeCost);
   b.upgrading = { toTier: (b.tier || 0) + 1, progress: 0, time: buildTimeFor(next.upgradeCost) };
-  logMsg(state, `🔧 Upgrading a tunnel section to ${next.name} (~${Math.round(b.upgrading.time)}s)…`);
+  logMsg(state, `🔧 Upgrading a ${kind} section to ${next.name} (~${Math.round(b.upgrading.time)}s)…`);
   return { ok: true };
 }
 const costText = (c) => Object.entries(c).map(([k, v]) => `${k} ${v}`).join(', ');

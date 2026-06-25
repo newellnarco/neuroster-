@@ -206,6 +206,10 @@ export const BUILDINGS = {
     name: 'Tunnel (Wood)', icon: '🛤️', desc: 'Covered run: rodents travel protected; blocks other animals crossing. Has HP, takes damage, and upgrades wood→iron→steel (click to upgrade/repair).',
     cost: { wood: 15, planks: 8 }, category: 'Defense', tunnel: true,
   },
+  bridge: {
+    name: 'Bridge (Wood)', icon: '🌉', desc: 'Span water (or tunnels): eases crossings and helps hold back floods. Wood can BURN in wildfire or WASH AWAY in floods — upgrade wood→stone→steel (click to upgrade/repair).',
+    cost: { wood: 18, planks: 10 }, category: 'Defense', bridge: true,
+  },
   dam: {
     name: 'Beaver Dam', icon: '🦫', desc: 'Beavers dam the water to collect & hold it: lots of Water + strong flood protection (cuts flow upstream).',
     cost: { wood: 50, stone: 20 }, category: 'Defense', produces: { water: 1.0 }, needsWater: true, radius: 2,
@@ -231,10 +235,25 @@ export const BUILDINGS = {
 // is tougher (more HP & protection); upgrade a section by spending materials —
 // wood → iron → refined steel. Damaged sections protect less and can collapse.
 export const TUNNEL_TIERS = [
-  { name: 'Wood',  hp: 30,  protect: { wolf: 2, hawk: 2, raid: 1 }, color: '#7a5a36', upgradeCost: null },
-  { name: 'Iron',  hp: 75,  protect: { wolf: 4, hawk: 4, raid: 3 }, color: '#8a929a', upgradeCost: { iron: 20, planks: 10 } },
-  { name: 'Steel', hp: 150, protect: { wolf: 7, hawk: 7, raid: 5 }, color: '#aebfd0', upgradeCost: { steel: 25, iron: 10 } },
+  { name: 'Wood',  hp: 30,  protect: { wolf: 2, hawk: 2, raid: 1 }, color: '#7a5a36', upgradeCost: null,                    repairCost: { wood: 8 } },
+  { name: 'Iron',  hp: 75,  protect: { wolf: 4, hawk: 4, raid: 3 }, color: '#8a929a', upgradeCost: { iron: 20, planks: 10 }, repairCost: { iron: 6 } },
+  { name: 'Steel', hp: 150, protect: { wolf: 7, hawk: 7, raid: 5 }, color: '#aebfd0', upgradeCost: { steel: 25, iron: 10 }, repairCost: { steel: 6 } },
 ];
+
+// Bridges span water/tunnels and help hold back floods. Wood burns/washes away;
+// upgrade wood → stone → steel for far more HP and flood protection.
+export const BRIDGE_TIERS = [
+  { name: 'Wood',  hp: 22,  protect: { flood: 2 }, defense: 1, color: '#8a6a3a', upgradeCost: null,                     repairCost: { wood: 8 } },
+  { name: 'Stone', hp: 70,  protect: { flood: 5 }, defense: 2, color: '#9aa0a6', upgradeCost: { stone: 30, planks: 10 }, repairCost: { stone: 8 } },
+  { name: 'Steel', hp: 150, protect: { flood: 9 }, defense: 3, color: '#aebfd0', upgradeCost: { steel: 25, iron: 10 },   repairCost: { steel: 6 } },
+];
+
+// The tier ladder for a tiered "fortification" building (tunnel/bridge), or null.
+export function fortTiers(type) {
+  if (BUILDINGS[type]?.tunnel) return TUNNEL_TIERS;
+  if (BUILDINGS[type]?.bridge) return BRIDGE_TIERS;
+  return null;
+}
 export const TUNNEL_REPAIR = { steel: 0, iron: 0 }; // repair cost is a fraction of upgrade (computed)
 
 // ---- Town Hall / leadership tiers ------------------------------------------

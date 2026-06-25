@@ -74,6 +74,9 @@ This loop is meant to compound: each layer unlocks new adjacent layers (e.g. con
 - [ ] Balance pass: tune drains/yields once conveyors & more buildings land.
 
 ### ➕ Add
+- [x] **Bridges** — buildable over water (and tunnels), tiered **wood→stone→steel** with HP,
+      reusing the tunnel-tier system (`fortTiers`); wood **burns** in wildfire / **washes away**
+      in floods; click to upgrade/repair; contributes flood protection.
 - [x] **Conveyor belts** — all three tiers now shipped: **wood → plastic → metal**
       (plastic from a new Refinery: coal → plastic). Still to add: **multi-segment belt
       networks** (chain belts node→belt→belt→storage with direction).
