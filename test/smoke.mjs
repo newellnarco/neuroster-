@@ -332,6 +332,42 @@ console.log('Sexed burrow breeding:');
   ok(`sexed burrow breeding: needs mature M+F (no one-sex/immature breeding), born at a burrow (${born} born)`);
 }
 
+// 10d) Wet tail is far less punishing — fair, not a fast wipe.
+console.log('Wet tail (fair disease):');
+{
+  const { WETTAIL, BUILDINGS } = await import('../src/config.js');
+  const burrowType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed);
+  const vetType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].vet);
+
+  // The retune: gentler illness with a real treatment window.
+  assert(WETTAIL.riskPerFilth < 0.0009, `riskPerFilth lowered (${WETTAIL.riskPerFilth} < 0.0009)`);
+  assert(WETTAIL.dieAfter > 55, `time-to-death lengthened (${WETTAIL.dieAfter} > 55)`);
+  assert(WETTAIL.healthDrain < 5, `health drain softened (${WETTAIL.healthDrain} < 5)`);
+  assert(WETTAIL.infectAt > 1, `infection needs a real filth pile (${WETTAIL.infectAt} > 1)`);
+
+  // A TIDY colony (no filth) essentially never catches wet tail.
+  {
+    const g = newGame(811, 'woodland', 'syrian', 'Tidy', {});
+    g.popCap = 99; g.res.food = 9999;
+    g.buildings.push({ id: g.nextId++, type: burrowType, x: g.world.spawn.x + 1, y: g.world.spawn.y, active: true });
+    let caught = false;
+    for (let i = 0; i < 3000; i++) { stepEconomy(g, 0.1); if (g.units.some(u => u.sick)) caught = true; }
+    assert(!caught, 'a tidy (clean) colony does not catch wet tail');
+  }
+
+  // An infected rodent recovers under a Vet Clinic.
+  {
+    const g = newGame(812, 'woodland', 'syrian', 'Cure', {});
+    g.popCap = 99; g.res = { ...g.res, planks: 999, iron: 999 };
+    g.buildings.push({ id: g.nextId++, type: vetType, x: g.world.spawn.x + 1, y: g.world.spawn.y, active: true });
+    g.units[0].sick = true; g.units[0].sickT = 5;
+    let cured = false;
+    for (let i = 0; i < 400 && !cured; i++) { stepEconomy(g, 0.2); if (!g.units[0].sick) cured = true; }
+    assert(cured, 'a Vet Clinic cures a wet-tail case (treatment works)');
+  }
+  ok(`wet tail retuned: tidy colony immune, vet cures, longer window (die after ${WETTAIL.dieAfter}s vs 55s)`);
+}
+
 // 11) Compassion & rescue (kindness as a mechanic).
 console.log('Compassion & rescue:');
 {

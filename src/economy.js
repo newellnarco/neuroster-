@@ -698,11 +698,16 @@ function updateDisease(state, dt) {
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) filth += wasteAt(world, b.x + dx, b.y + dy);
   }
   const vets = state._vets || 0;
-  // infection chance scales with filth; vets and sand-bath hygiene suppress it
-  const hygieneMul = 1 / (1 + (state._hygiene || 0) * 0.5);
+  // Sand-bath / cleaning hygiene suppresses both catching and progressing wet
+  // tail; vets help too. hygieneMul → 0 as hygiene climbs (clamped so a sand-bath
+  // colony is essentially immune). _hygiene is the colony's hygiene level.
+  const hygieneMul = Math.max(1 - WETTAIL.hygieneSuppress, 1 / (1 + (state._hygiene || 0) * 1.2));
+  // Infection needs a real pile of filth (infectAt), then scales with how much
+  // worse it gets — a tidy colony (filth ≤ infectAt) never catches it.
   const healthy = state.units.filter(u => !u.sick);
-  if (healthy.length && filth > 1) {
-    const risk = WETTAIL.riskPerFilth * filth * dt * (vets ? 0.4 : 1) * hygieneMul;
+  if (healthy.length && filth > WETTAIL.infectAt) {
+    const excess = filth - WETTAIL.infectAt;
+    const risk = WETTAIL.riskPerFilth * excess * dt * (vets ? 0.4 : 1) * hygieneMul;
     if (Math.random() < risk) {
       const u = healthy[Math.floor(Math.random() * healthy.length)];
       u.sick = true; u.sickT = 0;
@@ -710,16 +715,25 @@ function updateDisease(state, dt) {
       logMsg(state, `🤢 A rodent caught wet tail from filth! ${vets ? 'The vet is treating it.' : 'Build a Vet Clinic & a Composter!'}`);
     }
   }
-  // progress illnesses: vets heal; without care it worsens and can be fatal
+  // Progress wet-tail cases (outbreak illness is handled in updateOutbreak): vets
+  // heal; hygiene slows the slide and brightens the self-recovery odds; without
+  // any care it worsens slowly, but not every case is fatal.
+  const cleanFactor = Math.max(0.15, hygieneMul); // active cleaning strongly slows progression
   for (let i = state.units.length - 1; i >= 0; i--) {
     const u = state.units[i];
-    if (!u.sick) continue;
-    u.needs.health = Math.max(0, u.needs.health - WETTAIL.healthDrain * dt);
+    if (!u.sick || u.outbreak) continue;
+    u.needs.health = Math.max(0, u.needs.health - WETTAIL.healthDrain * cleanFactor * dt);
     if (vets > 0) {
       u.sickT -= WETTAIL.vetCureRate * vets * dt;
       if (u.sickT <= 0) { u.sick = false; u.sickT = 0; u.needs.health = Math.max(u.needs.health, 40); addFx(state, u.x, u.y, '❤️', 1.6); logMsg(state, '💉 The vet cured a rodent of wet tail.'); }
     } else {
-      u.sickT += dt;
+      u.sickT += dt * cleanFactor;
+      // A brief chance the rodent shakes off a mild case on its own (better with hygiene).
+      if (Math.random() < WETTAIL.selfRecover * (2 - cleanFactor) * dt) {
+        u.sick = false; u.sickT = 0; u.needs.health = Math.max(u.needs.health, 35);
+        addFx(state, u.x, u.y, '❤️', 1.4); logMsg(state, '🌿 A rodent shook off a mild case of wet tail.');
+        continue;
+      }
       if (u.sickT > WETTAIL.dieAfter && state.units.length > 1) {
         killUnit(state, u);
         logMsg(state, '💀 A rodent died of untreated wet tail. Bury it (Graveyard) & build a Vet Clinic!');

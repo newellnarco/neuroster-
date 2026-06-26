@@ -648,10 +648,13 @@ export const WASTE = {
   composterRate: 0.5,// droppings -> fertilizer per second per composter
 };
 export const WETTAIL = {
-  riskPerFilth: 0.0009, // infection chance per tick per unit of nearby filth
-  healthDrain: 5,       // health lost per second while sick
-  dieAfter: 55,         // seconds sick & untreated before it's fatal
-  vetCureRate: 1.6,     // recovery per second per vet clinic
+  infectAt: 8,           // filth must exceed this near burrows/food before infection can start (was 1)
+  riskPerFilth: 0.00018, // infection chance per tick per unit of nearby filth (was 0.0009 — a tidy colony ~never gets it)
+  healthDrain: 2,        // health lost per second while sick (was 5 — slower illness)
+  dieAfter: 120,         // seconds sick & untreated before it's fatal (was 55 — a real window to treat)
+  vetCureRate: 1.6,      // recovery per second per vet clinic
+  hygieneSuppress: 0.85, // how strongly sand-bath/clean hygiene suppresses infection & progression
+  selfRecover: 0.004,    // per-second chance a mild untreated case shakes it off (not every case is fatal)
 };
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
