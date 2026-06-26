@@ -26,7 +26,8 @@ export const RESOURCES = {
   grain:    { name: 'Grain',    icon: '🟡', kind: 'refined', color: '#e0c060', nourish: 1.5 },
   pellets:  { name: 'Pellets',  icon: '🟤', kind: 'refined', color: '#b9853f', nourish: 2.4 },
   nuts:     { name: 'Nuts',     icon: '🌰', kind: 'refined', color: '#9c6b3f' },
-  fertilizer:{ name: 'Fertilizer', icon: '💩', kind: 'raw',  color: '#7a5a36' },
+  manure:   { name: 'Manure',   icon: '💩', kind: 'raw',     color: '#6b4a2b' },
+  fertilizer:{ name: 'Fertilizer', icon: '🪴', kind: 'refined', color: '#7a5a36' },
   planks:   { name: 'Planks',   icon: '🟫', kind: 'refined', color: '#caa05a' },
   iron:     { name: 'Iron',     icon: '🔩', kind: 'refined', color: '#cfd6dd' },
   steel:    { name: 'Steel',    icon: '⚙️', kind: 'refined', color: '#9fb0c4' },
@@ -82,7 +83,7 @@ export const BUILDINGS = {
     cost: { planks: 30, iron: 15 }, category: 'Food', produces: { pellets: 0.4 }, consumes: { grain: 0.6 },
   },
   composter: {
-    name: 'Composter', icon: '♻️', desc: 'Collects droppings nearby and turns them into Fertilizer.',
+    name: 'Composter', icon: '♻️', desc: 'Gathers nearby droppings into stored Manure (poop). A powered Fertilizer Mill turns Manure → Fertilizer, which boosts farm yield.',
     cost: { wood: 30, planks: 10 }, category: 'Food', composter: 1, radius: 5,
   },
   vet: {
@@ -143,7 +144,7 @@ export const BUILDINGS = {
     produces: { nuts: 0.5 },
   },
   sunflower: {
-    name: 'Sunflower Field', icon: '🌻', desc: 'A field of sunflowers — a steady crop of Seeds and a little Food. Seeds feed Processing Mills (→ fertilizer) and plant trees & oaks.',
+    name: 'Sunflower Field', icon: '🌻', desc: 'A field of sunflowers — a steady crop of Seeds and a little Food. Seeds plant trees, oaks & farms.',
     cost: { wood: 16, water: 10 }, category: 'Food', produces: { seeds: 0.6, food: 0.15 },
   },
   windmill: {
@@ -154,9 +155,9 @@ export const BUILDINGS = {
     name: 'Water Mill', icon: '🛞', desc: 'A wooden mill on the water — clean Power plus a steady trickle of Water. Build next to a river or pond. No pollution.',
     cost: { wood: 32, planks: 10, stone: 8 }, category: 'Automation', produces: { power: 0.9, water: 0.3 }, needsWater: true, radius: 1,
   },
-  seedmill: {
-    name: 'Processing Mill', icon: '⚙️', desc: 'A wooden mill — grinds Seeds into Fertilizer (needs Power from a wheel, windmill or water mill). Fertilizer in store boosts every Farm\'s yield.',
-    cost: { wood: 28, planks: 12 }, category: 'Production', consumes: { seeds: 0.4, power: 0.2 }, produces: { fertilizer: 0.3 },
+  fertilizerplant: {
+    name: 'Fertilizer Mill', icon: '⚙️', desc: 'A powered mill — processes stored Manure (poop, gathered by Composters & burrow cleaning) into Fertilizer. Needs Power (a wheel, windmill, water mill, or coal/steam plant). Fertilizer in store boosts every Farm\'s yield.',
+    cost: { wood: 28, planks: 12, stone: 10 }, category: 'Production', consumes: { manure: 0.4, power: 0.2 }, produces: { fertilizer: 0.3 },
   },
   cistern: {
     name: 'Water Cistern', icon: '🛢️', desc: 'A wooden cistern — +300 storage and it COLLECTS RAINWATER (extra Water in rain & storms). Stockpile water for dry spells.',

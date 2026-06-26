@@ -6,7 +6,7 @@ export function buildTimeFor(cost) {
   const sum = Object.values(cost || {}).reduce((a, b) => a + b, 0);
   return Math.max(CONSTRUCTION.minTime, sum * CONSTRUCTION.timePerCost);
 }
-import { canAfford, spend, logMsg, addFx, addCompassion } from './state.js';
+import { canAfford, spend, logMsg, addFx, addCompassion, addRes } from './state.js';
 import { getTile, TERRAIN, inBounds, wasteAt } from './world.js';
 import { makeRodent, gainXp } from './entities.js';
 import { spawnCaravan } from './factions.js';
@@ -228,9 +228,12 @@ export function upgradeTownhall(state, b) {
 export function cleanBurrow(state, b) {
   if (!BUILDINGS[b.type]?.breed) return { ok: false };
   if ((b.dirt || 0) < 1) return { ok: false, reason: 'Already clean' };
+  // Cleaning a burrow/house collects its soiled bedding as Manure (poop) — feed
+  // it to a Fertilizer Mill (with power) to turn it into farm fertilizer.
+  const got = addRes(state, 'manure', Math.min(8, Math.max(2, Math.round(b.dirt || 1))));
   b.dirt = 0; b.degraded = false;
   addFx(state, b.x, b.y, '🧹', 1.4);
-  logMsg(state, '🧹 Cleaned a burrow — fresh bedding all round.');
+  logMsg(state, `🧹 Cleaned a burrow — fresh bedding, and ${Math.round(got)} Manure for the Fertilizer Mill.`);
   return { ok: true };
 }
 

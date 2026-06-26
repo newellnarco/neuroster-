@@ -508,7 +508,8 @@ function updateWaste(state, dt) {
       if (u.needs.health > 35 && u.phase !== 'sleep') addWaste(world, Math.round(u.x), Math.round(u.y), 1);
     }
   }
-  // composters convert nearby droppings into fertilizer
+  // Composters gather nearby droppings into stored MANURE (poop storage). A
+  // powered Fertilizer Mill later turns manure → fertilizer (which boosts farms).
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def?.composter || b.underConstruction) continue;
@@ -519,7 +520,7 @@ function updateWaste(state, dt) {
       if (have <= 0) continue;
       const take = Math.min(have, want);
       addWaste(world, wx, wy, -take); want -= take;
-      addRes(state, 'fertilizer', take * 1.5);
+      addRes(state, 'manure', take * 1.5);
     }
   }
   // natural decay (sparse scan for performance)

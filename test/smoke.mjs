@@ -658,14 +658,15 @@ console.log('Wood economy (trees, mills, power, storage):');
   assert((p.res.power || 0) > 0, 'a windmill generates power');
   ok(`wooden windmill generates clean power (${(p.res.power || 0).toFixed(1)})`);
 
-  // Processing Mill: Power + Seeds → Fertilizer (the wood→power→fertilizer chain).
+  // Fertilizer Mill: Manure (poop) + Power → Fertilizer (the poop→fertilizer chain).
   const m = newGame(114, 'prairie', 'syrian', 'Mill', {});
-  m.res.seeds = 200; m.res.power = 200;
+  m.res = { manure: 200, power: 200 }; // leave storage room for the fertilizer
   const f0 = m.res.fertilizer || 0;
-  built(m, 'seedmill', m.world.spawn.x + 2, m.world.spawn.y);
+  built(m, 'fertilizerplant', m.world.spawn.x + 2, m.world.spawn.y);
   for (let i = 0; i < 20; i++) stepEconomy(m, 0.2);
-  assert((m.res.fertilizer || 0) > f0, `processing mill grinds seeds → fertilizer (${f0} → ${(m.res.fertilizer || 0).toFixed(1)})`);
-  ok('processing mill turns seeds + power into fertilizer');
+  assert((m.res.fertilizer || 0) > f0, `fertilizer mill turns manure → fertilizer (${f0} → ${(m.res.fertilizer || 0).toFixed(1)})`);
+  assert((m.res.manure || 0) < 200, 'the fertilizer mill consumes manure');
+  ok('fertilizer mill turns manure + power into fertilizer');
 
   // Cistern raises storage capacity (+300, wooden water storage).
   const c = newGame(115, 'prairie', 'syrian', 'Cist', {});
@@ -731,6 +732,35 @@ console.log('Beaver wood store & sabotage:');
   for (let i = 0; i < 40; i++) { f.res.wood = 500; stepEconomy(f, 0.2); }
   assert((f.beaverMood ?? 70) >= 35 && !((f._beaverSabotage || 0) > 0), 'fairly-treated beavers stay content');
   ok('fairly-treated beavers stay content (no sabotage)');
+}
+
+// 24) Fertilizer comes from POOP: composter & burrow-cleaning → manure → mill.
+console.log('Poop → manure → fertilizer chain:');
+{
+  const { BUILDINGS } = await import('../src/config.js');
+  const { cleanBurrow } = await import('../src/buildings.js');
+  const { addWaste } = await import('../src/world.js');
+  const breedType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed); // the burrow
+
+  // Composter gathers droppings into stored Manure (not fertilizer directly).
+  const s = newGame(800, 'woodland', 'syrian', 'Poop', {});
+  const sp = s.world.spawn;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) addWaste(s.world, sp.x + dx, sp.y + dy, 5);
+  s.buildings.push({ id: s.nextId++, type: 'composter', x: sp.x, y: sp.y, active: true });
+  const m0 = s.res.manure || 0;
+  for (let i = 0; i < 20; i++) stepEconomy(s, 0.2);
+  assert((s.res.manure || 0) > m0, `composter stockpiles droppings as manure (${m0} → ${(s.res.manure || 0).toFixed(1)})`);
+  assert((s.res.fertilizer || 0) === 0, 'a composter alone makes no fertilizer (needs the powered mill)');
+  ok('composter gathers droppings into manure (not fertilizer)');
+
+  // Cleaning a burrow yields manure (poop from houses).
+  const c = newGame(801, 'woodland', 'syrian', 'Clean', {});
+  const burrow = { id: c.nextId++, type: breedType, x: c.world.spawn.x + 1, y: c.world.spawn.y, active: true, dirt: 6 };
+  c.buildings.push(burrow);
+  const mb = c.res.manure || 0;
+  const r = cleanBurrow(c, burrow);
+  assert(r.ok && (c.res.manure || 0) > mb, `cleaning a burrow collects manure (${mb} → ${(c.res.manure || 0)})`);
+  ok('cleaning a burrow/house yields manure for fertilizer');
 }
 
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
