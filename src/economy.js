@@ -6,7 +6,7 @@ import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
 import { JUSTICE } from './config.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
-import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
+import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathBudget } from './entities.js';
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
@@ -41,7 +41,10 @@ export function stepEconomy(state, dt) {
   if (mega.power) addRes(state, 'power', mega.power * dt);
   ensureCamps(state); // idempotent — also back-fills camps for pre-camp saves
 
-  // 1) Rodent AI (gather/haul/sleep).
+  // 1) Rodent AI (gather/haul/sleep). Reset the per-tick A* recompute budget and
+  // advance the pathing clock once before movers run, so path recomputes are
+  // throttled colony-wide (see entities.js moveAlongPath).
+  resetPathBudget(state);
   for (const u of state.units) stepRodent(state, u, dt);
 
   // 2) Construction labour (sets _laborFactor), burrow upkeep, derived stats.

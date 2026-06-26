@@ -4,7 +4,26 @@ import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_
 import { traitMul, wellbeingMul, addRes, evoBonus, addFx, logMsg } from './state.js';
 import { isNight } from './environment.js';
 import { isSeen, nearestUnseen, isBlockedTile } from './world.js';
+import { findPath } from './pathfinding.js';
 import { nodeContestFactor } from './factions.js';
+
+// ---- Pathfinding integration tunables --------------------------------------
+// Movers follow a cached A* path toward their current target and only recompute
+// when the target changes, the path is consumed, or it's been invalidated. To
+// keep per-tick cost flat we (a) cap how many movers may recompute in a single
+// tick and (b) make each mover wait a few ticks between its own recomputes.
+const PATH_BUDGET_PER_TICK = 4;   // at most this many A* searches per sim tick
+const PATH_RECOMPUTE_COOLDOWN = 18; // a mover waits ≥ this many ticks to retry
+const PATH_NODE_BUDGET = 500;     // per-search node-expansion cap (safety valve)
+const PATH_REACH = 0.36;          // squared distance to count a waypoint reached (~0.6 tile)
+const PATH_MAX_LEN = 26 * 26;     // skip A* for very long hops; steering handles those
+
+// Reset once per simulation tick (called from economy before the rodent loop) so
+// the per-tick recompute cap is honoured across all movers.
+export function resetPathBudget(state) {
+  state._pathBudget = PATH_BUDGET_PER_TICK;
+  state._pathTick = (state._pathTick || 0) + 1; // monotonic clock for recompute cooldowns
+}
 
 let _id = 1;
 // Worker assignment order, weighted toward the materials early colonies need most.
@@ -115,7 +134,7 @@ export function stepRodent(state, u, dt) {
       u._wx = Math.max(1, Math.min(GRID_W - 2, u.x + (Math.random() - 0.5) * 6));
       u._wy = Math.max(1, Math.min(GRID_H - 2, u.y + (Math.random() - 0.5) * 6));
     }
-    moveToward(state, u, u._wx, u._wy, spd, dt);
+    moveAlongPath(state, u, u._wx, u._wy, spd, dt);
     return;
   }
 
@@ -125,7 +144,7 @@ export function stepRodent(state, u, dt) {
   // nap. Fog is revealed by the per-tick exploration pass as the rodent travels.
   if (u.order) {
     if (u.order.kind === 'goto') {
-      if (moveToward(state, u, u.order.x, u.order.y, spd, dt)) {
+      if (moveAlongPath(state, u, u.order.x, u.order.y, spd, dt)) {
         u.order = null; u.phase = 'seek'; u.targetNode = null; // arrived → resume work
       }
       return;
@@ -141,7 +160,7 @@ export function stepRodent(state, u, dt) {
         logMsg(state, `🧭 ${u.name} finished exploring — the map is fully revealed.`);
         return;
       }
-      if (moveToward(state, u, u._exTarget.x, u._exTarget.y, spd, dt)) u._exTarget = null;
+      if (moveAlongPath(state, u, u._exTarget.x, u._exTarget.y, spd, dt)) u._exTarget = null;
       return;
     }
   }
@@ -153,7 +172,7 @@ export function stepRodent(state, u, dt) {
         if (!u.targetNode) { u.phase = 'idle'; return; }
       }
       const n = u.targetNode;
-      if (moveToward(state, u, n.x, n.y, spd, dt)) { u.phase = 'work'; u.progress = 0; }
+      if (moveAlongPath(state, u, n.x, n.y, spd, dt)) { u.phase = 'work'; u.progress = 0; }
       break;
     }
     case 'work': {
@@ -179,7 +198,7 @@ export function stepRodent(state, u, dt) {
     case 'deliver': {
       const d = u.targetDrop;
       const dx = d ? d.x : state.world.spawn.x, dy = d ? d.y : state.world.spawn.y;
-      if (moveToward(state, u, dx, dy, spd, dt)) { deliverCarry(state, u); u.phase = 'seek'; }
+      if (moveAlongPath(state, u, dx, dy, spd, dt)) { deliverCarry(state, u); u.phase = 'seek'; }
       break;
     }
     case 'idle': {
@@ -209,10 +228,84 @@ function isRestTime(state, u) {
   return false; // crepuscular: only sleeps when exhausted
 }
 
+// Follow a cached A* path toward (tx,ty), falling back to local steering when no
+// path is available. This is the entry point for all movers; it returns true on
+// arrival at the final target (same contract as moveToward).
+//
+// A mover keeps a cached `_path` (waypoint list), an index `_pathI`, and the
+// target the path was computed for (`_pathTx/_pathTy`). The path is recomputed
+// only when the target moves, the path is consumed, or it's invalidated — and
+// recomputes are throttled two ways: a per-tick colony-wide cap (_pathBudget)
+// and a per-mover cooldown (_pathTick clock). When findPath returns null
+// (unreachable / over budget / very long hop / pathing unavailable), we fall
+// straight back to moveToward's one-tile steering so movement never stalls.
+function moveAlongPath(state, u, tx, ty, spd, dt) {
+  const world = state && state.world;
+  // No world (defensive) → plain steering.
+  if (!world || !world.terrain) return moveToward(state, u, tx, ty, spd, dt);
+
+  const dxg = tx - u.x, dyg = ty - u.y;
+  // Already essentially on the target — done (mirrors moveToward's arrival check).
+  if (Math.hypot(dxg, dyg) < 0.15) { clearPath(u); return true; }
+
+  const rtx = Math.round(tx), rty = Math.round(ty);
+  const sameTarget = u._pathTx === rtx && u._pathTy === rty;
+
+  // Decide whether we need a fresh path: target changed, or we have none / it's
+  // been fully consumed. (A consumed-but-valid path just means "keep steering to
+  // the target directly" below — the final approach is short-range.)
+  const haveUsablePath = sameTarget && u._path && u._pathI < u._path.length;
+  if (!haveUsablePath) {
+    const longHop = (dxg * dxg + dyg * dyg) > PATH_MAX_LEN;
+    const tick = state._pathTick || 0;
+    const cooledDown = (tick - (u._pathCd || -1e9)) >= PATH_RECOMPUTE_COOLDOWN;
+    const budgetLeft = (state._pathBudget || 0) > 0;
+    // Only spend an A* search if the target changed (always worth a try, subject
+    // to budget) or our cached path is gone — and only when throttles allow.
+    if (!longHop && budgetLeft && (!sameTarget || cooledDown)) {
+      state._pathBudget--;
+      u._pathCd = tick;
+      const p = findPath(world, u.x, u.y, rtx, rty, { budget: PATH_NODE_BUDGET });
+      if (p && p.length) {
+        u._path = p; u._pathI = 0; u._pathTx = rtx; u._pathTy = rty;
+      } else {
+        // null (unreachable/over budget) or empty (already adjacent) → no path to
+        // follow; fall back to steering for this leg.
+        clearPath(u);
+      }
+    }
+  }
+
+  // Follow the cached path if we have one.
+  if (u._path && u._pathI < u._path.length) {
+    const wp = u._path[u._pathI];
+    const wdx = wp.x - u.x, wdy = wp.y - u.y;
+    if ((wdx * wdx + wdy * wdy) <= PATH_REACH) {
+      // Reached this waypoint → advance. If that was the last one, hand off to
+      // direct steering for the final short approach to the exact target.
+      u._pathI++;
+      if (u._pathI >= u._path.length) { clearPath(u); return moveToward(state, u, tx, ty, spd, dt); }
+    }
+    const nwp = u._path[u._pathI];
+    // Steer toward the next waypoint (moveToward keeps its own local avoidance as
+    // a safety net). We never treat reaching a waypoint as reaching the target.
+    moveToward(state, u, nwp.x, nwp.y, spd, dt);
+    // Arrival is decided purely by proximity to the real target.
+    if (Math.hypot(tx - u.x, ty - u.y) < 0.15) { clearPath(u); return true; }
+    return false;
+  }
+
+  // No path (couldn't compute one, or it's a long hop) → fall back to steering.
+  return moveToward(state, u, tx, ty, spd, dt);
+}
+
+function clearPath(u) { u._path = null; u._pathI = 0; u._pathTx = null; u._pathTy = null; }
+
 // Cheap, O(1) local obstacle avoidance: step toward the target, but if the next
 // step would land in a blocked tile (water/mountain), deflect to one side and
 // steer along the obstacle edge instead of clipping straight through it. This is
-// deliberately a one-tile lookahead — NOT global pathfinding.
+// deliberately a one-tile lookahead — the steering FALLBACK beneath the cached
+// A* paths above (used directly for short hops and when no path can be found).
 function moveToward(state, u, tx, ty, spd, dt) {
   const world = state && state.world;
   const dx = tx - u.x, dy = ty - u.y, dist = Math.hypot(dx, dy);

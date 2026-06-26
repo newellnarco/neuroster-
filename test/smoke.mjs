@@ -1754,4 +1754,62 @@ console.log('Pathfinding (A* core):');
   }
 }
 
+// 46) Pathfinding integration: movers follow cached A* paths around barriers,
+//     and fall back to local steering when no path exists — never stalling.
+console.log('Pathfinding (mover integration):');
+{
+  const { stepRodent } = await import('../src/entities.js');
+  const { TERRAIN, idx, isBlockedTile } = await import('../src/world.js');
+  const { GRID_H } = await import('../src/config.js');
+
+  // A wall of water between a mover and its goto target, with a single gap. The
+  // rodent must route AROUND it (through the gap) without ever standing in water.
+  {
+    const s = newGame(9100, 'prairie', 'syrian', 'Route', {});
+    s.world.terrain.fill(TERRAIN.grass);
+    const sp = s.world.spawn;
+    const wallX = sp.x + 5;
+    for (let y = 0; y < GRID_H; y++) s.world.terrain[idx(wallX, y)] = TERRAIN.water;
+    const gapY = 2; s.world.terrain[idx(wallX, gapY)] = TERRAIN.grass; // the only door, far from the straight line
+    const u = s.units[0];
+    u.x = sp.x - 4; u.y = sp.y; // start well left of the wall
+    const tx = wallX + 4, ty = sp.y; // target well right of it
+    u.order = { kind: 'goto', x: tx, y: ty };
+    u.inBall = false; u.phase = 'seek'; u.targetNode = null;
+    let steppedOnWater = false, threadedGap = false, guard = 0;
+    while (u.order && guard++ < 8000) {
+      u.needs.energy = 100; // keep it awake
+      stepEconomy(s, 0.1);
+      if (isBlockedTile(s.world, u.x, u.y)) steppedOnWater = true;
+      if (Math.abs(Math.round(u.x) - wallX) <= 0 && Math.abs(Math.round(u.y) - gapY) <= 1) threadedGap = true;
+    }
+    assert(u.order === null, 'the mover eventually reaches the walled-off target');
+    assert(!steppedOnWater, 'the mover never stands on a blocked (water) tile en route');
+    assert(threadedGap, 'the mover detoured through the single gap (true pathfinding, not clipping)');
+    assert(Math.hypot(u.x - tx, u.y - ty) < 1.5, `mover arrives at the target (at ${u.x.toFixed(1)},${u.y.toFixed(1)})`);
+    ok('a mover follows an A* path around a wall, through the gap, onto the target');
+  }
+
+  // Fallback: when the target sits behind a SEALED wall (unreachable), findPath
+  // returns null and the mover falls back to steering — it presses toward the
+  // wall without crashing, stalling the sim, or wading into water.
+  {
+    const s = newGame(9101, 'prairie', 'syrian', 'Fallback', {});
+    s.world.terrain.fill(TERRAIN.grass);
+    const sp = s.world.spawn;
+    const wallX = sp.x + 5;
+    for (let y = 0; y < GRID_H; y++) s.world.terrain[idx(wallX, y)] = TERRAIN.water; // no gap → unreachable
+    const u = s.units[0];
+    u.x = sp.x - 2; u.y = sp.y;
+    u.order = { kind: 'goto', x: wallX + 4, y: sp.y };
+    u.inBall = false; u.phase = 'seek'; u.targetNode = null;
+    let everBlocked = false;
+    for (let i = 0; i < 600; i++) { u.needs.energy = 100; stepEconomy(s, 0.1); if (isBlockedTile(s.world, u.x, u.y)) everBlocked = true; }
+    assert(!everBlocked, 'unreachable target: the steering fallback still keeps the mover off water');
+    assert(u.x < wallX, 'the fallback presses toward the barrier but cannot cross the sealed wall');
+    assert(u.order && u.order.kind === 'goto', 'an impossible order does not silently clear (no false arrival)');
+    ok('fallback engages on an unreachable target — steering keeps moving, never stalls or wades in');
+  }
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
