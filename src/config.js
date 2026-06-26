@@ -808,10 +808,20 @@ export const FAMILY_NAMES = [
 
 // Start-of-game options for replayability: difficulty scales danger & starting
 // stock; density scales how abundant resource nodes are in the generated world.
+// Difficulty modulates the whole game, not just combat:
+//   disasterMul → event SEVERITY (how hard each disaster hits)
+//   startMul    → the starting resource bundle
+//   paceMul     → event PACING: ×gaps between events (>1 = calmer, gentler cadence)
+//   graceMul    → ×the peaceful grace period before any threats begin
+//   yieldMul    → resource production / mining / belt-haul output
+//   breedMul    → breeding speed
+// Easier settings get longer grace, gentler pacing, richer yields & faster
+// breeding; harder settings get the reverse. paceMul/graceMul/yieldMul/breedMul
+// are read by events.js & economy.js (see eventPace/graceSeconds, yieldMul).
 export const DIFFICULTIES = {
-  relaxed: { name: 'Relaxed', icon: '😌', disasterMul: 0.55, startMul: 1.4, desc: 'Gentle threats, generous start. Build & relax.' },
-  normal:  { name: 'Normal',  icon: '⚖️', disasterMul: 1.0,  startMul: 1.0, desc: 'The intended balance.' },
-  harsh:   { name: 'Harsh',   icon: '🔥', disasterMul: 1.6,  startMul: 0.8, desc: 'Frequent, fierce dangers and a lean start.' },
+  relaxed: { name: 'Relaxed', icon: '😌', disasterMul: 0.55, startMul: 1.4, paceMul: 1.35, graceMul: 1.5, yieldMul: 1.2,  breedMul: 1.25, desc: 'Gentle threats, generous start, richer yields. Build & relax.' },
+  normal:  { name: 'Normal',  icon: '⚖️', disasterMul: 1.0,  startMul: 1.0, paceMul: 1.0,  graceMul: 1.0, yieldMul: 1.0,  breedMul: 1.0,  desc: 'The intended balance.' },
+  harsh:   { name: 'Harsh',   icon: '🔥', disasterMul: 1.6,  startMul: 0.8, paceMul: 0.78, graceMul: 0.7, yieldMul: 0.85, breedMul: 0.8,  desc: 'Frequent, fierce dangers, lean start & yields.' },
 };
 export const DENSITIES = {
   sparse: { name: 'Sparse', icon: '🍂', mul: 0.6, desc: 'Scarce resources — expand & explore to survive.' },

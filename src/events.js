@@ -131,6 +131,18 @@ const GRACE_SECONDS = 420;
 // (raise for calmer, lower for busier). Difficulty still scales severity.
 const EVENT_PACE = 1.7;
 
+// Difficulty is a knob on PACING & GRACE, not just severity. Easier settings get
+// a longer peaceful grace period and gentler cadence (bigger gaps between
+// events); harder settings get a shorter grace and busier pacing. These read the
+// chosen difficulty's paceMul/graceMul (config.js DIFFICULTIES). Exported so the
+// smoke test (and UI) can assert the effective values differ by difficulty.
+export function eventPace(state) {
+  return EVENT_PACE * (DIFFICULTIES[state?.difficulty]?.paceMul ?? 1);
+}
+export function graceSeconds(state) {
+  return GRACE_SECONDS * (DIFFICULTIES[state?.difficulty]?.graceMul ?? 1);
+}
+
 // Called each tick. Uses per-disaster countdown timers stored on state.events.
 export function stepEvents(state, dt) {
   if (state.disasters === false) return; // peaceful mode: no predators/disasters
@@ -138,20 +150,22 @@ export function stepEvents(state, dt) {
   const pop = population(state);
   if (pop <= 0) return;
   const elapsed = state.env?.lived || 0; // seconds actually played
-  if (elapsed < GRACE_SECONDS) return; // peaceful early game
+  const grace = graceSeconds(state); // difficulty scales the peaceful grace period
+  const pace = eventPace(state);     // …and the cadence between events
+  if (elapsed < grace) return; // peaceful early game
 
   const biome = state.world?.biome;
   for (const [key, d] of Object.entries(DISASTERS)) {
     if (d.biomes && !d.biomes.includes(biome)) continue; // biome-specific events
     // First scheduled occurrence is offset past the grace period.
-    const ev = state.events[key] || (state.events[key] = { timer: d.interval * EVENT_PACE * (0.6 + 0.8 * hash(key)) });
+    const ev = state.events[key] || (state.events[key] = { timer: d.interval * pace * (0.6 + 0.8 * hash(key)) });
     ev.timer -= dt;
     if (ev.timer > 0) continue;
 
     // Reschedule next occurrence; they grow a little more frequent over time, but
     // gently (higher floor, slower ramp) so the late game stays playable.
     const ramp = Math.max(0.72, 1 - elapsed / 12000);
-    ev.timer = d.interval * EVENT_PACE * ramp * (0.7 + 0.6 * hash(key + elapsed));
+    ev.timer = d.interval * pace * ramp * (0.7 + 0.6 * hash(key + elapsed));
 
     // A brokered truce holds predators (not natural disasters) at bay for a while.
     if (d.kind === 'predator' && (state.truceUntil || 0) > elapsed) continue;
@@ -269,6 +283,8 @@ function fireDisaster(state, key, d, elapsed) {
 export function stepFactions(state, dt) {
   if (!state.factions) return;
   const lived = state.env?.lived || 0;
+  const grace = graceSeconds(state); // difficulty scales grace before raids/contests
+  const pace = eventPace(state);     // …and the cadence of competition & raids
   expireContests(state, lived); // contests that have run their course lapse
   for (const [id, f] of Object.entries(FACTIONS)) {
     const st = state.factions[id] || (state.factions[id] = { standing: 0, raidTimer: 150 });
@@ -286,15 +302,15 @@ export function stepFactions(state, dt) {
     // Standing-driven on-map competition: every so often a neighbour eyes a seam.
     st.interestTimer = (st.interestTimer ?? CONTEST.interest * (0.5 + hash(id))) - dt;
     if (st.interestTimer <= 0) {
-      st.interestTimer = CONTEST.interest * EVENT_PACE * (0.7 + 0.6 * hash(id + Math.floor(lived)));
+      st.interestTimer = CONTEST.interest * pace * (0.7 + 0.6 * hash(id + Math.floor(lived)));
       stepCompetition(state, id, f, st, lived, hoard);
     }
 
     // raid cadence
     st.raidTimer -= dt;
     if (st.raidTimer <= 0) {
-      st.raidTimer = (150 + 120 * hash(id + Math.floor(lived))) * EVENT_PACE;
-      if (lived < GRACE_SECONDS || state.disasters === false) continue; // peaceful mode: no raids
+      st.raidTimer = (150 + 120 * hash(id + Math.floor(lived))) * pace;
+      if (lived < grace || state.disasters === false) continue; // peaceful mode: no raids
       if ((state.truceUntil || 0) > lived) continue; // a brokered truce stays the raiders' paws
       const pressure = Math.max(0, -st.standing) + Math.min(45, hoard * 0.12);
       if (pressure > 14) fireFactionRaid(state, id, f, pressure);
@@ -309,7 +325,7 @@ export function stepFactions(state, dt) {
 function stepCompetition(state, id, f, st, lived, hoard) {
   const standing = st.standing || 0;
   if (standing >= CONTEST.cedeStanding) { resolveContest(state, id); return; }
-  if (lived < GRACE_SECONDS || state.disasters === false) return; // peaceful early game / mode
+  if (lived < graceSeconds(state) || state.disasters === false) return; // peaceful early game / mode
   if ((state.truceUntil || 0) > lived) return; // a truce stays competition too
   // Envy (hoarding their coveted goods) makes even a neutral neighbour grab a seam.
   const contestUrge = standing < CONTEST.contestBelow || hoard > 0;

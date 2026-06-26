@@ -1370,4 +1370,22 @@ console.log('Main Hamster level unlocks:');
   ok(`a level-gated ability unlocks & applies at threshold (Refining II @ Lv.${TECH.refining2.reqLevel})`);
 }
 
+// 36) Difficulty knob: event pacing & grace scale with the chosen difficulty.
+console.log('Difficulty pacing & grace knob:');
+{
+  const { eventPace, graceSeconds } = await import('../src/events.js');
+  const { DIFFICULTIES } = await import('../src/config.js');
+  const mk = (d) => newGame(2200, 'woodland', 'syrian', 'Pace', { difficulty: d });
+  const relaxed = mk('relaxed'), normal = mk('normal'), harsh = mk('harsh');
+  // Easier → MORE grace and gentler (longer) pacing; harder → less.
+  assert(graceSeconds(relaxed) > graceSeconds(normal), `relaxed has more grace than normal (${graceSeconds(relaxed)} > ${graceSeconds(normal)})`);
+  assert(graceSeconds(normal) > graceSeconds(harsh), `normal has more grace than harsh (${graceSeconds(normal)} > ${graceSeconds(harsh)})`);
+  assert(eventPace(relaxed) > eventPace(normal), `relaxed has gentler pacing than normal (${eventPace(relaxed).toFixed(2)} > ${eventPace(normal).toFixed(2)})`);
+  assert(eventPace(normal) > eventPace(harsh), `normal has gentler pacing than harsh (${eventPace(normal).toFixed(2)} > ${eventPace(harsh).toFixed(2)})`);
+  // The knobs live on the difficulty config (a real, tunable dial).
+  assert(DIFFICULTIES.relaxed.graceMul > 1 && DIFFICULTIES.harsh.graceMul < 1, 'graceMul reads >1 for relaxed, <1 for harsh');
+  assert(DIFFICULTIES.relaxed.paceMul > 1 && DIFFICULTIES.harsh.paceMul < 1, 'paceMul reads >1 for relaxed, <1 for harsh');
+  ok(`event pace/grace scale by difficulty (grace ${graceSeconds(relaxed)}/${graceSeconds(normal)}/${graceSeconds(harsh)}, pace ${eventPace(relaxed).toFixed(1)}/${eventPace(normal).toFixed(1)}/${eventPace(harsh).toFixed(1)})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
