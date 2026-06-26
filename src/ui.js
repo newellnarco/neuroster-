@@ -1,5 +1,5 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR, NODE_TYPES } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
 import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
@@ -190,6 +190,17 @@ export function createUI(state, ctx) {
           ${orderLabel ? `<span class="sub">${orderLabel}</span>` : ''}
           <span class="sub" title="Select a rodent, then click a tile (even fogged) to send it there">tip: click the map to send</span>
         </div>` : '';
+      // Job assignment (selected unit): bias this rodent toward a preferred
+      // resource. This is a soft preference over the auto-sim — "Auto" clears it
+      // and lets the colony decide; a pinned kind makes the rodent prefer that
+      // resource when one is available, falling back to the nearest otherwise.
+      const jobRow = view.selUnit === u.id ? `<div class="care taskrow jobrow">
+          <span class="sub" title="Bias this rodent toward gathering a resource. Soft preference: it prefers its assigned target when one's available, else takes the nearest.">🎯 Job:</span>
+          <button class="carebtn ${!u.jobPref ? 'on' : ''}" data-job="auto" data-ju="${u.id}"
+            title="Auto — let the colony decide what this rodent gathers">🤖 Auto</button>
+          ${Object.entries(JOB_KINDS).map(([kind, j]) => `<button class="carebtn ${u.jobPref === kind ? 'on' : ''}" data-job="${kind}" data-ju="${u.id}"
+            title="Prefer ${j.label} (${RESOURCES[NODE_TYPES[kind].resource]?.name || NODE_TYPES[kind].resource})${NODE_TYPES[kind].surface === false ? ' — needs a Mine on the seam' : ''}">${j.icon}</button>`).join('')}
+        </div>` : '';
       // Guard / soldier skill + equipment tiers (selected unit).
       const nextGear = GUARD_GEAR[(u.gear || 0) + 1];
       const guardRow = view.selUnit === u.id ? `<div class="care taskrow">
@@ -206,7 +217,7 @@ export function createUI(state, ctx) {
           <span class="xpbar"><span style="width:${Math.min(100, 100 * u.xp / xpForLevel(u.level))}%"></span></span>
           <span class="sub">❤️${bond} · ${sleepInfo}</span></div>
         ${lineage ? `<div class="kinrow">${lineage}</div>` : ''}
-        <div class="traits">${traits}</div>${care}${taskRow}${guardRow}</div>`;
+        <div class="traits">${traits}</div>${care}${taskRow}${jobRow}${guardRow}</div>`;
     }).join('');
 
     const more = state.units.length > CAP ? `<div class="hint">Showing the top ${CAP} of ${population(state)} by level (select one to pin it to the top).</div>` : '';
@@ -241,6 +252,16 @@ export function createUI(state, ctx) {
         if (u.inBall) { exitBall(state, u); flash('🫧 Out of the ball'); }
         else { const r = enterBall(state, u); if (r.ok) { sfx('care'); flash('🫧 Rolling out — safe from predators!'); } else flash(r.reason); }
       } else { u.order = null; u._exTarget = null; if (u.inBall) exitBall(state, u); flash('✋ Order cleared — back to work'); }
+      renderRodents();
+    });
+    bind('[data-job]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.ju);
+      if (!u) return;
+      const k = btn.dataset.job;
+      u.jobPref = k === 'auto' ? null : k;
+      u.targetNode = null; // re-pick a target now so the new preference takes effect immediately
+      sfx('click');
+      flash(u.jobPref ? `🎯 ${escHtml(u.name || 'Rodent')} → prefers ${JOB_KINDS[u.jobPref]?.label || u.jobPref}` : `🤖 ${escHtml(u.name || 'Rodent')} → Auto`);
       renderRodents();
     });
     bind('[data-guard]', (btn) => {
@@ -724,7 +745,10 @@ export function createUI(state, ctx) {
     // zoom and scroll-center on the colony spawn. The player can still zoom out
     // to 1 (whole map). 1 = whole map fits; >1 = zoomed in, #viewport pans.
     const START_ZOOM = 2;
+    // A saved colony restores its last zoom (game.js seeds view.zoom from
+    // state.viewPrefs); a first run with no saved value starts at START_ZOOM.
     if (view.zoom == null) view.zoom = START_ZOOM;
+    const hasSavedCenter = typeof view.centerFracX === 'number' && typeof view.centerFracY === 'number';
     const applyZoom = () => {
       const cs = getComputedStyle(board);
       const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
@@ -748,13 +772,24 @@ export function createUI(state, ctx) {
     const centerOnTown = () => {
       if (centered) return;
       if (!(board.clientWidth > 0 && c.offsetWidth > 0)) { requestAnimationFrame(centerOnTown); return; }
+      // Restore the saved pan center (a 0..1 fraction of the map) when this colony
+      // has one; otherwise focus on the town spawn (first-run behaviour).
       const sp = state.world?.spawn || { x: GRID_W / 2, y: GRID_H / 2 };
-      const fracX = (sp.x + 0.5) / GRID_W, fracY = (sp.y + 0.5) / GRID_H;
+      const fracX = hasSavedCenter ? view.centerFracX : (sp.x + 0.5) / GRID_W;
+      const fracY = hasSavedCenter ? view.centerFracY : (sp.y + 0.5) / GRID_H;
       board.scrollLeft = Math.max(0, fracX * c.offsetWidth - board.clientWidth / 2);
       board.scrollTop = Math.max(0, fracY * c.offsetHeight - board.clientHeight / 2);
       centered = true;
     };
     requestAnimationFrame(centerOnTown);
+    // Keep view.centerFracX/Y tracking the live pan center (fraction of the map),
+    // so saves capture where the player is looking. Updated on scroll.
+    const trackCenter = () => {
+      if (!(c.offsetWidth > 0 && c.offsetHeight > 0)) return;
+      view.centerFracX = (board.scrollLeft + board.clientWidth / 2) / c.offsetWidth;
+      view.centerFracY = (board.scrollTop + board.clientHeight / 2) / c.offsetHeight;
+    };
+    board.addEventListener('scroll', trackCenter, { passive: true });
     // Re-fit whenever the board area changes — window resize, or the sidebar/log
     // dividers being dragged (which resize the board around the map).
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => applyZoom()).observe(board);
@@ -901,6 +936,16 @@ export function createUI(state, ctx) {
   return { init, update, flash, newColony: showCharacterCreation,
     renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderDoctrine(); renderLog(); renderAlerts(); renderGuide(); } };
 }
+
+// Assignable gathering jobs — each biases a rodent toward one resource node kind.
+// Icons read at a glance in the per-rodent Job row (the auto-sim honours the pick).
+const JOB_KINDS = {
+  trees:    { icon: '🌳', label: 'Wood (forage trees)' },
+  rock:     { icon: '🪨', label: 'Stone (quarry rock)' },
+  bush:     { icon: '🌿', label: 'Seeds (forage bushes)' },
+  orevein:  { icon: '⛰️', label: 'Iron ore (mine)' },
+  coalseam: { icon: '⚫', label: 'Coal (mine)' },
+};
 
 // Short, plain-language notes shown when you click a resource chip.
 const RESDESC = {

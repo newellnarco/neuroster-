@@ -43,6 +43,18 @@ function migrateLegacy() {
 export function listSlots() { migrateLegacy(); return readIndex().slice().sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0)); }
 export function hasSave() { migrateLegacy(); return readIndex().length > 0; }
 
+// Capture per-colony view preferences (zoom + pan center) into the save state so
+// reloading restores the player's last camera. `view` is the live UI view object;
+// the pan center is recorded as a 0..1 fraction of the map so it survives a
+// differently-sized window on reload. No-ops gracefully if either is missing.
+export function captureViewPrefs(state, view) {
+  if (!state || !view) return;
+  const vp = (state.viewPrefs = state.viewPrefs || {});
+  if (typeof view.zoom === 'number') vp.zoom = view.zoom;
+  if (typeof view.centerFracX === 'number') vp.centerFracX = view.centerFracX;
+  if (typeof view.centerFracY === 'number') vp.centerFracY = view.centerFracY;
+}
+
 // Save the running state to the active slot (creating one if needed).
 export function saveGame(state) {
   try {

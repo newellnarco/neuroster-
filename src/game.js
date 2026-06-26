@@ -7,7 +7,7 @@ import { createUI } from './ui.js';
 import { createAudio } from './audio.js';
 import { setupLayout } from './layout.js';
 import { saveGame, loadGame, exportSave, importSaveString, hasSave,
-  listSlots, selectSlot, deleteSlot, startNewSlot, saveAsNewSlot } from './save.js';
+  listSlots, selectSlot, deleteSlot, startNewSlot, saveAsNewSlot, captureViewPrefs } from './save.js';
 
 const START_KEY = 'neuroster.newstart';
 const AUTO_KEY = 'neuroster.autobegin'; // set when New/Load reloads, so the splash skips the gate
@@ -34,14 +34,25 @@ export function startGame(canvas) {
   }
 
   const view = { placing: null, hover: null, canPlace: false, paused: false, speed: 1, selUnit: null };
+  // Seed the camera from this colony's saved view preferences (zoom + pan center),
+  // so a reload restores the player's last view. setupCanvas reads view.zoom and
+  // view.centerFracX/Y; leaving them unset keeps the "start centered on town" default.
+  if (state.viewPrefs) {
+    if (typeof state.viewPrefs.zoom === 'number') view.zoom = state.viewPrefs.zoom;
+    if (typeof state.viewPrefs.centerFracX === 'number') view.centerFracX = state.viewPrefs.centerFracX;
+    if (typeof state.viewPrefs.centerFracY === 'number') view.centerFracY = state.viewPrefs.centerFracY;
+  }
   let started = false; // gameplay keys are inert until the start screen is dismissed
+  // Snapshot the live camera into the save state, then persist. Used by every
+  // save path so the player's zoom/pan rides along with the colony.
+  const persist = () => { captureViewPrefs(state, view); return saveGame(state); };
 
   const renderer = createRenderer(canvas, state, () => view);
   const audio = createAudio();
   const ui = createUI(state, {
     canvas, view, audio,
     onNewGame: (opt) => { localStorage.setItem(START_KEY, JSON.stringify(opt || {})); localStorage.setItem(AUTO_KEY, '1'); location.reload(); },
-    onSave: () => saveGame(state),
+    onSave: () => persist(),
     onSaveAs: (name) => { saveAsNewSlot(state, name); ui.flash(`💾 Saved as a new hamster: ${name}`); },
     onExport: () => exportColony(state, ui),
     onImport: () => importColony(ui),
@@ -78,7 +89,7 @@ export function startGame(canvas) {
       let guard = 0;
       while (acc >= tickDt && guard++ < 240) { stepEconomy(state, tickDt); acc -= tickDt; }
       saveAcc += frameDt;
-      if (started && saveAcc >= AUTOSAVE_SEC) { saveAcc = 0; saveGame(state); showAutosave(); }
+      if (started && saveAcc >= AUTOSAVE_SEC) { saveAcc = 0; persist(); showAutosave(); }
     }
     renderer.draw(now);
     ui.update(frameDt);
@@ -93,12 +104,12 @@ export function startGame(canvas) {
     if (e.key === '2') view.speed = 2;
     if (e.key === '3') view.speed = 4;
   });
-  window.addEventListener('beforeunload', () => { if (started) saveGame(state); }); // don't persist a pre-start default as a slot
+  window.addEventListener('beforeunload', () => { if (started) persist(); }); // don't persist a pre-start default as a slot
 
   // In-game updater: autosave, then reload to pick up the newest served code
   // (the server serves files live with no-cache, so a reload = latest version).
   function updateNow() {
-    try { if (started) saveGame(state); } catch {}
+    try { if (started) persist(); } catch {}
     ui.flash('🔄 Saving & updating…');
     setTimeout(() => location.reload(), 250);
   }
@@ -108,7 +119,7 @@ export function startGame(canvas) {
   // Load / switch colony → save, then drop back to the start screen (Continue /
   // Load other hamsters / New) by clearing the auto-begin flag and reloading.
   const btnLoad = document.getElementById('btn-load');
-  if (btnLoad) btnLoad.onclick = () => { try { if (started) saveGame(state); } catch {} localStorage.removeItem(AUTO_KEY); location.reload(); };
+  if (btnLoad) btnLoad.onclick = () => { try { if (started) persist(); } catch {} localStorage.removeItem(AUTO_KEY); location.reload(); };
 
   // Brief "Auto-saving…" flash in the header when an autosave fires.
   let autosaveT;

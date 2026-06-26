@@ -1578,4 +1578,91 @@ console.log('River dams (real upstream/flow geography):');
   ok(`river flow bonus folds into water output (${wDry.toFixed(1)} → ${wRiver.toFixed(1)})`);
 }
 
+// 43) Persist zoom level (per colony): the camera (zoom + pan center) is written
+//     to the save state and restored on load, without breaking the first-run
+//     "start centered on town" default (only restore when a saved value exists).
+console.log('Persist zoom per colony:');
+{
+  const { captureViewPrefs } = await import('../src/save.js');
+  // A fresh colony has no saved view prefs (so a first run starts centered/default).
+  const s = newGame(1700, 'woodland', 'syrian', 'Zoom', {});
+  assert(s.viewPrefs == null, 'a new colony stores no view prefs (first run uses the default view)');
+
+  // The player zooms and pans; capturing folds the live camera into the state.
+  const view = { zoom: 2.75, centerFracX: 0.4, centerFracY: 0.6 };
+  captureViewPrefs(s, view);
+  assert(s.viewPrefs && s.viewPrefs.zoom === 2.75, `zoom is written to the save state (got ${s.viewPrefs?.zoom})`);
+  assert(s.viewPrefs.centerFracX === 0.4 && s.viewPrefs.centerFracY === 0.6, 'pan center is written to the save state');
+  ok('zoom + pan center are written into the colony save state');
+
+  // The camera survives a save/load roundtrip (so a reload restores the last view).
+  const back = importSaveString(exportSave(s));
+  assert(back.ok && back.state.viewPrefs?.zoom === 2.75, `zoom is restored from the save state (got ${back.state.viewPrefs?.zoom})`);
+  assert(back.state.viewPrefs.centerFracX === 0.4 && back.state.viewPrefs.centerFracY === 0.6, 'pan center is restored from the save state');
+  ok('zoom + pan center persist through save/load and are restored');
+
+  // Capture is a graceful no-op without a view, and never invents a zoom.
+  const s2 = newGame(1701, 'prairie', 'syrian', 'NoView', {});
+  captureViewPrefs(s2, null);
+  assert(s2.viewPrefs == null, 'capturing with no view leaves the colony at the first-run default (no zoom invented)');
+  ok('capture is a safe no-op when there is no live view to read');
+}
+
+// 44) Job assignment: a player can bias a rodent toward a resource (a soft
+//     preference over the auto-sim), it persists through save/load, and the
+//     sim's task-selection honours it when the assigned target is available.
+console.log('Job assignment (resource bias):');
+{
+  const { stepRodent } = await import('../src/entities.js');
+  const s = newGame(1800, 'prairie', 'syrian', 'Jobs', {});
+  // A controlled world: a NEAR bush (seeds) and a FAR rock (stone). Auto would
+  // grab the near bush; a stone-pinned rodent should walk past it to the rock.
+  s.world.nodes.length = 0;
+  const sp = s.world.spawn;
+  const bush = { id: 1, kind: 'bush', x: sp.x + 1, y: sp.y, amount: 200, max: 200 };
+  const rock = { id: 2, kind: 'rock', x: sp.x + 6, y: sp.y, amount: 500, max: 500 };
+  s.world.nodes.push(bush, rock);
+
+  const u = s.units[0];
+  // Pin a job preference, and make it the auto round-robin's NON-choice so we're
+  // really testing the explicit jobPref override.
+  u.prefKind = 'bush';        // auto would pick the near bush
+  u.jobPref = 'rock';         // the player pins stone instead
+  u.order = null; u.inBall = false; u.phase = 'seek'; u.targetNode = null; u.needs.energy = 100;
+  assert(u.jobPref === 'rock', 'a rodent can be given an explicit job preference');
+
+  // One seek step picks a target — the pinned kind, even though it's farther.
+  stepRodent(s, u, 0.05);
+  assert(u.targetNode && u.targetNode.kind === 'rock', `a pinned rodent targets its assigned kind over a nearer one (got ${u.targetNode?.kind})`);
+  ok('the sim honours a job preference: a stone-pinned rodent skips the nearer bush for rock');
+
+  // "Auto" (no jobPref) falls back to the round-robin prefKind (here, the bush).
+  const a = s.units[1] || s.units[0];
+  a.jobPref = null; a.prefKind = 'bush';
+  a.order = null; a.inBall = false; a.phase = 'seek'; a.targetNode = null; a.needs.energy = 100;
+  stepRodent(s, a, 0.05);
+  assert(a.targetNode && a.targetNode.kind === 'bush', `Auto (no pin) follows the colony's default choice (got ${a.targetNode?.kind})`);
+  ok('Auto default leaves selection to the colony (round-robin prefKind)');
+
+  // The preference is a soft bias: if the pinned kind runs out, it still works
+  // (takes the nearest available) rather than stalling the auto-sim.
+  const t = newGame(1801, 'prairie', 'syrian', 'Soft', {});
+  t.world.nodes.length = 0;
+  const tp = t.world.spawn;
+  t.world.nodes.push({ id: 1, kind: 'trees', x: tp.x + 2, y: tp.y, amount: 100, max: 400 });
+  const tu = t.units[0];
+  tu.jobPref = 'coalseam'; // no coal seam exists on this map
+  tu.order = null; tu.inBall = false; tu.phase = 'seek'; tu.targetNode = null; tu.needs.energy = 100;
+  stepRodent(t, tu, 0.05);
+  assert(tu.targetNode && tu.targetNode.kind === 'trees', 'an unavailable preference falls back to the nearest node (no stall)');
+  ok('a job preference is a soft bias — it never strands a rodent when its target is gone');
+
+  // The assignment persists through a save/load roundtrip.
+  const back = importSaveString(exportSave(s));
+  assert(back.ok, 'colony with job assignments re-imports');
+  const ru = back.state.units.find(x => x.id === u.id);
+  assert(ru && ru.jobPref === 'rock', `a rodent's job preference survives save/load (got ${ru?.jobPref})`);
+  ok('job assignments persist through save/load');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
