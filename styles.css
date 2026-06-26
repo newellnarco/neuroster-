@@ -92,13 +92,31 @@ body {
   padding: 5px 10px; border-radius: 7px; cursor: pointer;
 }
 .controls button:hover { border-color: var(--accent); }
-/* Tool-mode toggles (👆 Select / 🎩 Demolish) — clear active state. */
+/* Tool-mode toggles (🐹 Animals / 🏠 Buildings / 🎩 Demolish) — clear active state. */
 .controls button.toolbtn.active {
   background: var(--accent); color: #1c1a17; border-color: var(--accent); font-weight: 700;
 }
 #tool-demolish.active { background: #d4574a; border-color: #d4574a; color: #fff; }
 /* Demolish mode swaps the board cursor so it's obvious you're tearing down. */
 #board.demolish-mode #game { cursor: crosshair; }
+/* The Buildings tool uses a pointer cursor so it reads as "click to use". */
+#board.buildings-mode #game { cursor: pointer; }
+/* A box-drag marquee → a crosshair while dragging across the board. */
+#board.marquee-mode #game { cursor: crosshair; }
+/* Live multi-selection action chip (e.g. "🏚️ Demolish 4"). */
+.controls button.toolbtn.multi-chip {
+  background: #3a6ea5; color: #fff; border-color: #3a6ea5; font-weight: 700;
+}
+.controls button.toolbtn.multi-chip:hover { background: #4a80bd; }
+/* Dashed selection rectangle drawn as a DOM overlay over the canvas. Positioned
+   in viewport (fixed) coords so it tracks the pointer regardless of scroll. */
+#marquee-box {
+  position: fixed; pointer-events: none; z-index: 50; display: none;
+  border: 1.5px dashed #ffd54f; background: rgba(255, 213, 79, 0.12);
+  border-radius: 2px;
+}
+#marquee-box.demolish { border-color: #ff6b5e; background: rgba(255, 107, 94, 0.14); }
+#marquee-box.buildings { border-color: #6fb1ff; background: rgba(111, 177, 255, 0.12); }
 
 /* Environment bar */
 .envbar {

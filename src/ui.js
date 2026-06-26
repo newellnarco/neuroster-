@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
 import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR, NODE_TYPES } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, digDeeper, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine, useBuilding, serviceNeedOf, directToService } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, digDeeper, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine, useBuilding, serviceNeedOf, directToService, buildingActionable } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -13,6 +13,9 @@ import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
 import { learnDoctrine, doctrineStatus, hasDoctrine, doctrineCount } from './doctrines.js';
 import { enterBall, exitBall, hasBallWorkshop } from './economy.js';
 import { isMature } from './entities.js';
+import { isDrag, normRect, unitsInRect, buildingsInRect, selectUnits, selectBuildings,
+  clearSelection, selectedUnits, groupGather, groupService, groupGoto, groupJob,
+  groupDemolish, groupCleanBurrows } from './select.js';
 
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
@@ -97,9 +100,9 @@ export function createUI(state, ctx) {
       }).join('')}</div>`).join('');
     bind('[data-build]', (btn) => {
       view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build;
-      // Choosing a building to place returns the cursor to the Select tool so the
-      // demolish cursor never lingers over a build action.
-      if (view.placing && view.tool !== 'select') { view.tool = 'select'; renderTools(); }
+      // Choosing a building to place returns the cursor to the Animals tool so the
+      // demolish/buildings cursor never lingers over a build action.
+      if (view.placing && view.tool !== 'animals') { view.tool = 'animals'; renderTools(); }
       renderBuild();
     });
   }
@@ -247,7 +250,7 @@ export function createUI(state, ctx) {
       // Spending a trait point works for ANY rodent (founder or not) that earned
       // skill points by leveling. Also pin the unit as selected so its controls
       // surface — clicking a non-leader's trait shouldn't feel inert.
-      view.selUnit = u.id;
+      if (!(view.selUnits || []).includes(u.id)) { selectUnits(view, [u]); }
       const r = upgradeTrait(state, u, btn.dataset.trait);
       if (r?.ok && r.paidWith === 'skillPoint') { sfx('level'); flash(`⭐ ${escHtml(u.name || 'Rodent')} → ${TRAITS[btn.dataset.trait]?.name || 'trait'} up!`); }
       else msg(r);
@@ -279,10 +282,17 @@ export function createUI(state, ctx) {
       const u = state.units.find(x => x.id == btn.dataset.ju);
       if (!u) return;
       const k = btn.dataset.job;
-      u.jobPref = k === 'auto' ? null : k;
-      u.targetNode = null; // re-pick a target now so the new preference takes effect immediately
-      sfx('click');
-      flash(u.jobPref ? `🎯 ${escHtml(u.name || 'Rodent')} → prefers ${JOB_KINDS[u.jobPref]?.label || u.jobPref}` : `🤖 ${escHtml(u.name || 'Rodent')} → Auto`);
+      const kind = k === 'auto' ? null : k;
+      // When MULTIPLE rodents are selected, the Job buttons apply to the whole
+      // group; otherwise just this rodent.
+      const group = selectedUnits(state, view);
+      if (group.length > 1) {
+        groupJob(state, group, kind); sfx('click');
+        flash(kind ? `🎯 ${group.length} rodents → prefer ${JOB_KINDS[kind]?.label || kind}` : `🤖 ${group.length} rodents → Auto`);
+      } else {
+        u.jobPref = kind; u.targetNode = null; sfx('click');
+        flash(kind ? `🎯 ${escHtml(u.name || 'Rodent')} → prefers ${JOB_KINDS[kind]?.label || kind}` : `🤖 ${escHtml(u.name || 'Rodent')} → Auto`);
+      }
       renderRodents();
     });
     bind('[data-guard]', (btn) => {
@@ -292,7 +302,7 @@ export function createUI(state, ctx) {
       else { const r = equipGuard(state, u); msg(r); if (r.ok) sfx('place'); }
       renderRodents(); renderEnv();
     });
-    bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
+    bind('[data-selunit]', (d) => { selectUnits(view, [{ id: +d.dataset.selunit }]); view.selBuildings = []; renderRodents(); renderTools(); });
   }
 
   // ---- Defense & Military screen (garrison + works + threat readiness) ----
@@ -561,22 +571,65 @@ export function createUI(state, ctx) {
     if (btn) btn.click();
   }
 
-  // ---- Tool modes (👆 Select / 🎩 Demolish) ----
+  // ---- Tool modes (🐹 Animals / 🏠 Buildings / 🎩 Demolish) ----
   // Reflect view.tool in the top-bar buttons' active state and the board cursor.
   function renderTools() {
-    const sel = el('tool-select'), dem = el('tool-demolish');
-    if (sel) sel.classList.toggle('active', (view.tool || 'select') === 'select');
-    if (dem) dem.classList.toggle('active', view.tool === 'demolish');
+    const tool = view.tool || 'animals';
+    const map = { animals: 'tool-animals', buildings: 'tool-buildings', demolish: 'tool-demolish' };
+    for (const [t, id] of Object.entries(map)) { const b = el(id); if (b) b.classList.toggle('active', tool === t); }
     const board = el('board');
-    if (board) board.classList.toggle('demolish-mode', view.tool === 'demolish');
+    if (board) {
+      board.classList.toggle('demolish-mode', tool === 'demolish');
+      board.classList.toggle('buildings-mode', tool === 'buildings');
+    }
+    renderMultiChip();
   }
-  // Switch tools. Picking a tool always cancels a held building so the two modes
-  // never fight; flag the change so the player sees what's active.
+  // A live "act on the multi-selection" chip in the top bar: bulk-demolish for a
+  // building multi-selection, "N selected" for an animal one. Hidden otherwise.
+  function renderMultiChip() {
+    const chip = el('tool-multi'), chip2 = el('tool-multi2');
+    if (!chip) return;
+    const hide = (b) => { if (b) { b.classList.add('hidden'); b.onclick = null; } };
+    const nUnits = (view.selUnits || []).length;
+    const nBld = (view.selBuildings || []).length;
+    hide(chip); hide(chip2);
+    if (view.tool === 'buildings' && nBld > 1) {
+      chip.classList.remove('hidden'); chip.textContent = `🏚️ Demolish ${nBld}`;
+      chip.title = `Demolish the ${nBld} selected buildings (50% refund each)`;
+      chip.onclick = () => bulkDemolishSelection();
+      // Offer "Clean N" when the selection holds dirty burrows.
+      const dirty = (view.selBuildings || []).filter(b => buildingActionable(state, b) === 'clean').length;
+      if (dirty > 0 && chip2) {
+        chip2.classList.remove('hidden'); chip2.textContent = `🧹 Clean ${dirty}`;
+        chip2.title = `Clean all ${dirty} dirty burrows in the selection`;
+        chip2.onclick = () => bulkCleanSelection();
+      }
+    } else if (view.tool === 'animals' && nUnits > 1) {
+      chip.classList.remove('hidden'); chip.textContent = `🐹 ${nUnits} selected`;
+      chip.title = `${nUnits} rodents selected — click a node/feeder/well/tile to order the whole group`;
+      chip.onclick = () => { document.querySelector('[data-tab="rodents"]')?.click(); };
+    }
+  }
+  function bulkDemolishSelection() {
+    const r = groupDemolish(state, view.selBuildings || []);
+    if (r.ok) { sfx('place'); flash(`🏚️ Demolished ${r.n}`); clearSelection(view); renderBuild(); renderResbar(); renderTools(); }
+  }
+  function bulkCleanSelection() {
+    const r = groupCleanBurrows(state, view.selBuildings || []);
+    if (r.ok) { sfx('click'); flash(`🧹 Cleaned ${r.n} burrows`); renderResbar(); renderTools(); }
+    else flash('🧹 No dirty burrows in the selection');
+  }
+  // Switch tools. Picking a tool always cancels a held building, and switching the
+  // target type clears the current selection so the two never mix.
   function setTool(tool) {
+    const prev = view.tool;
     view.tool = tool;
     if (view.placing) { view.placing = null; view.canPlace = false; renderBuild(); }
+    if (prev !== tool) clearSelection(view);
     renderTools(); sfx('click');
-    flash(tool === 'demolish' ? '🎩 Demolish — click a building to tear it down' : '👆 Select — click hamsters & buildings');
+    flash(tool === 'demolish' ? '🎩 Demolish — click or drag a box to tear down'
+      : tool === 'buildings' ? '🏠 Buildings — click to use; drag a box to multi-select'
+      : '🐹 Animals — click a hamster; drag a box to select a group');
   }
 
   // ---- Tabs & controls ----
@@ -595,9 +648,10 @@ export function createUI(state, ctx) {
       const n = prompt('Save as a new hamster — name this copy:', state.founder?.name || 'Colony');
       if (n != null && n.trim()) ctx.onSaveAs?.(n.trim().slice(0, 16));
     };
-    // Tool modes: 👆 Select (default) / 🎩 Demolish. Picking a tool clears any
-    // held building; the active button + board cursor reflect the current tool.
-    if (el('tool-select')) el('tool-select').onclick = () => setTool('select');
+    // Tool modes: 🐹 Animals (default) / 🏠 Buildings / 🎩 Demolish. Picking a tool
+    // clears any held building; the active button + board cursor reflect the tool.
+    if (el('tool-animals')) el('tool-animals').onclick = () => setTool('animals');
+    if (el('tool-buildings')) el('tool-buildings').onclick = () => setTool('buildings');
     if (el('tool-demolish')) el('tool-demolish').onclick = () => setTool('demolish');
     renderTools();
     if (el('btn-help')) el('btn-help').onclick = showHelp;
@@ -874,12 +928,91 @@ export function createUI(state, ctx) {
       const r = c.getBoundingClientRect();
       return { x: Math.floor((e.clientX - r.left) / r.width * GRID_W), y: Math.floor((e.clientY - r.top) / r.height * GRID_H) };
     };
+    // Sub-tile (fractional) world coords — for the marquee start/end so the drag
+    // threshold + "inside the rect" test are smooth, not snapped to whole tiles.
+    const toWorld = (e) => {
+      const r = c.getBoundingClientRect();
+      return { x: (e.clientX - r.left) / r.width * GRID_W, y: (e.clientY - r.top) / r.height * GRID_H };
+    };
     c.addEventListener('mousemove', (e) => {
       const t = toTile(e); view.hover = t;
       if (view.placing) view.canPlace = canPlace(state, view.placing, t.x, t.y).ok;
     });
     c.addEventListener('mouseleave', () => view.hover = null);
+
+    // ---- Left-button marquee drag (right-drag still pans; see above) ----------
+    // A left pointerdown starts a candidate marquee; once the pointer moves past
+    // DRAG_THRESHOLD it becomes a box selection drawn as a DOM overlay. On release
+    // we select/act-on everything inside it FOR THE ACTIVE TOOL. A press that
+    // never crosses the threshold falls through to the normal single click below.
+    const marqueeBox = el('marquee-box');
+    let mDown = false, mDragging = false, mStart = null, mStartClient = null, suppressClick = false;
+    const updateMarqueeBox = (a, b) => {
+      if (!marqueeBox) return;
+      const r = c.getBoundingClientRect();
+      const sx = r.left + Math.min(a.x, b.x) / GRID_W * r.width;
+      const sy = r.top + Math.min(a.y, b.y) / GRID_H * r.height;
+      const w = Math.abs(b.x - a.x) / GRID_W * r.width;
+      const h = Math.abs(b.y - a.y) / GRID_H * r.height;
+      marqueeBox.style.left = sx + 'px'; marqueeBox.style.top = sy + 'px';
+      marqueeBox.style.width = w + 'px'; marqueeBox.style.height = h + 'px';
+      marqueeBox.className = view.tool === 'demolish' ? 'demolish' : view.tool === 'buildings' ? 'buildings' : '';
+      marqueeBox.style.display = 'block';
+    };
+    const hideMarqueeBox = () => { if (marqueeBox) { marqueeBox.style.display = 'none'; } el('board')?.classList.remove('marquee-mode'); };
+    c.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || view.placing) return; // left button only; ignore while placing
+      mDown = true; mDragging = false; suppressClick = false;
+      mStart = toWorld(e); mStartClient = { x: e.clientX, y: e.clientY };
+      try { c.setPointerCapture(e.pointerId); } catch {}
+    });
+    c.addEventListener('pointermove', (e) => {
+      if (!mDown) return;
+      const w = toWorld(e);
+      if (!mDragging && isDrag(mStart.x, mStart.y, w.x, w.y)) { mDragging = true; view.marquee = null; el('board')?.classList.add('marquee-mode'); }
+      if (mDragging) {
+        view.marquee = normRect(mStart.x, mStart.y, w.x, w.y);
+        updateMarqueeBox(mStart, w);
+      }
+    });
+    const finishMarquee = (e) => {
+      if (!mDown) return;
+      mDown = false;
+      try { c.releasePointerCapture(e.pointerId); } catch {}
+      if (!mDragging) { view.marquee = null; hideMarqueeBox(); return; } // a plain click — let `click` handle it
+      suppressClick = true; // a real drag: don't also fire the single-click handler
+      const rect = view.marquee || normRect(mStart.x, mStart.y, toWorld(e).x, toWorld(e).y);
+      view.marquee = null; hideMarqueeBox();
+      applyMarquee(rect);
+    };
+    c.addEventListener('pointerup', finishMarquee);
+    c.addEventListener('pointercancel', (e) => { mDown = false; mDragging = false; view.marquee = null; hideMarqueeBox(); try { c.releasePointerCapture(e.pointerId); } catch {} });
+
+    // Resolve a finished marquee for the active tool: Animals → select rodents,
+    // Buildings → select buildings, Demolish → bulldoze everything inside.
+    function applyMarquee(rect) {
+      if (view.tool === 'demolish') {
+        const r = groupDemolish(state, buildingsInRect(state, rect));
+        if (r.ok) { sfx('place'); flash(`🏚️ Demolished ${r.n}`); renderBuild(); renderResbar(); }
+        else flash('🎩 Nothing in the box to demolish');
+        renderTools(); return;
+      }
+      if (view.tool === 'buildings') {
+        const bs = buildingsInRect(state, rect).filter(b => !b.underConstruction);
+        selectBuildings(view, bs); view.selUnits = []; view.selUnit = null;
+        flash(bs.length ? `🏠 ${bs.length} selected` : '🏠 No buildings in the box');
+        renderTools(); return;
+      }
+      // Animals
+      const us = unitsInRect(state, rect);
+      selectUnits(view, us); view.selBuildings = [];
+      flash(us.length ? `🐹 ${us.length} selected` : '🐹 No rodents in the box');
+      if (us.length) document.querySelector('[data-tab="rodents"]')?.click();
+      renderRodents(); renderTools();
+    }
+
     c.addEventListener('click', (e) => {
+      if (suppressClick) { suppressClick = false; return; } // a marquee just resolved
       const t = toTile(e);
       if (view.placing) {
         const r = placeBuilding(state, view.placing, t.x, t.y);
@@ -899,75 +1032,100 @@ export function createUI(state, ctx) {
       if (view.tool === 'demolish') {
         const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
         if (b) { demolish(state, b); sfx('place'); flash('🏚️ Demolished (50% refund)'); renderBuild(); renderResbar(); }
-        else flash('🎩 Click a building to demolish it');
+        else flash('🎩 Click a building to demolish it, or drag a box to bulldoze');
         return;
       }
-      // select a rodent under the cursor
       const px = (e.offsetX) / c.getBoundingClientRect().width * GRID_W;
       const py = (e.offsetY) / c.getBoundingClientRect().height * GRID_H;
+      const bAt = state.buildings.find(b => b.x === t.x && b.y === t.y);
+
+      // ---- BUILDINGS tool: click a building to use it / select it ----
+      if (view.tool === 'buildings') {
+        if (bAt) {
+          // Its single-building action still fires (clean/upgrade/toggle/dig/repair).
+          const r = useBuilding(state, bAt);
+          if (!r.none) { if (r.flash) flash(r.flash); if (r.ok) sfx('click'); renderResbar(); }
+          selectBuildings(view, [bAt]); view.selUnits = []; view.selUnit = null;
+          if (r.none) { sfx('click'); flash(`🏠 ${BUILDINGS[bAt.type]?.name || 'Building'} selected`); }
+          renderTools(); return;
+        }
+        // Empty ground in Buildings tool clears the selection.
+        if ((view.selBuildings || []).length) { clearSelection(view); renderTools(); flash('🏠 Selection cleared'); }
+        return;
+      }
+
+      // ---- ANIMALS tool ----
       if (state.rescue && Math.hypot(state.rescue.x - px, state.rescue.y - py) < 0.85) {
         const r = takeInRescue(state); if (r.ok) sfx('care'); else flash(r.reason || '');
         renderResbar(); renderRodents(); return;
       }
-      const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
-      // BUILDING ACTIONS FIRST: if the clicked tile holds a building with a current
-      // action (clean a dirty burrow, repair/dig/upgrade, toggle a tower, upgrade
-      // the Town Hall), do it BEFORE trying to select a nearby rodent — so hamsters
-      // crowding a burrow no longer block cleaning it.
-      if (b) {
-        const r = useBuilding(state, b);
-        if (!r.none) { if (r.flash) flash(r.flash); if (r.ok) sfx('click'); renderResbar(); return; }
-      }
-      // SELECTED RODENT + a feeder/well: send it there to eat/drink. The order
-      // marches it over and tops up the matching need on arrival (entities.js).
-      if (b && view.selUnit) {
-        const u = state.units.find(x => x.id === view.selUnit);
-        const need = serviceNeedOf(b);
-        if (u && need) {
-          directToService(state, u, b); sfx('click');
-          flash(need === 'food' ? '🍽️ → feeding' : '💧 → drinking');
-          renderRodents(); return;
+
+      // With an existing multi-selection, a click ISSUES A GROUP ORDER rather than
+      // re-selecting: gather a node, eat/drink at a feeder/well, or go to a tile.
+      const group = selectedUnits(state, view);
+      if (group.length > 1) {
+        if (bAt) {
+          const need = serviceNeedOf(bAt);
+          if (need) {
+            const r = groupService(state, group, bAt); sfx('click');
+            flash(need === 'food' ? `🍽️ ${r.n} → feeding` : `💧 ${r.n} → drinking`);
+            renderRodents(); return;
+          }
+          // A non-service building under a group click: fall through to re-select.
+        } else {
+          const node = state.world.nodes.find(n => n.x === t.x && n.y === t.y && n.amount > 0);
+          if (node && JOB_KINDS[node.kind]) {
+            const r = groupGather(state, group, node); sfx('click');
+            flash(`🎯 ${r.n} rodents → mining ${r.resource}`); renderRodents(); return;
+          }
+          const r = groupGoto(state, group, t.x, t.y); sfx('click');
+          flash(`🐾 ${r.n} on the way!`); renderRodents(); return;
         }
       }
-      // Pick the NEAREST rodent within a generous radius (its drawn position),
-      // so clicking near a moving hamster still selects it.
+
+      // Single-click selection: pick the NEAREST rodent (its drawn position), so
+      // clicking near a moving hamster still selects it. Animals tool does NOT
+      // trigger building actions.
       let best = null, bestD = 1.1;
       for (const u of state.units) {
         const d = Math.hypot((u._rx ?? u.x) - px, (u._ry ?? u.y) - py);
         if (d < bestD) { bestD = d; best = u; }
       }
-      if (best) { view.selUnit = best.id; sfx('click'); document.querySelector('[data-tab="rodents"]').click(); renderRodents(); return; }
-      // A selected rodent + a click on the world. If the tile holds a RESOURCE
-      // NODE, send the rodent to GATHER there: pin its job preference to the node's
-      // kind (so it keeps working that resource) and march it over. Otherwise it's
-      // a plain "go there" order that reveals fog en route.
-      if (!b && view.selUnit) {
+      if (best) { selectUnits(view, [best]); view.selBuildings = []; sfx('click'); document.querySelector('[data-tab="rodents"]').click(); renderRodents(); renderTools(); return; }
+
+      // No rodent under the cursor. A single selected rodent + a world click: send
+      // it to gather a node or go to the tile. An empty-ground click with nothing
+      // useful clears the selection.
+      if (view.selUnit) {
         const u = state.units.find(x => x.id === view.selUnit);
         if (u) {
-          const node = state.world.nodes.find(n => n.x === t.x && n.y === t.y && n.amount > 0);
+          const node = !bAt && state.world.nodes.find(n => n.x === t.x && n.y === t.y && n.amount > 0);
           if (node && JOB_KINDS[node.kind]) {
-            u.jobPref = node.kind;
-            u.targetNode = null;           // re-pick under the new preference
+            u.jobPref = node.kind; u.targetNode = null;
             u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null;
             sfx('click');
             const resName = RESOURCES[NODE_TYPES[node.kind].resource]?.name || node.kind;
-            flash(`🎯 → mining ${resName}`);
-            renderRodents();
-            return;
+            flash(`🎯 → mining ${resName}`); renderRodents(); return;
+          }
+          if (bAt) {
+            const need = serviceNeedOf(bAt);
+            if (need) { directToService(state, u, bAt); sfx('click'); flash(need === 'food' ? '🍽️ → feeding' : '💧 → drinking'); renderRodents(); return; }
           }
           u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null; sfx('click'); flash('🐾 On my way!'); renderRodents(); return;
         }
       }
+      // Empty-ground click with no selection target → clear any selection.
+      if ((view.selUnits || []).length) { clearSelection(view); renderRodents(); renderTools(); }
     });
     c.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!panMoved) { view.placing = null; renderBuild(); } });
-    // Escape also drops the held building → back to the arrow/select cursor.
+    // Escape drops a held building, clears any selection, and returns to Animals.
     window.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      // Esc drops a held building AND returns to the Select tool (clears Demolish).
       let did = false;
       if (view.placing) { view.placing = null; renderBuild(); did = true; }
-      if (view.tool !== 'select') { view.tool = 'select'; renderTools(); did = true; }
-      if (did) flash('↩︎ Back to select');
+      if ((view.selUnits || []).length || (view.selBuildings || []).length) { clearSelection(view); renderTools(); renderRodents(); did = true; }
+      if (view.tool !== 'animals') { view.tool = 'animals'; renderTools(); did = true; }
+      if (did) flash('↩︎ Cleared');
     });
   }
 
