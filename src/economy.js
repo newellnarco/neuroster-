@@ -1,6 +1,6 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, FEEDER_SERVES, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice, traitMul } from './state.js';
 import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
@@ -222,7 +222,7 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 700, defense = 0, /* base cap matches STARTING.storageCap */ fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0, statues = 0;
+  let popCap = 0, storage = 700, defense = 0, /* base cap matches STARTING.storageCap */ fun = 0, health = 0, feeders = 0, waterers = 0, feederN = 0, watererN = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0, statues = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
@@ -240,7 +240,9 @@ function recomputeBuildings(state) {
     distract += def.distract || 0;
     health += def.health || 0;
     feeders += def.feeder || 0;
+    if (def.feeder) feederN++;   // count stations (for crowding throughput)
     waterers += def.waterer || 0;
+    if (def.waterer) watererN++;
     caretakers += def.caretaker || 0;
     vets += def.vet || 0;
     if (def.sanctuary) sanctuaries++;
@@ -263,7 +265,8 @@ function recomputeBuildings(state) {
   storage += state._mega?.storage || 0; // Great Granary expands the vaults
   state.popCap = popCap; state.storageCap = storage; state.defense = defense;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
-  state._waterers = waterers; state._caretakers = caretakers; state._hygiene = hygiene;
+  state._waterers = waterers; state._feederN = feederN; state._watererN = watererN;
+  state._caretakers = caretakers; state._hygiene = hygiene;
   state._distract = Math.min(0.2, distract); // enrichment-for-fun trades a little output (capped)
   state._defendTowers = defendTowers; state._watchTowers = watchTowers;
 }
@@ -370,8 +373,27 @@ function powerMultiplier(state) {
 
 // Each rodent eats, drinks, gets bored, and ages its health independently.
 function updatePerUnitNeeds(state, dt, env) {
-  const feederFactor = Math.max(0.4, 1 - (state._feeders || 0) * 0.15);
-  const watererFactor = Math.max(0.4, 1 - (state._waterers || 0) * 0.15);
+  // Feeder/waterer THROUGHPUT scales with crowding: each station serves a limited
+  // number of rodents well, and its per-station effectiveness degrades as the
+  // population it must feed/water rises (queueing). Like burrow filth, this means
+  // you must build MORE feeders/waterers as the colony grows — one feeder can't
+  // satisfy an ever-larger warren. crowdEff(stations) → 1 (well-served) … →0.3
+  // (overwhelmed): each station's 15% drain-cut is scaled by how crowded it is.
+  const pop = population(state);
+  // crowdEff(stationCount): 1 (well-served) … 0.3 (overwhelmed) — full strength up
+  // to FEEDER_SERVES rodents per station, then it falls off with the queue.
+  const crowdEff = (stations) => {
+    if (stations <= 0) return 0;
+    const perStation = pop / stations; // rodents each station must serve
+    return Math.max(0.3, Math.min(1, FEEDER_SERVES / Math.max(1, perStation)));
+  };
+  // Feeders/waterers cut need drain (the summed `feeder`/`waterer` value), but the
+  // cut is SCALED by how crowded the stations are: a single feeder for a swollen
+  // colony helps far less than one per handful of rodents — build more as you grow.
+  const feederEff = state._feederEff = crowdEff(state._feederN || 0);
+  const watererEff = state._watererEff = crowdEff(state._watererN || 0);
+  const feederFactor = Math.max(0.4, 1 - (state._feeders || 0) * 0.15 * feederEff);
+  const watererFactor = Math.max(0.4, 1 - (state._waterers || 0) * 0.15 * watererEff);
   const funRecover = (state._funBld || 0) * 0.05 * dt;     // Playgrounds + caretakers
   const healthRecover = (state._healthBld || 0) * 0.04 * dt; // Infirmaries + caretakers
   const energyRecover = (state._caretakers || 0) * 0.6 * dt; // caretakers ease rest needs

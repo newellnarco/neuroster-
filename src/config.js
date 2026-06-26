@@ -643,6 +643,12 @@ export const WETTAIL = {
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
 
+// Feeders & Auto-Waterers have finite THROUGHPUT. Each station serves about this
+// many rodents at full effectiveness; beyond that, queueing degrades its per-
+// station drain-cut (see economy.js updatePerUnitNeeds), so a growing colony must
+// build more stations rather than leaning on one. Lower = stricter crowding.
+export const FEEDER_SERVES = 6;
+
 // ---- Disease / outbreaks ---------------------------------------------------
 // Beyond wet-tail (filth-driven, per-rodent), a colony can suffer a contagious
 // OUTBREAK: a sickness that spreads rodent-to-rodent, worse the more CROWDED the

@@ -1388,4 +1388,29 @@ console.log('Difficulty pacing & grace knob:');
   ok(`event pace/grace scale by difficulty (grace ${graceSeconds(relaxed)}/${graceSeconds(normal)}/${graceSeconds(harsh)}, pace ${eventPace(relaxed).toFixed(1)}/${eventPace(normal).toFixed(1)}/${eventPace(harsh).toFixed(1)})`);
 }
 
+// 37) Feeder/waterer throughput degrades with crowding (build more as you grow).
+console.log('Feeder/waterer crowding throughput:');
+{
+  const { FEEDER_SERVES } = await import('../src/config.js');
+  // One feeder serving a small colony vs an oversized one: per-feeder
+  // effectiveness must drop as the population per feeder rises.
+  function feederEff(popN, feeders) {
+    const g = newGame(2300, 'woodland', 'syrian', 'Feed', {});
+    while (g.units.length < popN) g.units.push({ ...g.units[0], id: g.nextId++, needs: { ...g.units[0].needs } });
+    while (g.units.length > popN) g.units.pop();
+    const sp = g.world.spawn;
+    for (let i = 0; i < feeders; i++) g.buildings.push({ id: g.nextId++, type: 'feeder', x: sp.x + i, y: sp.y, active: true });
+    stepEconomy(g, 0.1);
+    return g._feederEff;
+  }
+  const lightlyLoaded = feederEff(FEEDER_SERVES, 1);   // ~1 feeder per FEEDER_SERVES rodents
+  const overcrowded = feederEff(FEEDER_SERVES * 3, 1); // 3× the rodents per feeder
+  assert(lightlyLoaded > overcrowded, `a feeder serving more rodents is less effective each (${lightlyLoaded.toFixed(2)} > ${overcrowded.toFixed(2)})`);
+  assert(overcrowded >= 0.3 - 1e-9, 'per-feeder effectiveness has a sane floor (>=0.3)');
+  // Building MORE feeders for the same crowded colony restores effectiveness.
+  const moreFeeders = feederEff(FEEDER_SERVES * 3, 3);
+  assert(moreFeeders > overcrowded, `adding feeders for a big colony raises per-feeder effectiveness (${overcrowded.toFixed(2)} → ${moreFeeders.toFixed(2)})`);
+  ok(`feeder throughput degrades with crowding & recovers with more stations (${lightlyLoaded.toFixed(2)} vs ${overcrowded.toFixed(2)} → ${moreFeeders.toFixed(2)})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
