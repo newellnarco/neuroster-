@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T18:22:24Z",
+  "updated": "2026-06-26T18:23:02Z",
   "items": [
     {
       "key": "econ:1",
@@ -1273,19 +1273,24 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "57",
+      "release": "3785819",
       "detail": "Dig burrow networks; spatial novelty + a reason to keep expanding.",
       "timeline": [
         {
           "at": "2026-06-26T18:20:31+00:00",
           "status": "Done",
           "note": "Deep-mining slice delivered; full multi-level world view remains as add:tunnels-multilevel (Backlog)"
+        },
+        {
+          "at": "2026-06-26T18:23:02+00:00",
+          "status": "Shipped",
+          "note": "Vertical-expansion delivered via the deep-mining slice (PR #57); full multi-level world view tracked separately as add:tunnels-multilevel (Backlog)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T18:20:31+00:00"
+      "updated": "2026-06-26T18:23:02+00:00"
     },
     {
       "key": "add:ai-colonies-compete",
@@ -2046,13 +2051,19 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Done",
-      "pr": 0,
-      "release": null,
+      "status": "Shipped",
+      "pr": "57",
+      "release": "3785819",
       "detail": "",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T18:23:02+00:00",
+          "status": "Shipped",
+          "note": "PR #57 merged (release 3785819)"
+        }
+      ],
       "screenshots": [],
-      "updated": null,
+      "updated": "2026-06-26T18:23:02+00:00",
       "parent": "add:tunnels-underground"
     },
     {
