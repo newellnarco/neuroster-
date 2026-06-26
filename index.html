@@ -32,6 +32,8 @@
     <div id="resbar" class="resbar"></div>
     <div class="spacer"></div>
     <div class="controls">
+      <button id="tool-select" class="toolbtn" title="Select tool — click a hamster to care for it / direct it, click a building to use it">👆 Select</button>
+      <button id="tool-demolish" class="toolbtn" title="Demolish tool — left-click a building to tear it down for a 50% refund (no confirmation)">🎩 Demolish</button>
       <span id="autosave-ind" class="autosave hidden">💾 Auto-saving…</span>
       <button id="btn-menu" title="Menu — save, load, settings & more">☰ Menu</button>
       <button id="btn-update" title="Save &amp; reload to get the newest version of the game">🔄 Update</button>
@@ -55,7 +57,7 @@
       </div>
       <div id="flash" class="flash"></div>
       <div id="guide" class="guide hidden"></div>
-      <div class="hotkeys">Scroll = zoom · Right-drag = pan · Space = pause · 1/2/3 = speed · Click a hamster to care for it (then click a tile to send it, or 🧭 Explore) · Click a building to place · Esc / right-click = back to arrow</div>
+      <div class="hotkeys">👆 Select / 🎩 Demolish tools (top bar) · Click a building to use it (clean burrow, repair, upgrade…) · Click a hamster to care for it, then click a resource/feeder/well to send it to gather, eat or drink · Scroll = zoom · Right-drag = pan · Space = pause · 1/2/3 = speed · Esc / right-click = back to Select</div>
     </div>
 
     <div id="vsplit" class="vsplit" title="Drag to resize the panel"><span class="grip vgrip"></span><button id="vcollapse" class="split-btn" title="Hide / show the panel">›</button></div>
@@ -113,11 +115,19 @@
           <b>Right-click</b> cancels. Buildings take <b>time</b> to construct — awake rodents build them
           (more builders = faster). Start with a <b>🕳️ Burrow</b> (housing + breeding), a <b>🌾 Farm</b>,
           and a <b>well/pond</b> for water.</li>
+        <li><b>Tool modes</b> (top bar): <b>👆 Select</b> (the default) lets you use buildings, pick
+          hamsters and direct them. <b>🎩 Demolish</b> tears a building down on a single left-click
+          for a <b>50% refund</b> — no confirmation; pick a building to place or press <b>Esc</b> to
+          return to Select.</li>
         <li><b>Care for a rodent:</b> click it on the map (or open <b>🐹 Rodents</b>), then
           <b>Feed / Water / Play / Pet</b> — an instant need boost plus <b>bond</b> (affection) that
           raises its productivity &amp; loyalty. Cooldowns reward periodic check-ins.</li>
-        <li><b>Click structures</b> to act on them: upgrade a <b>tunnel</b> or <b>Town Hall</b>, repair a
-          flooded <b>mine</b>, clean a dirty <b>burrow</b>, or demolish (50% refund).</li>
+        <li><b>Click a building to use it:</b> upgrade a <b>tunnel</b> or <b>Town Hall</b>, repair a
+          flooded <b>mine</b>, dig a mine <b>deeper</b>, toggle a <b>tower's</b> stance, or clean a
+          dirty <b>burrow</b> (this works even when hamsters are standing on it).</li>
+        <li><b>Direct a selected hamster:</b> with a rodent picked, click a <b>resource node</b> to send
+          it to gather there, a <b>🍽️ Feeder</b> (or farm) to go eat, or a <b>⛲ Well / 🚰 Auto-Waterer</b>
+          to go drink — or any other tile to simply travel there.</li>
         <li><b>The alert bar</b> (top) flags whatever needs attention now — <b>click an alert</b> to jump
           straight to the right panel. The <b>Getting-Started</b> checklist guides your first steps.</li>
         <li><b>Controls:</b> <b>Space</b> = pause · <b>1 / 2 / 3</b> = speed (1× / 2× / 4×) ·

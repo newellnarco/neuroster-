@@ -267,6 +267,91 @@ export function cleanBurrow(state, b) {
   return { ok: true };
 }
 
+// ---- Click-to-use a building -------------------------------------------------
+// Does a building currently offer an interactive action the player can trigger
+// by clicking it? Returns null when there's nothing to do (so the click can fall
+// through to selecting/directing a rodent). Decoupled from the UI so the headless
+// suite can verify the priority (e.g. cleaning a crowded burrow).
+export function buildingActionable(state, b) {
+  if (!b || b.underConstruction) return null;
+  const def = BUILDINGS[b.type]; if (!def) return null;
+  if (b.flooded) return 'repair';
+  if (def.deep) return 'dig';
+  if (def.tunnel || def.bridge || def.wall) return 'upgrade';
+  if (def.tower) return 'tower';
+  if (def.townhall) return 'townhall';
+  if (def.breed && (b.dirt || 0) >= 1) return 'clean';
+  return null;
+}
+
+// Perform the building's current actionable interaction. Returns the same
+// {ok, reason} shape as the underlying action plus an `action`/`flash` hint the
+// UI can surface. Returns { none: true } when the building has nothing to do.
+export function useBuilding(state, b) {
+  const action = buildingActionable(state, b);
+  if (!action) return { none: true };
+  if (action === 'repair') { const r = repairMine(state, b); return { ...r, action, flash: r.ok ? '🔧 Mine repaired' : (r.reason || '') }; }
+  if (action === 'dig') { const r = digDeeper(state, b); return { ...r, action, flash: r.ok ? '⛏️ Digging deeper — richer gem yield' : (r.reason || '') }; }
+  if (action === 'upgrade') { const r = upgradeTunnel(state, b); return { ...r, action, flash: r.ok ? '🔧 Improved!' : (r.reason || '') }; }
+  if (action === 'tower') {
+    b.mode = b.mode === 'defend' ? 'watch' : 'defend';
+    return { ok: true, action, flash: b.mode === 'defend' ? '🗡️ Tower → DEFEND (stronger, but costs morale)' : '👁️ Tower → WATCH (wide vision, gentle)' };
+  }
+  if (action === 'townhall') { const r = upgradeTownhall(state, b); return { ...r, action, flash: r.ok ? 'Town Hall upgraded' : (r.reason || '') }; }
+  if (action === 'clean') { const r = cleanBurrow(state, b); return { ...r, action, flash: r.ok ? '🧹 Burrow cleaned' : (r.reason || '') }; }
+  return { none: true };
+}
+
+// Which need (if any) does this building service when a rodent visits it?
+// Feeders (and food producers) → 'food'; wells / auto-waterers (and water
+// producers) → 'water'. Returns null for anything else.
+export function serviceNeedOf(b) {
+  if (!b) return null;
+  const def = BUILDINGS[b.type]; if (!def) return null;
+  // Water sources: wells, the auto-waterer, and anything that produces water.
+  if (def.waterer || def.produces?.water) return 'water';
+  // Food sources: feeders and anything that produces an edible food resource.
+  if (def.feeder || def.produces?.food || def.produces?.pellets || def.produces?.grain) return 'food';
+  return null;
+}
+
+// Direct a selected rodent to a feeder/well to eat/drink: a 'service' order that
+// marches it to the building, then tops up the matching need from stores on
+// arrival (see entities.js). Returns { ok, need } or null when the building
+// services no need.
+export function directToService(state, u, b) {
+  const need = serviceNeedOf(b);
+  if (!need || !u) return null;
+  u.order = { kind: 'service', x: b.x, y: b.y, need };
+  u.targetNode = null; u._exTarget = null;
+  return { ok: true, need };
+}
+
+// Top up a rodent's food/water need from the colony stores (used on arrival at a
+// feeder/well). Returns the amount actually serviced. Mirrors the auto-eat draw
+// in economy.js but is an immediate, player-directed boost.
+export function serviceNeed(state, u, need) {
+  if (!u || (need !== 'food' && need !== 'water')) return 0;
+  const before = u.needs[need] || 0;
+  if (need === 'water') {
+    const used = Math.min(state.res.water || 0, 6);
+    state.res.water = (state.res.water || 0) - used;
+    u.needs.water = Math.min(100, before + used * 7);
+  } else {
+    let want = 6, gained = 0;
+    const EDIBLES = ['pellets', 'grain', 'food'];
+    for (const ed of EDIBLES) {
+      if (want <= 0) break;
+      const used = Math.min(state.res[ed] || 0, want);
+      if (used <= 0) continue;
+      state.res[ed] -= used; want -= used; gained += used * 7;
+    }
+    u.needs.food = Math.min(100, before + gained);
+  }
+  addFx(state, u.x, u.y, need === 'water' ? '💧' : '🍽️', 1.4);
+  return (u.needs[need] || 0) - before;
+}
+
 // Train a loyal rodent as a GUARD/soldier (adds colony defense & offense), or
 // stand it down. A guard is reluctant to kill — it would rather capture & spare.
 export function toggleGuard(state, u) {
