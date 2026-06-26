@@ -1,8 +1,8 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS, buildingTex } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
-import { dayFraction, currentWeather, seasonKey } from './environment.js';
+import { dayFraction, currentWeather, seasonKey, seasonTint } from './environment.js';
 import { buildTextures } from './textures.js';
 
 const VIS = {
@@ -78,8 +78,8 @@ export function createRenderer(canvas, state, getView) {
   function drawSeason(t) {
     const key = seasonKey(state);
     const W = VW, H = VH;
-    const tint = { spring: 'rgba(150,210,140,0.05)', summer: 'rgba(255,224,130,0.05)', autumn: 'rgba(214,120,40,0.10)', winter: 'rgba(150,180,225,0.12)' }[key];
-    if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H); }
+    // Cheap seasonal colour wash — one fill per frame, distinct per season.
+    ctx.fillStyle = seasonTint(key); ctx.fillRect(0, 0, W, H);
 
     if (key === 'autumn') {
       const cols = ['#c8762e', '#b8531f', '#d89a3a', '#a8451c'];
@@ -354,9 +354,13 @@ export function createRenderer(canvas, state, getView) {
       if (b.type === 'wall') { drawWall(cx, cy, b); continue; }
       if (BUILDINGS[b.type].tunnel) { drawTunnel(cx, cy, b); continue; }
       if (BUILDINGS[b.type].townhall) { drawTownhall(cx, cy, b); continue; }
+      // Per-building material treatment: a tinted base + the matching procedural
+      // texture (stone/brick/dirt/…), so each generic building reads as what it's
+      // made of instead of all sharing one timber base. Visual only.
+      const mat = buildingTex(b.type);
       ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(b.x * TILE + 4, b.y * TILE + 10, TILE - 8, TILE - 11, 6); ctx.fill();
-      ctx.fillStyle = '#bcab8b'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
-      texClip('wood', b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 0.4, 'soft-light'); // timber structure base
+      ctx.fillStyle = mat.base; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
+      texClip(mat.tex, b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 0.42, 'soft-light'); // material base
       ctx.fillStyle = 'rgba(255,255,255,0.20)'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, 3, 3); ctx.fill();
       glyph(BUILDINGS[b.type].icon, cx, cy - 3, TILE * 0.78);
       if (BUILDINGS[b.type].tower) glyph(b.mode === 'defend' ? '🗡️' : '👁️', cx + 9, cy - 9, 11); // stance badge
@@ -719,13 +723,18 @@ export function createRenderer(canvas, state, getView) {
 
   function drawCreatureRaw(cx, cy, face, vis, legPhase, walking, sleeping, carrying, t = 0, u = null) {
     const s = vis.size / 15;
-    const bob = walking ? Math.abs(Math.sin(legPhase)) * 1.6 : Math.sin((t || 0) * 2 + (u ? u.id : 0)) * 0.5;
+    // Idle "breathe": when standing still a rodent gently bobs AND its body
+    // squashes/stretches a touch (a slow ~0.5Hz breath), reading as alive. While
+    // walking the bob comes from the gait instead and breathing is suppressed.
+    const breath = walking ? 0 : Math.sin((t || 0) * 1.4 + (u ? u.id : 0)) * 0.5 + 0.5; // 0..1
+    const bob = walking ? Math.abs(Math.sin(legPhase)) * 1.6 : Math.sin((t || 0) * 1.4 + (u ? u.id : 0)) * 1.1;
+    const breatheY = 1 + breath * 0.06 * (walking ? 0 : 1); // gentle vertical stretch on the inhale
     // Soft, blurred contact shadow (stacked fading ellipses → an ambient-occlusion pool).
     for (let i = 3; i >= 1; i--) {
       ctx.fillStyle = `rgba(0,0,0,${0.05 + i * 0.045})`;
       ctx.beginPath(); ctx.ellipse(cx, cy + 7.5 * s, (6 + i * 1.6) * s, (2.2 + i * 0.7) * s, 0, 0, 7); ctx.fill();
     }
-    ctx.save(); ctx.translate(cx, cy - bob); ctx.scale(face, 1);
+    ctx.save(); ctx.translate(cx, cy - bob); ctx.scale(face, breatheY);
 
     if (sleeping) {
       ctx.save(); ctx.translate(2 * s, 2 * s);
