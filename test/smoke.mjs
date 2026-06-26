@@ -836,4 +836,35 @@ console.log('Hamster balls:');
   ok('balls are travel/fun only — no hauling');
 }
 
+// 26) Guard / soldier skill + equipment tiers.
+console.log('Guard skill & equipment:');
+{
+  const { toggleGuard, equipGuard } = await import('../src/buildings.js');
+  const { GUARD_GEAR } = await import('../src/config.js');
+  const { totalOffense } = await import('../src/events.js');
+  const s = newGame(1000, 'prairie', 'syrian', 'Guard', {});
+  s.env.lived = 4000;
+  const u = s.units[0];
+  const def0 = protectionAgainst(s, 'wolf'), off0 = totalOffense(s);
+  toggleGuard(s, u);
+  assert(u.guard, 'a loyal rodent can be trained as a guard');
+  const def1 = protectionAgainst(s, 'wolf'), off1 = totalOffense(s);
+  assert(def1 > def0 && off1 > off0, `a guard adds colony defense & offense (${def0}/${off0} → ${def1}/${off1})`);
+  ok(`training a guard raises defense ${def0}→${def1} & offense ${off0}→${off1}`);
+
+  // Equip the next tier — spends materials, raises protection & damage.
+  s.res = { wood: 999, planks: 999, iron: 999, steel: 999 };
+  const wood0 = s.res.wood;
+  const r = equipGuard(s, u);
+  assert(r.ok && u.gear === 1, 'a guard equips the next gear tier');
+  assert(s.res.wood < wood0, 'equipping spends materials');
+  const def2 = protectionAgainst(s, 'wolf'), off2 = totalOffense(s);
+  assert(def2 > def1 && off2 > off1, `equipment raises protection & damage (${def1}/${off1} → ${def2}/${off2})`);
+  ok(`equipping ${GUARD_GEAR[u.gear].name} adds more def/atk (${def1}/${off1} → ${def2}/${off2})`);
+
+  // Only a trained guard can be equipped.
+  assert(!equipGuard(s, s.units[1]).ok, 'an untrained rodent cannot be equipped');
+  ok('equipment requires the guard skill first');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

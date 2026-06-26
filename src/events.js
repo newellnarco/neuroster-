@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR } from './config.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan } from './factions.js';
@@ -87,6 +87,7 @@ export function protectionAgainst(state, key) {
     const sp = SPECIES[u.species];
     if (sp?.protect?.[key]) p += sp.protect[key];
     if (sp?.def) p += sp.def; // guards (e.g. guinea pigs) defend against everything
+    if (u.guard) p += (GUARD_GEAR[u.gear || 0]?.def || 0); // trained/equipped guards
   }
   p += state._mega?.protectAll || 0; // the Citadel shields against every threat
   return p;
@@ -100,7 +101,10 @@ export function totalOffense(state) {
     o += def?.offense || 0;
     if (def?.tower && b.mode === 'defend') o += def.towerOffense || 0; // towers fight only when set to DEFEND
   }
-  for (const u of state.units) o += SPECIES[u.species]?.atk || 0; // soldiers (guinea pigs)
+  for (const u of state.units) {
+    o += SPECIES[u.species]?.atk || 0; // soldiers (guinea pigs)
+    if (u.guard) o += (GUARD_GEAR[u.gear || 0]?.atk || 0); // trained/equipped guards
+  }
   o += state._doc?.offense || 0; // War Strategy doctrine
   return o;
 }

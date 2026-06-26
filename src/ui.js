@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -187,6 +187,15 @@ export function createUI(state, ctx) {
           ${orderLabel ? `<span class="sub">${orderLabel}</span>` : ''}
           <span class="sub" title="Select a rodent, then click a tile (even fogged) to send it there">tip: click the map to send</span>
         </div>` : '';
+      // Guard / soldier skill + equipment tiers (selected unit).
+      const nextGear = GUARD_GEAR[(u.gear || 0) + 1];
+      const guardRow = view.selUnit === u.id ? `<div class="care taskrow">
+          <button class="carebtn ${u.guard ? 'on' : ''}" data-guard="toggle" data-gu="${u.id}"
+            title="Guard / Soldier — adds colony defense & offense. Reluctant to kill — it would rather capture & spare a beaten foe.">🛡️ ${u.guard ? 'Guard ✓' : 'Train guard'}</button>
+          ${u.guard ? `<button class="carebtn ${nextGear && canAffordCost(nextGear.cost) ? '' : 'cd'}" data-guard="equip" data-gu="${u.id}"
+            title="Equip the next tier of arms & armour — spends materials for more protection & damage">⚔️ Equip</button>
+          <span class="sub">${GUARD_GEAR[u.gear || 0].icon} ${GUARD_GEAR[u.gear || 0].name}${nextGear ? ` → ${nextGear.name} (${costStr(nextGear.cost)})` : ' · max'}</span>` : ''}
+        </div>` : '';
       return `<div class="unit ${sel}" data-selunit="${u.id}">
         <div class="uhead">${sp.icon} ${name} ${phase}${hybrid}
           <button class="rename" data-rename="${u.id}" title="Rename this rodent">✏️</button>
@@ -194,7 +203,7 @@ export function createUI(state, ctx) {
           <span class="xpbar"><span style="width:${Math.min(100, 100 * u.xp / xpForLevel(u.level))}%"></span></span>
           <span class="sub">❤️${bond} · ${sleepInfo}</span></div>
         ${lineage ? `<div class="kinrow">${lineage}</div>` : ''}
-        <div class="traits">${traits}</div>${care}${taskRow}</div>`;
+        <div class="traits">${traits}</div>${care}${taskRow}${guardRow}</div>`;
     }).join('');
 
     const more = state.units.length > CAP ? `<div class="hint">Showing the top ${CAP} of ${population(state)} by level (select one to pin it to the top).</div>` : '';
@@ -230,6 +239,13 @@ export function createUI(state, ctx) {
         else { const r = enterBall(state, u); if (r.ok) { sfx('care'); flash('🫧 Rolling out — safe from predators!'); } else flash(r.reason); }
       } else { u.order = null; u._exTarget = null; if (u.inBall) exitBall(state, u); flash('✋ Order cleared — back to work'); }
       renderRodents();
+    });
+    bind('[data-guard]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.gu);
+      if (!u) return;
+      if (btn.dataset.guard === 'toggle') { toggleGuard(state, u); sfx('click'); }
+      else { const r = equipGuard(state, u); msg(r); if (r.ok) sfx('place'); }
+      renderRodents(); renderEnv();
     });
     bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
   }

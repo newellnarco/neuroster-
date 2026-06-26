@@ -602,6 +602,18 @@ export const BEAVER = {
   spillChance: 0.04,   // per-sec chance a grumpy lodge spills some hoarded wood
 };
 
+// Guard / soldier skill + equipment tiers. Any loyal rodent can be trained as a
+// GUARD (adds defense & offense to the colony, reluctant to kill — it would
+// rather capture & spare). Equipment upgrades (built from materials) raise its
+// protection and its damage. Each tier's def/atk is the guard's TOTAL at that
+// tier (index 0 = just trained, no gear). Edit freely to balance.
+export const GUARD_GEAR = [
+  { name: 'Trained',            icon: '🛡️', def: 1, atk: 1, cost: {} },
+  { name: 'Spear & Sling',      icon: '🔱', def: 2, atk: 3, cost: { wood: 20, planks: 8 } },
+  { name: 'Sword & Shield',     icon: '⚔️', def: 5, atk: 5, cost: { iron: 20, planks: 10 } },
+  { name: 'Steel Plate & Bow',  icon: '🏹', def: 9, atk: 9, cost: { steel: 15, iron: 10 } },
+];
+
 // Hamster balls — roll a rodent around the world SAFE from predators. A made-
 // from-plastic ball (Ball Workshop) lifts fun & curiosity at first, but anxiety
 // climbs the longer it's inside, so it pops out before long. On a HOT day the

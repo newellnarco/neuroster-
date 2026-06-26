@@ -1,5 +1,5 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS, RESCUE } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS, RESCUE, GUARD_GEAR } from './config.js';
 
 // Labour-time for a project, from the total resources it costs (bigger = longer).
 export function buildTimeFor(cost) {
@@ -234,6 +234,28 @@ export function cleanBurrow(state, b) {
   b.dirt = 0; b.degraded = false;
   addFx(state, b.x, b.y, '🧹', 1.4);
   logMsg(state, `🧹 Cleaned a burrow — fresh bedding, and ${Math.round(got)} Manure for the Fertilizer Mill.`);
+  return { ok: true };
+}
+
+// Train a loyal rodent as a GUARD/soldier (adds colony defense & offense), or
+// stand it down. A guard is reluctant to kill — it would rather capture & spare.
+export function toggleGuard(state, u) {
+  u.guard = !u.guard;
+  if (u.guard && u.gear == null) u.gear = 0;
+  logMsg(state, u.guard ? `🛡️ ${u.name} took up the guard's post.` : `${u.name} stood down from guard duty.`);
+  return { ok: true, on: u.guard };
+}
+// Upgrade a guard's equipment one tier (spends materials → more protection & damage).
+export function equipGuard(state, u) {
+  if (!u.guard) return { ok: false, reason: 'Train it as a guard first (🛡️)' };
+  const next = (u.gear || 0) + 1;
+  if (next >= GUARD_GEAR.length) return { ok: false, reason: 'Already fully equipped' };
+  const tier = GUARD_GEAR[next];
+  if (!canAfford(state, tier.cost)) return { ok: false, reason: 'Needs ' + Object.entries(tier.cost).map(([k, v]) => k + ' ' + v).join(', ') };
+  spend(state, tier.cost);
+  u.gear = next;
+  addFx(state, u.x, u.y, tier.icon, 1.6);
+  logMsg(state, `${tier.icon} ${u.name} equipped: ${tier.name} (def +${tier.def}, atk +${tier.atk}).`);
   return { ok: true };
 }
 
