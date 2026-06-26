@@ -128,8 +128,8 @@ export const BUILDINGS = {
     cost: { wood: 30, planks: 16, seeds: 12 }, category: 'Wellbeing', curiosity: 14, distract: 0.07,
   },
   infirmary: {
-    name: 'Infirmary', icon: '🏥', desc: 'Tends sick & injured rodents. Raises Health.',
-    cost: { planks: 20, iron: 5 }, category: 'Wellbeing', health: 6,
+    name: 'Infirmary', icon: '🏥', desc: 'Tends sick & injured rodents. Raises Health, heals those caught in a disease OUTBREAK faster, and (as a clinic) slows contagion spreading through the warren.',
+    cost: { planks: 20, iron: 5 }, category: 'Wellbeing', health: 6, infirmary: 1,
   },
   sandbath: {
     name: 'Sand Bath', icon: '🏖️', desc: 'Hamsters roll in sand to clean themselves — boosts Health and cuts wet-tail risk.',
@@ -517,6 +517,10 @@ export const DISASTERS = {
     name: 'Earthquake', icon: '🌋', kind: 'disaster', baseSeverity: 16, interval: 200,
     desc: 'The ground shakes; structures collapse.', effect: 'destroy',
   },
+  outbreak: {
+    name: 'Disease Outbreak', icon: '🦠', kind: 'disaster', baseSeverity: 12, interval: 220,
+    desc: 'A contagious sickness breaks out and spreads through the crowded warren, sapping health. Build Infirmaries and call a Quarantine to contain it.', effect: 'outbreak',
+  },
   // ---- Biome-specific disasters (only fire in their listed biomes) ----
   tsunami: {
     name: 'Tsunami', icon: '🌊', kind: 'disaster', baseSeverity: 20, interval: 200,
@@ -636,6 +640,27 @@ export const WETTAIL = {
 };
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
+
+// ---- Disease / outbreaks ---------------------------------------------------
+// Beyond wet-tail (filth-driven, per-rodent), a colony can suffer a contagious
+// OUTBREAK: a sickness that spreads rodent-to-rodent, worse the more CROWDED the
+// warren is (population over housing). The sick lose health; healthy rodents
+// catch it from the sick. An INFIRMARY treats the ill (faster recovery) and, as
+// a clinic, slows the spread. A QUARANTINE response (toggle) clamps the spread
+// hard — but confining the colony costs productivity while it's in force.
+export const DISEASE = {
+  outbreakInterval: 220, // seconds-ish between possible outbreaks (scheduled like other events)
+  baseInfect: 2,         // initial rodents infected when an outbreak begins
+  spreadPerSick: 0.06,   // per-sick infection pressure per second
+  crowdRef: 1.0,         // crowding (pop/popCap) at/above which spread is full strength
+  healthDrain: 3.0,      // health/sec a sick rodent loses during an outbreak
+  recover: 5.0,          // health threshold + recovery rate from an infirmary
+  cureRate: 1.4,         // illness cleared per second per infirmary
+  selfCure: 0.25,        // slow self-recovery per second without care
+  infirmarySpreadCut: 0.45, // each infirmary multiplies remaining spread by this (diminishing)
+  quarantineSpreadCut: 0.2, // quarantine multiplies spread by this (strong clamp)
+  quarantineOutput: 0.25,   // …but cuts colony output by this fraction while active
+};
 
 // ---- Pollution -------------------------------------------------------------
 // Coal-burning industry (coal plant, smelter, steelworks, refinery, electric

@@ -1201,4 +1201,70 @@ console.log('Plastics & advanced refining:');
   ok('plastic is a usable resource: consumed by the Ball Workshop & spent on plastic conveyors/solar');
 }
 
+// 33) Disease outbreaks: spread lowers health; Infirmary heals & curbs spread; quarantine slows it.
+console.log('Disease outbreaks, Infirmary & quarantine:');
+{
+  const { BUILDINGS, DISASTERS, DISEASE } = await import('../src/config.js');
+  const { toggleQuarantine } = await import('../src/buildings.js');
+  const built = (s, type, x, y, n = 1) => { for (let i = 0; i < n; i++) s.buildings.push({ id: s.nextId++, type, x: x + i, y, active: true }); };
+
+  // The outbreak disaster, Infirmary clinic flag, and DISEASE tuning all exist.
+  assert(DISASTERS.outbreak?.effect === 'outbreak', 'a contagious Outbreak disaster exists');
+  assert(BUILDINGS.infirmary?.infirmary > 0 && BUILDINGS.infirmary?.health > 0, 'the Infirmary is a clinic that heals');
+  assert(DISEASE && DISEASE.spreadPerSick > 0 && DISEASE.quarantineSpreadCut < 1, 'disease tuning present');
+  ok('outbreak disaster, Infirmary clinic & disease tuning are present');
+
+  // An active outbreak lowers the sick rodents' health over time.
+  const s = newGame(1600, 'woodland', 'syrian', 'Sick', {});
+  s.outbreak = { until: 1e9 };
+  s.units.forEach(u => { u.needs.health = 90; });
+  s.units[0].sick = true; s.units[0].outbreak = true;
+  const h0 = s.units[0].needs.health;
+  for (let i = 0; i < 20; i++) stepEconomy(s, 0.2);
+  assert(s.units[0].needs.health < h0, `an outbreak drains a sick rodent's health (${h0} → ${s.units[0].needs.health.toFixed(1)})`);
+  ok(`outbreak lowers the sick rodent's health (${h0} → ${s.units[0].needs.health.toFixed(1)})`);
+
+  // The outbreak spreads to healthy rodents in a crowded warren.
+  function spreadCount(infirmaries, quarantine) {
+    const g = newGame(1601, 'woodland', 'syrian', 'Spread', {});
+    g.popCap = 1; // crowded: pop over housing → full spread pressure
+    g.outbreak = { until: 1e9 };
+    g.units.forEach(u => { u.needs.health = 100; });
+    g.units[0].sick = true; g.units[0].outbreak = true;
+    if (infirmaries) built(g, 'infirmary', g.world.spawn.x + 3, g.world.spawn.y, infirmaries);
+    if (quarantine) g.quarantine = true;
+    let maxSick = 1;
+    for (let i = 0; i < 200; i++) { stepEconomy(g, 0.2); maxSick = Math.max(maxSick, g.units.filter(u => u.outbreak).length); }
+    return maxSick;
+  }
+  const bare = spreadCount(0, false);
+  assert(bare > 1, `an outbreak spreads through a crowded warren (peaked at ${bare} ill)`);
+  ok(`an outbreak spreads rodent-to-rodent when crowded (peak ${bare} ill)`);
+
+  // An Infirmary heals the ill (an isolated case recovers under care).
+  const heal = newGame(1602, 'woodland', 'syrian', 'Heal', {});
+  heal.units.forEach(u => { u.needs.health = 50; });
+  heal.units[0].sick = true; heal.units[0].outbreak = true; heal.units[0].sickT = 3;
+  built(heal, 'infirmary', heal.world.spawn.x + 3, heal.world.spawn.y, 2);
+  for (let i = 0; i < 60; i++) stepEconomy(heal, 0.2);
+  assert(!heal.units[0].sick, 'an Infirmary cures an outbreak case under care');
+  ok('Infirmary treats & cures the ill');
+
+  // Quarantine slows the spread vs no quarantine (fewer rodents infected).
+  const noQ = spreadCount(0, false);
+  const withQ = spreadCount(0, true);
+  assert(withQ <= noQ, `quarantine slows spread (no-Q peaked ${noQ} ≥ Q peaked ${withQ})`);
+  // …and the quarantine output penalty is felt by production.
+  const q = newGame(1603, 'prairie', 'syrian', 'Lockdown', {});
+  q.res = { stone: 400 };
+  built(q, 'mason', q.world.spawn.x + 2, q.world.spawn.y);
+  const noLock = (() => { const g = newGame(1603, 'prairie', 'syrian', 'Lockdown', {}); g.res = { stone: 400 }; g.buildings.push({ id: 1, type: 'mason', x: g.world.spawn.x + 2, y: g.world.spawn.y, active: true }); const b0 = g.res.brick || 0; for (let i = 0; i < 30; i++) stepEconomy(g, 0.2); return (g.res.brick || 0) - b0; })();
+  toggleQuarantine(q);
+  const b0 = q.res.brick || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(q, 0.2);
+  const locked = (q.res.brick || 0) - b0;
+  assert(locked < noLock, `a quarantine reduces output (free ${noLock.toFixed(2)} > locked ${locked.toFixed(2)})`);
+  ok(`quarantine reduces spread & costs output (${noQ}→${withQ} ill; output ${noLock.toFixed(1)}→${locked.toFixed(1)})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

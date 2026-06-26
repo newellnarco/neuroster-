@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE } from './config.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST } from './factions.js';
@@ -214,6 +214,22 @@ function fireDisaster(state, key, d, elapsed) {
       }
       hurtHealth(state, 8);
       logMsg(state, `${d.icon} ${d.name}! ${gone} structure(s) burned, ${burned} groves scorched. Walls & water help.`);
+      break;
+    }
+    case 'outbreak': {
+      // A contagious outbreak begins: infect a few rodents (fewer if infirmaries
+      // are on hand). The spread itself is handled per-tick in economy.js.
+      const infirmaries = state.buildings.reduce((s, b) => s + (BUILDINGS[b.type]?.infirmary || 0), 0);
+      const seed = Math.max(1, Math.round((DISEASE.baseInfect + sev / 14) / (1 + infirmaries * 0.5)));
+      let infected = 0;
+      const healthy = state.units.filter(u => !u.sick);
+      for (let i = 0; i < seed && healthy.length; i++) {
+        const u = healthy[Math.floor(rand(state) * healthy.length)];
+        if (!u.sick) { u.sick = true; u.sickT = 0; u.outbreak = true; infected++; }
+      }
+      state.outbreak = { until: (state.env?.lived || 0) + 90 + sev * 4 };
+      hurtHealth(state, 4);
+      logMsg(state, `🦠 ${d.name}! ${infected} rodent(s) fell ill and it's spreading${infirmaries ? ' — the infirmary is treating them' : ' — build an Infirmary'}. Call a Quarantine (Threats panel) to slow it.`);
       break;
     }
     case 'blight': {

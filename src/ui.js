@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
 import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -307,6 +307,16 @@ export function createUI(state, ctx) {
       </div>`;
     }).join('');
 
+    // 3b) Public health: infirmaries, outbreak status, and the quarantine toggle.
+    const infirmaries = state.buildings.filter(x => BUILDINGS[x.type]?.infirmary && !x.underConstruction).length;
+    const sickCount = state.units.filter(u => u.sick).length;
+    const outbreakOn = !!state.outbreak;
+    const healthHtml =
+      `<div class="ds">🏥 Infirmaries ×${infirmaries} · ${outbreakOn ? `<b class="bd">🦠 OUTBREAK — ${sickCount} ill</b>` : (sickCount ? `${sickCount} ill` : 'no active outbreak')}</div>
+       <div class="care taskrow"><button class="carebtn ${state.quarantine ? 'sel' : ''}" data-quarantine="1"
+         title="Slow contagion spread hard, at the cost of colony output while it holds">${state.quarantine ? '🟢 Lift Quarantine' : '🚧 Declare Quarantine'}</button>
+         <span class="sub">${state.quarantine ? 'in force — spread slowed, output reduced' : 'slows an outbreak; reduces output while active'}</span></div>`;
+
     el('tab-threats').innerHTML =
       `<div class="hint">Your colony's standing <b>defense &amp; garrison</b>. Predators snatch rodents; disasters wreck buildings &amp; stores. Muster &amp; equip guards, raise defensive works, and lean on protective species — biome, weather &amp; night all shift the danger.</div>
        <div class="cat">Standing — 🛡️ ${state.defense} defense · ⚔️ ${totalOffense(state)} offense</div>
@@ -314,8 +324,12 @@ export function createUI(state, ctx) {
        ${roster}${muster}
        <div class="cat">🧱 Defensive works</div>
        ${worksHtml}
+       <div class="cat">🏥 Public health</div>
+       ${healthHtml}
        <div class="cat">⚠️ Threat readiness</div>
        ${threats}`;
+
+    bind('#tab-threats [data-quarantine]', () => { toggleQuarantine(state); sfx('click'); renderThreats(); });
 
     bind('#tab-threats [data-guard]', (btn) => {
       const u = state.units.find(x => x.id == btn.dataset.gu);

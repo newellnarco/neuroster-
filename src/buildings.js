@@ -251,6 +251,17 @@ export function toggleGuard(state, u) {
   logMsg(state, u.guard ? `🛡️ ${u.name} took up the guard's post.` : `${u.name} stood down from guard duty.`);
   return { ok: true, on: u.guard };
 }
+// Quarantine: a colony-wide public-health measure. While on, contagion spreads
+// far slower (the warren confines itself) — but the lockdown costs output. A
+// toggle the player flips during a disease outbreak.
+export function toggleQuarantine(state) {
+  state.quarantine = !state.quarantine;
+  logMsg(state, state.quarantine
+    ? '🚧 Quarantine declared — the colony confines itself to slow the contagion (output suffers while it holds).'
+    : '🟢 Quarantine lifted — the colony returns to full work.');
+  return { ok: true, on: !!state.quarantine };
+}
+
 // Upgrade a guard's equipment one tier (spends materials → more protection & damage).
 export function equipGuard(state, u) {
   if (!u.guard) return { ok: false, reason: 'Train it as a guard first (🛡️)' };
