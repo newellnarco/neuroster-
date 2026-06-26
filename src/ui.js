@@ -250,28 +250,81 @@ export function createUI(state, ctx) {
     bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
   }
 
-  // ---- Threats panel ----
+  // ---- Defense & Military screen (garrison + works + threat readiness) ----
   function renderThreats() {
+    // 1) Garrison: the mustered guards, their gear tier, and quick equip/upgrade.
+    const guards = state.units.filter(u => u.guard);
+    const roster = guards.length ? guards.map(u => {
+      const sp = SPECIES[u.species] || { icon: '🐹' };
+      const gear = GUARD_GEAR[u.gear || 0];
+      const nextGear = GUARD_GEAR[(u.gear || 0) + 1];
+      const equip = nextGear
+        ? `<button class="carebtn ${canAffordCost(nextGear.cost) ? '' : 'cd'}" data-guard="equip" data-gu="${u.id}"
+             title="Equip ${nextGear.name} — more protection & damage">⚔️ ${nextGear.name} (${costStr(nextGear.cost)})</button>`
+        : `<span class="sub">· fully equipped</span>`;
+      return `<div class="threat">
+        <div class="trow"><span>${sp.icon} <b>${escHtml(u.name || 'Guard')}</b> · ${gear.icon} ${gear.name}</span>
+          <span class="gd">🛡️${gear.def} ⚔️${gear.atk}</span></div>
+        <div class="ds taskrow">${equip}
+          <button class="carebtn" data-guard="stand" data-gu="${u.id}" title="Stand down from guard duty">✋ Stand down</button></div>
+      </div>`;
+    }).join('') : `<div class="ds">No guards mustered yet. Promote your strongest rodents to defend the colony.</div>`;
+    // A free, loyal rodent we could promote next (highest level wins).
+    const recruit = state.units.filter(u => !u.guard).sort((a, b) => (b.level || 0) - (a.level || 0))[0];
+    const muster = recruit
+      ? `<div class="care taskrow"><button class="carebtn" data-guard="muster" data-gu="${recruit.id}"
+           title="Train your highest-level free rodent as a guard">🛡️ Train a guard</button>
+           <span class="sub">next: ${SPECIES[recruit.species]?.icon || '🐹'} ${escHtml(recruit.name || '')} (Lv.${recruit.level || 1})</span></div>`
+      : '';
+
+    // 2) Defensive works: every built structure that adds defense / protection.
+    const works = Object.entries(BUILDINGS)
+      .filter(([, b]) => b.defense || b.wall || b.protect)
+      .map(([type, b]) => {
+        const n = state.buildings.filter(x => x.type === type && !x.underConstruction).length;
+        if (!n) return null;
+        const d = b.defense ? ` · 🛡️${b.defense}` : '';
+        return `<span class="helpers" title="${escHtml(b.desc || '')}">${b.icon} ${escHtml(b.name)} ×${n}${d}</span>`;
+      }).filter(Boolean);
+    const worksHtml = works.length ? `<div class="ds">${works.join('  ')}</div>` : `<div class="ds">— none built — raise walls, fences & towers in 🏗️ Build —</div>`;
+
+    // 3) Threat readiness: per-hazard protection vs the scaling severity.
+    const threats = Object.entries(DISASTERS).map(([key, d]) => {
+      const biomeMul = BIOMES[state.world.biome]?.hazardMul?.[key] ?? 1;
+      const prot = protectionAgainst(state, key) + (d.kind === 'predator' ? totalOffense(state) : 0);
+      const sev = Math.round(d.baseSeverity * (1 + (state.env?.lived || 0) / 3000) * biomeMul);
+      const ratio = Math.min(1, prot / Math.max(1, sev));
+      const cls = ratio >= 1 ? 'ok' : ratio >= 0.6 ? 'mid' : 'low';
+      const helpers = [
+        ...Object.entries(BUILDINGS).filter(([, b]) => b.protect?.[key]).map(([, b]) => b.icon),
+        ...Object.entries(SPECIES).filter(([, s]) => s.protect?.[key]).map(([, s]) => s.icon),
+      ];
+      return `<div class="threat">
+        <div class="trow"><span>${d.icon} <b>${d.name}</b></span>
+          <span class="${cls === 'ok' ? 'gd' : cls === 'low' ? 'bd' : ''}">${Math.round(prot)} / ${sev}</span></div>
+        <div class="need ${cls}"><span class="bar" style="width:100%"><span style="width:${ratio * 100}%"></span></span></div>
+        <div class="ds">${d.desc} <span class="helpers">Counter: ${helpers.join(' ') || '—'}</span></div>
+      </div>`;
+    }).join('');
+
     el('tab-threats').innerHTML =
-      `<div class="hint">Predators snatch rodents; disasters wreck buildings & stores. Raise protection with defensive buildings AND protective species. Your biome and the weather/night change how dangerous each threat is.</div>
-       <div class="cat">Now — 🛡️ ${state.defense} defense · ⚔️ ${totalOffense(state)} offense</div>` +
-      Object.entries(DISASTERS).map(([key, d]) => {
-        const biomeMul = BIOMES[state.world.biome]?.hazardMul?.[key] ?? 1;
-        const prot = protectionAgainst(state, key) + (d.kind === 'predator' ? totalOffense(state) : 0);
-        const sev = Math.round(d.baseSeverity * (1 + (state.env?.lived || 0) / 3000) * biomeMul);
-        const ratio = Math.min(1, prot / Math.max(1, sev));
-        const cls = ratio >= 1 ? 'ok' : ratio >= 0.6 ? 'mid' : 'low';
-        const helpers = [
-          ...Object.entries(BUILDINGS).filter(([, b]) => b.protect?.[key]).map(([, b]) => b.icon),
-          ...Object.entries(SPECIES).filter(([, s]) => s.protect?.[key]).map(([, s]) => s.icon),
-        ];
-        return `<div class="threat">
-          <div class="trow"><span>${d.icon} <b>${d.name}</b></span>
-            <span class="${cls === 'ok' ? 'gd' : cls === 'low' ? 'bd' : ''}">${Math.round(prot)} / ${sev}</span></div>
-          <div class="need ${cls}"><span class="bar" style="width:100%"><span style="width:${ratio * 100}%"></span></span></div>
-          <div class="ds">${d.desc} <span class="helpers">Counter: ${helpers.join(' ') || '—'}</span></div>
-        </div>`;
-      }).join('');
+      `<div class="hint">Your colony's standing <b>defense &amp; garrison</b>. Predators snatch rodents; disasters wreck buildings &amp; stores. Muster &amp; equip guards, raise defensive works, and lean on protective species — biome, weather &amp; night all shift the danger.</div>
+       <div class="cat">Standing — 🛡️ ${state.defense} defense · ⚔️ ${totalOffense(state)} offense</div>
+       <div class="cat">🪖 Garrison (${guards.length} guard${guards.length === 1 ? '' : 's'})</div>
+       ${roster}${muster}
+       <div class="cat">🧱 Defensive works</div>
+       ${worksHtml}
+       <div class="cat">⚠️ Threat readiness</div>
+       ${threats}`;
+
+    bind('#tab-threats [data-guard]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.gu);
+      if (!u) return;
+      const act = btn.dataset.guard;
+      if (act === 'equip') { const r = equipGuard(state, u); msg(r); if (r.ok) sfx('place'); }
+      else { toggleGuard(state, u); sfx('click'); } // muster (train) or stand down
+      renderThreats(); renderEnv(); renderRodents();
+    });
   }
 
   // ---- Trade / alliances ----
