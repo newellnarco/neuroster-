@@ -155,6 +155,30 @@ export function stepRodent(state, u, dt) {
       }
       return;
     }
+    if (u.order.kind === 'service') {
+      // Player sent this rodent to a feeder/well to eat/drink. March it there,
+      // then top up the matching need from colony stores on arrival.
+      if (moveAlongPath(state, u, u.order.x, u.order.y, spd, dt)) {
+        const need = u.order.need;
+        if (need === 'water') {
+          const used = Math.min(state.res.water || 0, 6);
+          state.res.water = (state.res.water || 0) - used;
+          u.needs.water = Math.min(100, (u.needs.water || 0) + used * 7);
+          addFx(state, u.x, u.y, '💧', 1.4);
+        } else if (need === 'food') {
+          let want = 6;
+          for (const ed of ['pellets', 'grain', 'food']) {
+            if (want <= 0) break;
+            const av = state.res[ed] || 0; if (av <= 0) continue;
+            const used = Math.min(av, want); state.res[ed] -= used; want -= used;
+            u.needs.food = Math.min(100, (u.needs.food || 0) + used * 7);
+          }
+          addFx(state, u.x, u.y, '🍽️', 1.4);
+        }
+        u.order = null; u.phase = 'seek'; u.targetNode = null;
+      }
+      return;
+    }
     if (u.order.kind === 'explore') {
       // Aim for the nearest fogged tile; re-target once it (or the current
       // target) has been revealed, sweeping outward until none remain.

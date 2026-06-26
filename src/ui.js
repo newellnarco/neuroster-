@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
 import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR, NODE_TYPES } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, digDeeper, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine, useBuilding } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, digDeeper, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine, useBuilding, serviceNeedOf, directToService } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -917,6 +917,17 @@ export function createUI(state, ctx) {
       if (b) {
         const r = useBuilding(state, b);
         if (!r.none) { if (r.flash) flash(r.flash); if (r.ok) sfx('click'); renderResbar(); return; }
+      }
+      // SELECTED RODENT + a feeder/well: send it there to eat/drink. The order
+      // marches it over and tops up the matching need on arrival (entities.js).
+      if (b && view.selUnit) {
+        const u = state.units.find(x => x.id === view.selUnit);
+        const need = serviceNeedOf(b);
+        if (u && need) {
+          directToService(state, u, b); sfx('click');
+          flash(need === 'food' ? '🍽️ → feeding' : '💧 → drinking');
+          renderRodents(); return;
+        }
       }
       // Pick the NEAREST rodent within a generous radius (its drawn position),
       // so clicking near a moving hamster still selects it.

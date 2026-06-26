@@ -18,7 +18,7 @@ const { contributeMega, megaProgress, megaBonuses } = await import('../src/megap
 const { protectionAgainst } = await import('../src/events.js');
 const { exportSave, importSaveString } = await import('../src/save.js');
 const { ensureCamps, spawnCaravan, stepCaravans } = await import('../src/factions.js');
-const { giftFaction, demolish, useBuilding, buildingActionable } = await import('../src/buildings.js');
+const { giftFaction, demolish, useBuilding, buildingActionable, serviceNeedOf, directToService } = await import('../src/buildings.js');
 const { MEGAPROJECTS, FACTIONS, BUILDINGS } = await import('../src/config.js');
 
 const BIOMES = ['woodland', 'prairie', 'mountains', 'lakes', 'rivers', 'marsh', 'beach'];
@@ -2183,6 +2183,54 @@ console.log('Demolish tool (no confirm) & building-click priority:');
     assert(buildingActionable(g, clean) === null, 'a clean burrow offers no action');
     assert(useBuilding(g, clean).none === true, 'useBuilding falls through on a non-actionable building');
     ok('non-actionable buildings fall through to rodent selection/directing');
+  }
+}
+
+console.log('Direct a hamster to a feeder/well to eat/drink:');
+{
+  const feederType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].feeder);
+  const wellType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].produces?.water);
+  const watererType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].waterer);
+
+  // serviceNeedOf classifies food vs water sources.
+  {
+    assert(serviceNeedOf({ type: feederType }) === 'food', `a Feeder services food (${feederType})`);
+    assert(serviceNeedOf({ type: wellType }) === 'water', `a Well services water (${wellType})`);
+    assert(serviceNeedOf({ type: watererType }) === 'water', `an Auto-Waterer services water (${watererType})`);
+    assert(serviceNeedOf({ type: 'farm' }) === 'food', 'a Farm (food producer) services food');
+    assert(serviceNeedOf({ type: 'storage' }) === null, 'a Storage services no need');
+    ok('serviceNeedOf classifies feeders/wells/waterers correctly');
+  }
+
+  // directToService sets a 'service' order targeting the building.
+  {
+    const g = newGame(8901, 'woodland', 'syrian', 'Feed', {});
+    const sp = g.world.spawn;
+    const feeder = { id: g.nextId++, type: feederType, x: sp.x + 2, y: sp.y, active: true };
+    g.buildings.push(feeder);
+    const u = g.units[0];
+    const r = directToService(g, u, feeder);
+    assert(r && r.ok && r.need === 'food', 'directing to a feeder sets a food service order');
+    assert(u.order && u.order.kind === 'service' && u.order.need === 'food', 'the unit has a food service order');
+    assert(u.order.x === feeder.x && u.order.y === feeder.y, 'the service order targets the feeder tile');
+    ok('directToService sends a hamster to a feeder with a food service order');
+  }
+
+  // On arrival the service order tops up the matching need from stores, then clears.
+  {
+    const g = newGame(8902, 'woodland', 'syrian', 'Drink', {});
+    const sp = g.world.spawn;
+    const well = { id: g.nextId++, type: wellType, x: sp.x + 1, y: sp.y, active: true };
+    g.buildings.push(well);
+    const u = g.units[0];
+    u.x = sp.x; u.y = sp.y; u.needs.water = 20; // thirsty, right next to the well
+    g.res.water = 200;
+    directToService(g, u, well);
+    let ticks = 0;
+    while (u.order && ticks < 400) { stepEconomy(g, 0.1); ticks++; }
+    assert(!u.order, 'the service order clears once the hamster arrives');
+    assert(u.needs.water > 20, `the hamster drank on arrival (water ${u.needs.water.toFixed(0)} > 20)`);
+    ok('a hamster sent to a well actually services its water need on arrival');
   }
 }
 
