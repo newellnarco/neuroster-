@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T07:20:04Z",
+  "updated": "2026-06-26T16:02:46Z",
   "items": [
     {
       "key": "econ:1",
@@ -181,13 +181,19 @@
       "type": "Enhancement",
       "area": "Graphics",
       "priority": "P2",
-      "status": "Todo",
-      "pr": null,
+      "status": "Done",
+      "pr": "45",
       "release": null,
       "detail": "Swaying crops, chimney smoke, fireflies, seasonal motes; synthesised audio.js ambient soundscape + cues. Ongoing polish thread.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T15:52:14+00:00",
+          "status": "Done",
+          "note": "Seasonal colour wash (seasonTint) + idle breathe animation; bounded tested slice; +2 smoke"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T15:52:14+00:00"
     },
     {
       "key": "ux:zoom-map-fixes",
@@ -916,13 +922,19 @@
       "type": "Enhancement",
       "area": "Graphics",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "45",
       "release": null,
       "detail": "Most are emoji on a textured timber base now; finish the stragglers.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T15:52:14+00:00",
+          "status": "Done",
+          "note": "Per-material textured bases for one-off building glyphs; +1 smoke check"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T15:52:14+00:00"
     },
     {
       "key": "ux:persist-zoom",
@@ -1001,9 +1013,9 @@
       "type": "Enhancement",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "44",
-      "release": null,
+      "release": "7f9ff2e",
       "detail": "Belts ship wood→plastic→metal already; add chaining node→belt→belt→storage with direction.",
       "timeline": [
         {
@@ -1020,10 +1032,15 @@
           "at": "2026-06-26T07:15:49+00:00",
           "status": "Done",
           "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
+        },
+        {
+          "at": "2026-06-26T15:46:40+00:00",
+          "status": "Shipped",
+          "note": "PR #44 squash-merged to main (release 7f9ff2e); post-merge sweep"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T07:15:49+00:00"
+      "updated": "2026-06-26T15:46:40+00:00"
     },
     {
       "key": "fix:difficulty-scale",
@@ -1277,9 +1294,9 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "44",
-      "release": null,
+      "release": "7f9ff2e",
       "detail": "Include offense raids vs AI colonies.",
       "timeline": [
         {
@@ -1306,6 +1323,11 @@
           "at": "2026-06-26T07:15:49+00:00",
           "status": "Done",
           "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
+        },
+        {
+          "at": "2026-06-26T15:46:40+00:00",
+          "status": "Shipped",
+          "note": "PR #44 squash-merged to main (release 7f9ff2e); post-merge sweep"
         }
       ],
       "screenshots": [
@@ -1315,7 +1337,7 @@
           "caption": "Defense & Military screen: Garrison + Defensive works + Threat readiness"
         }
       ],
-      "updated": "2026-06-26T07:15:49+00:00"
+      "updated": "2026-06-26T15:46:40+00:00"
     },
     {
       "key": "change:evolution-branches",
@@ -1467,19 +1489,24 @@
       "type": "Process",
       "area": "Infra",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "44",
-      "release": null,
+      "release": "7f9ff2e",
       "detail": "playwright-core dev dep + test/browser-smoke.mjs + SessionStart auto-install; npm run verify:browser.",
       "timeline": [
         {
           "at": "2026-06-26T07:15:49+00:00",
           "status": "Done",
           "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
+        },
+        {
+          "at": "2026-06-26T15:46:40+00:00",
+          "status": "Shipped",
+          "note": "PR #44 squash-merged to main (release 7f9ff2e); post-merge sweep"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T07:15:49+00:00"
+      "updated": "2026-06-26T15:46:40+00:00"
     },
     {
       "key": "change:storage-1500",
@@ -1490,19 +1517,24 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "44",
-      "release": null,
+      "release": "7f9ff2e",
       "detail": "Player-requested: each Storage Depot now holds 1500 (was 200).",
       "timeline": [
         {
           "at": "2026-06-26T07:15:49+00:00",
           "status": "Done",
           "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
+        },
+        {
+          "at": "2026-06-26T15:46:40+00:00",
+          "status": "Shipped",
+          "note": "PR #44 squash-merged to main (release 7f9ff2e); post-merge sweep"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T07:15:49+00:00"
+      "updated": "2026-06-26T15:46:40+00:00"
     },
     {
       "key": "change:tab-restyle",
@@ -1513,9 +1545,9 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "44",
-      "release": null,
+      "release": "7f9ff2e",
       "detail": "Single flex row clipped 8 tab labels in the 340px pane; now a 4×2 grid of section tabs, all visible.",
       "timeline": [
         {
@@ -1527,6 +1559,11 @@
           "at": "2026-06-26T07:20:04+00:00",
           "status": "Done",
           "note": "Added slight zigzag (alternating tabs 5px lower) so the two rows read clearly; still on PR #44"
+        },
+        {
+          "at": "2026-06-26T15:46:41+00:00",
+          "status": "Shipped",
+          "note": "PR #44 squash-merged to main (release 7f9ff2e); post-merge sweep"
         }
       ],
       "screenshots": [
@@ -1541,7 +1578,7 @@
           "caption": "Zigzag section tabs — two rows read clearly, all 8 visible"
         }
       ],
-      "updated": "2026-06-26T07:20:04+00:00"
+      "updated": "2026-06-26T15:46:41+00:00"
     }
   ]
 }
