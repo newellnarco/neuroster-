@@ -1487,4 +1487,95 @@ console.log('Balance pass (conveyors & defense costs):');
   ok(`balance pass locked: fence wood:8 (< wall), belt ladder ${wood}/${plastic}/${metal}`);
 }
 
+// 41) Worker pathing: local avoidance keeps movers out of water/blocked tiles.
+console.log('Worker pathing (local obstacle avoidance):');
+{
+  const { stepRodent } = await import('../src/entities.js');
+  const { isBlockedTile, getTile, TERRAIN } = await import('../src/world.js');
+  const { GRID_W, GRID_H } = await import('../src/config.js');
+  const s = newGame(4242, 'rivers', 'syrian', 'Pathing', {});
+  // The helper exists and flags water as a tile to avoid.
+  let wx = -1, wy = -1;
+  outer: for (let y = 1; y < GRID_H - 1; y++) for (let x = 1; x < GRID_W - 1; x++) {
+    if (getTile(s.world.terrain, x, y) === TERRAIN.water) { wx = x; wy = y; break outer; }
+  }
+  assert(wx >= 0, 'rivers biome should carve a water tile');
+  assert(isBlockedTile(s.world, wx, wy), 'isBlockedTile flags a water tile as blocked');
+  assert(!isBlockedTile(s.world, s.world.spawn.x, s.world.spawn.y), 'the (land) spawn tile is not blocked');
+  ok('isBlockedTile marks water as impassable, land as free');
+
+  // Place a rodent just on one side of the water tile, target the far side so a
+  // straight line crosses the water — after many steps it must never END inside
+  // water (the avoidance redirects each blocked step to a free neighbour / holds).
+  const u = s.units[0];
+  u.order = null; u.phase = 'idle'; u.inBall = false; u.targetNode = null;
+  u.x = wx - 1.2; u.y = wy; u.needs.energy = 100;
+  u.order = { kind: 'goto', x: wx + 1.2, y: wy };
+  let everInWater = false;
+  for (let i = 0; i < 400 && u.order; i++) {
+    u.needs.energy = 100;
+    stepRodent(s, u, 0.1);
+    if (isBlockedTile(s.world, u.x, u.y)) everInWater = true;
+  }
+  assert(!everInWater, `a mover crossing toward water never ends a step inside it (at ${u.x.toFixed(1)},${u.y.toFixed(1)})`);
+  ok('local avoidance keeps a mover from stepping into water');
+}
+
+// 42) River geography for dams: rivers carry real flow; a dam reads it.
+console.log('River dams (real upstream/flow geography):');
+{
+  const { isRiverTile, riverFlowAt, riverNear, TERRAIN, getTile } = await import('../src/world.js');
+  const { damRiverFactor, RIVER_DAM_BONUS } = await import('../src/economy.js');
+  const { GRID_W, GRID_H } = await import('../src/config.js');
+  const s = newGame(909, 'rivers', 'syrian', 'Dammit', {});
+
+  // Rivers carry a flow/upstream attribute on real river tiles.
+  let rx = -1, ry = -1;
+  outer: for (let y = 1; y < GRID_H - 1; y++) for (let x = 1; x < GRID_W - 1; x++) {
+    if (isRiverTile(s.world, x, y)) { rx = x; ry = y; break outer; }
+  }
+  assert(rx >= 0, 'rivers biome tags real river tiles');
+  assert(getTile(s.world.terrain, rx, ry) === TERRAIN.water, 'a river tile is water');
+  const fl = riverFlowAt(s.world, rx, ry);
+  assert(fl && fl.downstream && fl.upstream, 'a river tile exposes downstream/upstream flow');
+  assert(fl.upstream.dy === -fl.downstream.dy, 'upstream is the opposite of downstream');
+  // A still pond tile (lakes biome, not river-carved) carries no flow.
+  const lake = newGame(910, 'lakes', 'syrian', 'Pond', {});
+  let pondFound = false;
+  for (let y = 0; y < GRID_H && !pondFound; y++) for (let x = 0; x < GRID_W; x++) {
+    if (getTile(lake.world.terrain, x, y) === TERRAIN.water && !isRiverTile(lake.world, x, y)) { pondFound = true; break; }
+  }
+  assert(pondFound, 'a pond water tile is NOT flagged as a flowing river');
+  ok('rivers carry flow geography (downstream/upstream); ponds do not');
+
+  // A dam placed on a real river tile reads the flow → flow/water bonus, vs a
+  // non-river placement which gets none.
+  const onRiver = riverNear(s.world, rx, ry, 2);
+  assert(onRiver && onRiver.flow, 'riverNear finds a river tile and its flow under a dam footprint');
+  const damOn = { id: 1, type: 'dam', x: rx, y: ry, active: true };
+  assert(Math.abs(damRiverFactor(s, damOn) - (1 + RIVER_DAM_BONUS)) < 1e-9, `a dam on a river earns the flow bonus (×${1 + RIVER_DAM_BONUS})`);
+  // A spot far from any water gets the plain factor (no river current).
+  const damOff = { id: 2, type: 'dam', x: s.world.spawn.x, y: s.world.spawn.y };
+  assert(damRiverFactor(s, damOff) === 1, 'a dam off any river gets no flow bonus');
+  ok(`a dam on a real river reads its flow for a ${(RIVER_DAM_BONUS * 100).toFixed(0)}% water bonus (off-river: none)`);
+
+  // The bonus actually folds into water output over a few ticks.
+  function damWater(x, y) {
+    const g = newGame(911, 'rivers', 'syrian', 'Flow', {});
+    g.units[0].species = 'beaver';
+    g.res = {}; // start from empty water store
+    g.buildings.push({ id: g.nextId++, type: 'dam', x, y, active: true });
+    for (let i = 0; i < 15; i++) stepEconomy(g, 0.2);
+    return g.res.water || 0;
+  }
+  // find a river tile in the seed-911 world
+  const g0 = newGame(911, 'rivers', 'syrian', 'Flow', {});
+  let frx = -1, fry = -1;
+  scan: for (let y = 1; y < GRID_H - 1; y++) for (let x = 1; x < GRID_W - 1; x++)
+    if (isRiverTile(g0.world, x, y)) { frx = x; fry = y; break scan; }
+  const wRiver = damWater(frx, fry), wDry = damWater(g0.world.spawn.x, g0.world.spawn.y);
+  assert(wRiver > wDry, `a river dam yields more water than a dry-placed one (${wRiver.toFixed(1)} > ${wDry.toFixed(1)})`);
+  ok(`river flow bonus folds into water output (${wDry.toFixed(1)} → ${wRiver.toFixed(1)})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

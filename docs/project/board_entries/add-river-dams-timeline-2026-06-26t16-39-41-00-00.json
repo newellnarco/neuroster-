@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "add:river-dams",
+  "status": "Done",
+  "timeline": [
+    {
+      "at": "2026-06-26T16:39:41+00:00",
+      "status": "Done",
+      "note": "Built in Engine section (lightweight, not the deferred A* refactor)"
+    }
+  ],
+  "updated": "2026-06-26T16:39:41+00:00",
+  "pr": "0"
+}

@@ -3,7 +3,7 @@
 import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H, HAMSTER_NAMES, FAMILY_NAMES, COAT_COLORS, COAT_PATTERNS } from './config.js';
 import { traitMul, wellbeingMul, addRes, evoBonus, addFx, logMsg } from './state.js';
 import { isNight } from './environment.js';
-import { isSeen, nearestUnseen } from './world.js';
+import { isSeen, nearestUnseen, isBlockedTile } from './world.js';
 import { nodeContestFactor } from './factions.js';
 
 let _id = 1;
@@ -115,7 +115,7 @@ export function stepRodent(state, u, dt) {
       u._wx = Math.max(1, Math.min(GRID_W - 2, u.x + (Math.random() - 0.5) * 6));
       u._wy = Math.max(1, Math.min(GRID_H - 2, u.y + (Math.random() - 0.5) * 6));
     }
-    moveToward(u, u._wx, u._wy, spd, dt);
+    moveToward(state, u, u._wx, u._wy, spd, dt);
     return;
   }
 
@@ -125,7 +125,7 @@ export function stepRodent(state, u, dt) {
   // nap. Fog is revealed by the per-tick exploration pass as the rodent travels.
   if (u.order) {
     if (u.order.kind === 'goto') {
-      if (moveToward(u, u.order.x, u.order.y, spd, dt)) {
+      if (moveToward(state, u, u.order.x, u.order.y, spd, dt)) {
         u.order = null; u.phase = 'seek'; u.targetNode = null; // arrived → resume work
       }
       return;
@@ -141,7 +141,7 @@ export function stepRodent(state, u, dt) {
         logMsg(state, `🧭 ${u.name} finished exploring — the map is fully revealed.`);
         return;
       }
-      if (moveToward(u, u._exTarget.x, u._exTarget.y, spd, dt)) u._exTarget = null;
+      if (moveToward(state, u, u._exTarget.x, u._exTarget.y, spd, dt)) u._exTarget = null;
       return;
     }
   }
@@ -153,7 +153,7 @@ export function stepRodent(state, u, dt) {
         if (!u.targetNode) { u.phase = 'idle'; return; }
       }
       const n = u.targetNode;
-      if (moveToward(u, n.x, n.y, spd, dt)) { u.phase = 'work'; u.progress = 0; }
+      if (moveToward(state, u, n.x, n.y, spd, dt)) { u.phase = 'work'; u.progress = 0; }
       break;
     }
     case 'work': {
@@ -179,7 +179,7 @@ export function stepRodent(state, u, dt) {
     case 'deliver': {
       const d = u.targetDrop;
       const dx = d ? d.x : state.world.spawn.x, dy = d ? d.y : state.world.spawn.y;
-      if (moveToward(u, dx, dy, spd, dt)) { deliverCarry(state, u); u.phase = 'seek'; }
+      if (moveToward(state, u, dx, dy, spd, dt)) { deliverCarry(state, u); u.phase = 'seek'; }
       break;
     }
     case 'idle': {
@@ -209,11 +209,38 @@ function isRestTime(state, u) {
   return false; // crepuscular: only sleeps when exhausted
 }
 
-function moveToward(u, tx, ty, spd, dt) {
+// Cheap, O(1) local obstacle avoidance: step toward the target, but if the next
+// step would land in a blocked tile (water/mountain), deflect to one side and
+// steer along the obstacle edge instead of clipping straight through it. This is
+// deliberately a one-tile lookahead — NOT global pathfinding.
+function moveToward(state, u, tx, ty, spd, dt) {
+  const world = state && state.world;
   const dx = tx - u.x, dy = ty - u.y, dist = Math.hypot(dx, dy);
   if (dist < 0.15) return true;
   const step = Math.min(dist, spd * dt);
-  u.x += (dx / dist) * step; u.y += (dy / dist) * step;
+  let ux = dx / dist, uy = dy / dist; // unit heading toward target
+
+  // Look a tile ahead; if blocked, try deflected headings (perpendicular offsets)
+  // and pick the first one whose landing tile is free. Falls back to the straight
+  // step if everything around is blocked (e.g. already on/surrounded by water).
+  if (world && isBlockedTile(world, u.x + ux, u.y + uy)) {
+    const px = -uy, py = ux;          // perpendicular to the heading
+    const deflect = [
+      [px, py], [-px, -py],           // 90° either side: steer along the edge
+      [ux + px, uy + py], [ux - px, uy - py], // 45° blends, biased toward target
+    ];
+    for (const [bx, by] of deflect) {
+      const m = Math.hypot(bx, by) || 1;
+      const nx = bx / m, ny = by / m;
+      if (!isBlockedTile(world, u.x + nx, u.y + ny)) { ux = nx; uy = ny; break; }
+    }
+  }
+
+  const candX = u.x + ux * step, candY = u.y + uy * step;
+  // Never end a step inside a blocked tile; if the chosen move still lands in one,
+  // hold position this tick rather than wade into water.
+  if (world && isBlockedTile(world, candX, candY)) return false;
+  u.x = candX; u.y = candY;
   return false;
 }
 
