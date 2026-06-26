@@ -558,4 +558,40 @@ console.log('Player orders (go-to + explore):');
   ok('explore: ends automatically once every tile has been mapped');
 }
 
+// 19) Per-unit Vigor: a high-Vigor rodent's needs drain slower.
+console.log('Per-unit Vigor (stamina trait):');
+{
+  function drainOver(vigorLevel) {
+    const g = newGame(1357, 'prairie', 'syrian', 'Vig', {});
+    g.res.food = 0; g.res.water = 0; // no stores to refill from — isolate drain
+    const u = g.units[0];
+    u.traits = { vigor: vigorLevel };
+    u.needs.food = 100; u.needs.water = 100; u.phase = 'idle'; // not gathering
+    for (let i = 0; i < 60; i++) { u.phase = 'idle'; stepEconomy(g, 0.2); }
+    return u.needs.food + u.needs.water;
+  }
+  const weak = drainOver(0), tough = drainOver(6);
+  assert(tough > weak, `Vigor should slow need drain (vigor0 left ${weak.toFixed(1)} < vigor6 left ${tough.toFixed(1)})`);
+  ok(`per-unit Vigor slows food/water drain (vigor0 ${weak.toFixed(1)} → vigor6 ${tough.toFixed(1)} left)`);
+}
+
+// 20) New milestones: present and firing on the right conditions.
+console.log('Milestones (new goals):');
+{
+  const { MILESTONES, checkMilestones } = await import('../src/milestones.js');
+  const ids = new Set(MILESTONES.map(m => m.id));
+  for (const id of ['pop50', 'explored', 'plastic', 'doctrine', 'valor90', 'justice90'])
+    assert(ids.has(id), `milestone ${id} should exist`);
+  // Cartographer fires once the whole map is revealed (ties to the Explore task).
+  const s = newGame(321, 'prairie', 'syrian', 'Goals', {});
+  s.world.seen.fill(1);
+  assert(checkMilestones(s).some(m => m.id === 'explored'), 'revealing the whole map awards Cartographer');
+  // Valor / Justice thresholds award their milestones.
+  const s2 = newGame(322, 'prairie', 'syrian', 'Virtue', {});
+  s2.valor = 95; s2.justice = 95;
+  const got = checkMilestones(s2);
+  assert(got.some(m => m.id === 'valor90') && got.some(m => m.id === 'justice90'), 'high Valor & Justice award their milestones');
+  ok(`new milestones present & firing (total ${MILESTONES.length})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

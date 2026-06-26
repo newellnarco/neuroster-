@@ -26,6 +26,12 @@ export const MILESTONES = [
   { id: 'megaproject', name: 'Wonder of the Warren', icon: '🏛️', desc: 'Complete your first Megaproject.',       reward: 80, check: (s) => Object.values(s.megaprojects || {}).some(m => m.done) },
   { id: 'rescue',      name: 'Open Heart',        icon: '💗', desc: 'Take in a lost or hurt animal.',             reward: 20, check: (s) => s.units.some(u => u.rescued) },
   { id: 'compassion',  name: 'Boundless Kindness',icon: '🕊️', desc: 'Reach 90 colony Compassion.',                reward: 40, check: (s) => (s.compassion || 0) >= 90 },
+  { id: 'pop50',       name: 'Teeming Warren',    icon: '🏙️', desc: 'Reach 50 rodents.',                          reward: 40, check: (s) => population(s) >= 50 },
+  { id: 'explored',    name: 'Cartographer',      icon: '🗺️', desc: 'Reveal the whole map (send a scout to Explore).', reward: 30, check: (s) => !!s.world?.seen && s.world.seen.every(v => v === 1) },
+  { id: 'plastic',     name: 'Polymer Age',       icon: '🧪', desc: 'Refine Plastic for advanced builds.',        reward: 20, check: (s) => (s.res.plastic || 0) > 0 },
+  { id: 'doctrine',    name: 'Path of Virtue',    icon: '🎓', desc: 'Learn your first Doctrine.',                 reward: 25, check: (s) => Object.keys(s.doctrines || {}).length >= 1 },
+  { id: 'valor90',     name: 'Spartan Spirit',    icon: '🦁', desc: 'Reach 90 colony Valor.',                     reward: 40, check: (s) => (s.valor || 0) >= 90 },
+  { id: 'justice90',   name: 'Pillar of Order',   icon: '⚖️', desc: 'Reach 90 colony Justice.',                   reward: 40, check: (s) => (s.justice || 0) >= 90 },
 ];
 
 // Check milestones (throttled by the caller). Returns newly-achieved entries.

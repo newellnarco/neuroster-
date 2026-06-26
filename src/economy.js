@@ -1,7 +1,7 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
-import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice } from './state.js';
+import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice, traitMul } from './state.js';
 import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
 import { JUSTICE } from './config.js';
@@ -333,7 +333,10 @@ function updatePerUnitNeeds(state, dt, env) {
 
   for (const u of state.units) {
     const n = u.needs;
-    const retain = Math.max(0.4, 1 - evoBonus(state, u.species, 'needRetain'));
+    // Per-unit Vigor (a 🔋 stamina trait) makes a rodent's food/water/energy
+    // drain slower — so investing skill points in Vigor visibly matters, not
+    // just the species-wide evolution bonus.
+    const retain = Math.max(0.4, 1 - evoBonus(state, u.species, 'needRetain')) / traitMul(u, 'stamina');
     u.bond = Math.max(0, (u.bond ?? 45) - BOND_DECAY * dt); // affection gently fades
 
     // Water: drain, then drink from stores if low.
