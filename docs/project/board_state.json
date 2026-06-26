@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T16:47:35Z",
+  "updated": "2026-06-26T16:47:49Z",
   "items": [
     {
       "key": "econ:1",
@@ -977,19 +977,24 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "50",
+      "release": "b4293ba",
       "detail": "Optional quality-of-life.",
       "timeline": [
         {
           "at": "2026-06-26T16:46:22+00:00",
           "status": "Done",
           "note": "Built in UI/UX section"
+        },
+        {
+          "at": "2026-06-26T16:47:49+00:00",
+          "status": "Shipped",
+          "note": "PR #50 merged (release b4293ba)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:46:22+00:00"
+      "updated": "2026-06-26T16:47:49+00:00"
     },
     {
       "key": "balance:pacing",
@@ -1313,9 +1318,9 @@
       "type": "New Feature",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "50",
+      "release": "b4293ba",
       "detail": "Currently auto by prefKind; let players pin specific rodents.",
       "timeline": [
         {
@@ -1332,10 +1337,15 @@
           "at": "2026-06-26T16:46:22+00:00",
           "status": "Done",
           "note": "Built in UI/UX section"
+        },
+        {
+          "at": "2026-06-26T16:47:49+00:00",
+          "status": "Shipped",
+          "note": "PR #50 merged (release b4293ba)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:46:22+00:00"
+      "updated": "2026-06-26T16:47:49+00:00"
     },
     {
       "key": "add:true-pathfinding",
