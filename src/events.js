@@ -126,10 +126,13 @@ export function totalOffense(state) {
 }
 
 // Disasters don't begin until the colony has had time to find its feet.
-const GRACE_SECONDS = 420;
+// Bumped ~35% so the calm/normal early game stays peaceful longer (Issue: too much
+// happening too soon); difficulty's graceMul still scales this per setting.
+const GRACE_SECONDS = 560;
 // Global pacing: stretches the gaps between ALL events so a normal game breathes
-// (raise for calmer, lower for busier). Difficulty still scales severity.
-const EVENT_PACE = 1.7;
+// (raise for calmer, lower for busier). Difficulty still scales severity. Bumped
+// ~35% (1.7 → 2.3) so fewer disasters/raids pile up at the default cadence.
+const EVENT_PACE = 2.3;
 
 // Difficulty is a knob on PACING & GRACE, not just severity. Easier settings get
 // a longer peaceful grace period and gentler cadence (bigger gaps between

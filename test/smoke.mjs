@@ -1386,6 +1386,15 @@ console.log('Difficulty pacing & grace knob:');
   assert(DIFFICULTIES.relaxed.graceMul > 1 && DIFFICULTIES.harsh.graceMul < 1, 'graceMul reads >1 for relaxed, <1 for harsh');
   assert(DIFFICULTIES.relaxed.paceMul > 1 && DIFFICULTIES.harsh.paceMul < 1, 'paceMul reads >1 for relaxed, <1 for harsh');
   ok(`event pace/grace scale by difficulty (grace ${graceSeconds(relaxed)}/${graceSeconds(normal)}/${graceSeconds(harsh)}, pace ${eventPace(relaxed).toFixed(1)}/${eventPace(normal).toFixed(1)}/${eventPace(harsh).toFixed(1)})`);
+
+  // Calm-by-default knobs: a global sim time-scale <1 keeps the 1× tier relaxed in
+  // real time, and the normal cadence/grace are roomy (events shouldn't pile up).
+  const { SIM_SCALE } = await import('../src/config.js');
+  assert(SIM_SCALE > 0 && SIM_SCALE < 1, `SIM_SCALE is a sub-real-time base scale (got ${SIM_SCALE})`);
+  assert(SIM_SCALE <= 0.7, `SIM_SCALE keeps the default noticeably calmer than real time (got ${SIM_SCALE})`);
+  assert(graceSeconds(normal) >= 540, `normal grace is roomy enough for a peaceful start (got ${graceSeconds(normal)})`);
+  assert(eventPace(normal) >= 2.0, `normal event pace spaces disasters out (got ${eventPace(normal)})`);
+  ok(`calm default locked: SIM_SCALE ${SIM_SCALE}, normal grace ${graceSeconds(normal)}s, pace ${eventPace(normal)}`);
 }
 
 // 37) Feeder/waterer throughput degrades with crowding (build more as you grow).

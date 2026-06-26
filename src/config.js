@@ -8,6 +8,11 @@ export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
 export const GRID_H = 28;        // world height in tiles
 export const TICKS_PER_SEC = 4;  // simulation steps per second
+// Global base time-scale folded into the simulation loop. <1 makes the default
+// (calm/normal) tier run noticeably slower in real time so the early game breathes
+// — things happen, but not frantically. The 1×/2×/4× speed keys multiply on top of
+// this, so the calm default stays relaxed while faster tiers stay an opt-in.
+export const SIM_SCALE = 0.65;
 export const AUTOSAVE_SEC = 10;  // autosave interval
 export const DAY_SECONDS = 900;  // 1 in-game day = 15 real minutes at 1x speed
 export const DAWN = 0.25, DUSK = 0.75; // fraction of day: night is < DAWN or > DUSK

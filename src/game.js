@@ -1,5 +1,5 @@
 // game.js — wires the simulation, renderer, and UI into a running game.
-import { TICKS_PER_SEC, AUTOSAVE_SEC, VERSION, BREEDS, BIOMES } from './config.js';
+import { TICKS_PER_SEC, AUTOSAVE_SEC, SIM_SCALE, VERSION, BREEDS, BIOMES } from './config.js';
 import { newGame } from './state.js';
 import { stepEconomy } from './economy.js';
 import { createRenderer } from './render.js';
@@ -85,7 +85,9 @@ export function startGame(canvas) {
     const frameDt = Math.min(0.25, (now - lastTime) / 1000);
     lastTime = now;
     if (!view.paused) {
-      acc += frameDt * view.speed;
+      // SIM_SCALE keeps the calm/normal (1×) tier relaxed in real time; the speed
+      // keys (1/2/4) multiply on top so faster pacing stays an opt-in.
+      acc += frameDt * view.speed * SIM_SCALE;
       let guard = 0;
       while (acc >= tickDt && guard++ < 240) { stepEconomy(state, tickDt); acc -= tickDt; }
       saveAcc += frameDt;
