@@ -142,6 +142,30 @@ export const BUILDINGS = {
     cost: { seeds: 14, water: 8, wood: 6 }, category: 'Food', tree: true,
     produces: { nuts: 0.5 },
   },
+  sunflower: {
+    name: 'Sunflower Field', icon: '🌻', desc: 'A field of sunflowers — a steady crop of Seeds and a little Food. Seeds feed Processing Mills (→ fertilizer) and plant trees & oaks.',
+    cost: { wood: 16, water: 10 }, category: 'Food', produces: { seeds: 0.6, food: 0.15 },
+  },
+  windmill: {
+    name: 'Windmill', icon: '🌬️', desc: 'A wooden windmill — clean Power that spins harder in WIND & storms (little on calm days). No pollution; a green alternative to coal.',
+    cost: { wood: 30, planks: 8 }, category: 'Automation', produces: { power: 0.7 },
+  },
+  watermill: {
+    name: 'Water Mill', icon: '🛞', desc: 'A wooden mill on the water — clean Power plus a steady trickle of Water. Build next to a river or pond. No pollution.',
+    cost: { wood: 32, planks: 10, stone: 8 }, category: 'Automation', produces: { power: 0.9, water: 0.3 }, needsWater: true, radius: 1,
+  },
+  seedmill: {
+    name: 'Processing Mill', icon: '⚙️', desc: 'A wooden mill — grinds Seeds into Fertilizer (needs Power from a wheel, windmill or water mill). Fertilizer in store boosts every Farm\'s yield.',
+    cost: { wood: 28, planks: 12 }, category: 'Production', consumes: { seeds: 0.4, power: 0.2 }, produces: { fertilizer: 0.3 },
+  },
+  cistern: {
+    name: 'Water Cistern', icon: '🛢️', desc: 'A wooden cistern — +300 storage and it COLLECTS RAINWATER (extra Water in rain & storms). Stockpile water for dry spells.',
+    cost: { wood: 26, planks: 8 }, category: 'Storage', storage: 300, cistern: true,
+  },
+  woodfence: {
+    name: 'Wooden Fence', icon: '🚧', desc: 'A cheap timber palisade — light defense vs ground predators & raids. Quick to ring the colony (wood can burn in wildfire).',
+    cost: { wood: 10 }, category: 'Defense', defense: 2,
+  },
   statue: {
     name: 'Statue', icon: '🗿', desc: 'A proud monument. A steady, quiet lift to colony morale — and a focus for its better nature (Compassion).',
     cost: { stone: 40, planks: 10 }, category: 'Wellbeing', statue: true,

@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "econ:2",
+  "status": "In Progress",
+  "timeline": [
+    {
+      "at": "2026-06-26T03:32:34+00:00",
+      "status": "In Progress",
+      "note": "Wood economy: +2.6x trees, sunflower seed field, wooden windmill/water mill power, processing mill (seeds->fertilizer), cistern, wood fence; friendly squirrels speed timber builds (PR #43)"
+    }
+  ],
+  "updated": "2026-06-26T03:32:34+00:00",
+  "pr": "43"
+}

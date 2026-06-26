@@ -41,8 +41,11 @@ export function stepEconomy(state, dt) {
   // Dams hold back the river: each one cuts non-dam water sources' flow upstream.
   const dams = state.buildings.filter(b => BUILDINGS[b.type]?.upstreamPenalty).length;
   const upstreamMul = Math.max(0.3, 1 - 0.3 * dams);
-  // Weather can rain extra water into stores.
-  if (env.waterGain) addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4));
+  // Weather can rain extra water into stores; wooden Cisterns collect more of it.
+  if (env.waterGain) {
+    const cisterns = state.buildings.filter(b => BUILDINGS[b.type]?.cistern && !b.underConstruction).length;
+    addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4) * (1 + cisterns * 0.5));
+  }
   const sun = solarFactor(state); // 0..1 daylight×weather, for solar panels
   let pollSrc = 0;                 // pollution emitted by running industry this tick
   // Pollution above a threshold poisons farmland (cuts food yield).
@@ -181,8 +184,12 @@ function updateConstruction(state, dt) {
   }
   W = Math.max(0.4, W);
   const perJob = Math.min(C.maxWorkersPerJob, W / jobs.length);
+  // Helpful squirrels (a kind colony with oaks/nuts drawing them) lend paws on
+  // TIMBER builds — wood structures rise ~35% faster while squirrels are friendly.
+  const squirrelHelp = ((state.squirrelPressure || 0) > 0 && (state.compassion ?? 50) >= SQUIRREL.kindAt) ? 0.35 : 0;
   for (const b of jobs) {
-    const inc = perJob * C.buildRate * dt;
+    const woodBuild = (BUILDINGS[b.type]?.cost?.wood || 0) > 0;
+    const inc = perJob * C.buildRate * dt * (1 + (woodBuild ? squirrelHelp : 0));
     if (b.underConstruction) {
       b.progress = (b.progress || 0) + inc;
       if (b.progress >= b.buildTime) {

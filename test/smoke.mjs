@@ -629,4 +629,74 @@ console.log('Oak → squirrel / nut economy:');
   ok('a kind colony trades with squirrels instead of being raided');
 }
 
+// 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
+//     fence, and friendly squirrels speeding timber builds.
+console.log('Wood economy (trees, mills, power, storage):');
+{
+  const { BUILDINGS } = await import('../src/config.js');
+  const built = (s, type, x, y, extra = {}) => { s.buildings.push({ id: s.nextId++, type, x, y, active: true, ...extra }); return s.buildings[s.buildings.length - 1]; };
+
+  // ~2.6× denser starting trees → a real timber supply.
+  const w = newGame(111, 'woodland', 'syrian', 'Woods', {});
+  const treeNodes = w.world.nodes.filter(n => n.kind === 'trees').length;
+  assert(treeNodes >= 15, `woodland seeds plenty of trees for a wood economy (got ${treeNodes})`);
+  ok(`denser tree cover: ${treeNodes} tree nodes on a woodland map`);
+
+  // Sunflower field grows seeds (+ a little food).
+  const g = newGame(112, 'prairie', 'syrian', 'Sun', {});
+  const sp = g.world.spawn;
+  const s0 = g.res.seeds || 0;
+  built(g, 'sunflower', sp.x + 2, sp.y);
+  for (let i = 0; i < 25; i++) stepEconomy(g, 0.2);
+  assert((g.res.seeds || 0) > s0, `sunflower field grows seeds (${s0} → ${(g.res.seeds || 0).toFixed(1)})`);
+  ok('sunflower field produces seeds');
+
+  // Wooden Windmill makes clean Power.
+  const p = newGame(113, 'prairie', 'syrian', 'Wind', {});
+  built(p, 'windmill', p.world.spawn.x + 2, p.world.spawn.y);
+  for (let i = 0; i < 20; i++) stepEconomy(p, 0.2);
+  assert((p.res.power || 0) > 0, 'a windmill generates power');
+  ok(`wooden windmill generates clean power (${(p.res.power || 0).toFixed(1)})`);
+
+  // Processing Mill: Power + Seeds → Fertilizer (the wood→power→fertilizer chain).
+  const m = newGame(114, 'prairie', 'syrian', 'Mill', {});
+  m.res.seeds = 200; m.res.power = 200;
+  const f0 = m.res.fertilizer || 0;
+  built(m, 'seedmill', m.world.spawn.x + 2, m.world.spawn.y);
+  for (let i = 0; i < 20; i++) stepEconomy(m, 0.2);
+  assert((m.res.fertilizer || 0) > f0, `processing mill grinds seeds → fertilizer (${f0} → ${(m.res.fertilizer || 0).toFixed(1)})`);
+  ok('processing mill turns seeds + power into fertilizer');
+
+  // Cistern raises storage capacity (+300, wooden water storage).
+  const c = newGame(115, 'prairie', 'syrian', 'Cist', {});
+  stepEconomy(c, 0.1); const cap0 = c.storageCap;
+  built(c, 'cistern', c.world.spawn.x + 2, c.world.spawn.y);
+  stepEconomy(c, 0.1);
+  assert(c.storageCap === cap0 + 300, `cistern adds +300 storage (${cap0} → ${c.storageCap})`);
+  ok('wooden cistern expands storage');
+
+  // Wooden Fence adds light defense.
+  const d = newGame(116, 'prairie', 'syrian', 'Fence', {});
+  stepEconomy(d, 0.1); const def0 = d.defense;
+  built(d, 'woodfence', d.world.spawn.x + 2, d.world.spawn.y);
+  stepEconomy(d, 0.1);
+  assert(d.defense > def0, `wooden fence adds defense (${def0} → ${d.defense})`);
+  ok('wooden fence raises colony defense');
+
+  // Friendly squirrels speed up TIMBER builds (~35% faster on wood structures).
+  function woodBuildProgress(friendly) {
+    const s = newGame(117, 'prairie', 'syrian', 'Help', {});
+    if (friendly) { s.res.nuts = 40; s.compassion = 85; } // oaks/nuts draw helpful squirrels
+    const b = built(s, 'storage', s.world.spawn.x + 3, s.world.spawn.y, { underConstruction: true, progress: 0, buildTime: 400 });
+    for (let i = 0; i < 25; i++) {
+      if (friendly) { s.res.nuts = Math.max(20, s.res.nuts); s.compassion = 85; }
+      stepEconomy(s, 0.2);
+    }
+    return b.progress || 0;
+  }
+  const plain = woodBuildProgress(false), helped = woodBuildProgress(true);
+  assert(helped > plain, `friendly squirrels speed timber builds (plain ${plain.toFixed(1)} < helped ${helped.toFixed(1)})`);
+  ok(`friendly squirrels lend paws on wood builds (${plain.toFixed(0)} → ${helped.toFixed(0)} progress)`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
