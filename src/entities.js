@@ -4,6 +4,7 @@ import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_
 import { traitMul, wellbeingMul, addRes, evoBonus, addFx, logMsg } from './state.js';
 import { isNight } from './environment.js';
 import { isSeen, nearestUnseen } from './world.js';
+import { nodeContestFactor } from './factions.js';
 
 let _id = 1;
 // Worker assignment order, weighted toward the materials early colonies need most.
@@ -162,7 +163,8 @@ export function stepRodent(state, u, dt) {
       u.needs.energy = Math.max(0, u.needs.energy - NEEDS.energy.workDrain * dt);
       if (u.progress >= 1) {
         const cap = carryOf(state, u);
-        const got = Math.min(cap, n.amount, Math.ceil(u.progress));
+        // A neighbour AI colony contesting this seam cuts what you can take from it.
+        const got = Math.min(cap, n.amount, Math.ceil(u.progress)) * nodeContestFactor(state, n);
         n.amount -= got;
         u.carrying = { res: nodeRes(n), amount: got };
         gainXp(state, u, got);

@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "add:ai-colonies-compete",
+  "status": "Done",
+  "timeline": [
+    {
+      "at": "2026-06-26T16:11:00+00:00",
+      "status": "Done",
+      "note": "AI colonies contest resource nodes; standing-driven trade/contest/raid"
+    }
+  ],
+  "updated": "2026-06-26T16:11:00+00:00",
+  "pr": "0"
+}

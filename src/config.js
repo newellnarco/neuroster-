@@ -31,6 +31,8 @@ export const RESOURCES = {
   planks:   { name: 'Planks',   icon: '🟫', kind: 'refined', color: '#caa05a' },
   iron:     { name: 'Iron',     icon: '🔩', kind: 'refined', color: '#cfd6dd' },
   steel:    { name: 'Steel',    icon: '⚙️', kind: 'refined', color: '#9fb0c4' },
+  brick:    { name: 'Brick',    icon: '🧱', kind: 'refined', color: '#b5562f' },
+  armour:   { name: 'Armour',   icon: '🛡️', kind: 'refined', color: '#8c97a6' },
   plastic:  { name: 'Plastic',  icon: '🟦', kind: 'refined', color: '#6fa8dc' },
   balls:    { name: 'Hamster Balls', icon: '🫧', kind: 'refined', color: '#bfe3ff' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
@@ -219,6 +221,21 @@ export const BUILDINGS = {
     cost: { stone: 50, iron: 20 }, category: 'Production', pollutes: 1.0,
     produces: { steel: 0.25 }, consumes: { iron: 0.4, coal: 0.3 },
   },
+  mason: {
+    name: 'Mason', icon: '🧱', desc: 'A kiln & workshop — fires Stone into sturdy Bricks for forges, kilns & strong walls.',
+    cost: { wood: 25, stone: 30 }, category: 'Production',
+    produces: { brick: 0.3 }, consumes: { stone: 0.4 },
+  },
+  furnace: {
+    name: 'Furnace', icon: '🔥', desc: 'A brick smelting furnace — melts Iron Ore + Coal into Iron ingots to feed the Forge. Hotter & cleaner than a raw Smelter.',
+    cost: { brick: 12, stone: 20 }, category: 'Production',
+    produces: { iron: 0.35 }, consumes: { ironore: 0.45, coal: 0.25 }, pollutes: 0.6,
+  },
+  forge: {
+    name: 'Forge', icon: '⚒️', desc: 'Hammers Iron & Planks into Armour. Stored Armour outfits the colony — every set raises colony defense and arms the guard.',
+    cost: { brick: 16, iron: 15 }, category: 'Production',
+    produces: { armour: 0.12 }, consumes: { iron: 0.3, planks: 0.2 },
+  },
   mine: {
     name: 'Mine', icon: '⛏️', desc: 'Digs an underground iron-ore or coal deposit. Shows remaining until it collapses. Can flood — repair with materials & time.',
     cost: { wood: 40, planks: 10 }, category: 'Extraction', mine: true, radius: 1, rate: 1.2,
@@ -349,6 +366,9 @@ export const BUILDING_TEX = {
   refinery:        { tex: 'brick', base: '#a85a42' },
   fertilizerplant: { tex: 'brick', base: '#b08a5a' },
   pelletpress:     { tex: 'brick', base: '#b9853f' },
+  mason:           { tex: 'brick', base: '#b5562f' },
+  furnace:         { tex: 'brick', base: '#bb6f4a' },
+  forge:           { tex: 'stone', base: '#9aa2ac' },
   // Metal / machinery (cool stone/steel cast)
   electricwheel:   { tex: 'stone', base: '#aab2bb' },
   solar:           { tex: 'stone', base: '#9aa6b6' },
@@ -667,6 +687,17 @@ export const GUARD_GEAR = [
   { name: 'Sword & Shield',     icon: '⚔️', def: 5, atk: 5, cost: { iron: 20, planks: 10 } },
   { name: 'Steel Plate & Bow',  icon: '🏹', def: 9, atk: 9, cost: { steel: 15, iron: 10 } },
 ];
+
+// Armour (forged from iron + planks at a Forge) outfits the colony. Each stored
+// set hardens the colony's defense and lends a little punch to the guard's
+// offense — a refining-chain payoff that ties the Furnace/Forge into Defense.
+// Capped so a stockpile can't trivialise threats; it's a steady edge, not a wall.
+export const ARMOUR = {
+  defPerSet: 1.2,   // colony defense per stored armour set
+  defCap: 30,       // max defense armour alone can contribute
+  atkPerSet: 0.5,   // guard offense per stored armour set
+  atkCap: 12,       // max offense armour alone can contribute
+};
 
 // Hamster balls — roll a rodent around the world SAFE from predators. A made-
 // from-plastic ball (Ball Workshop) lifts fun & curiosity at first, but anxiety
@@ -1098,6 +1129,35 @@ export const DECREES = {
       { label: 'Send them on', desc: 'Your stores are your own. Bloodless, but cool. +Justice, a little −Compassion.', tone: 'just', fx: '🚶', default: true,
         result: 'You point the herd onward to other pastures — prudent, if a little cold.',
         effect: { justice: 3, compassion: -3 } },
+    ],
+  },
+  merchant: {
+    id: 'merchant', icon: '🦝', title: 'A wandering merchant',
+    prompt: 'A travelling raccoon trader rolls a laden cart to your gates, offering a one-time bargain: a sack of surplus food for tools, lore and a little coin of goodwill. Do you deal, drive a hard bargain, or wave them on?',
+    eligible: (s) => (s.res?.food ?? 0) >= 30,
+    choices: [
+      { label: 'Trade food for goods', desc: 'A fair swap. −Food, +Planks, +Iron, +Research, +Compassion.', tone: 'kind', fx: '🤝',
+        result: 'You trade a sack of food for the merchant\'s wares — both part well pleased.',
+        effect: { compassion: 3, morale: 2, res: { food: -30, planks: 18, iron: 10, research: 8 } } },
+      { label: 'Haggle hard', desc: 'Squeeze a better deal — more goods, but it sours the mood. −Food, ++Iron, +Steel, −Compassion.', tone: 'hard', fx: '💰', requires: 'court',
+        result: 'You haggle the trader down to the bone — a fine haul, though they grumble at the sharp dealing.',
+        effect: { compassion: -3, justice: 2, res: { food: -30, iron: 20, steel: 8 } } },
+      { label: 'Wave them on', desc: 'Keep your stores. No cost, no gain.', tone: 'just', fx: '🚶', default: true,
+        result: 'You thank the merchant but keep your stores — they trundle off down the road.',
+        effect: {} },
+    ],
+  },
+  beastParley: {
+    id: 'beastParley', icon: '🐻', title: 'A hungry beast at the gates',
+    prompt: 'A great bear paces just beyond the palisade, drawn by the smell of your stores. It has not attacked — yet. Do you set out an offering to send it away in peace, or rouse the guard and stand to arms?',
+    eligible: (s) => (s.res?.food ?? 0) >= 25 && (s.disasters !== false),
+    choices: [
+      { label: 'Set out an offering', desc: 'Buy peace with food — the beast (and prowling predators) hold off a while. −Food, +Compassion, 🕊️ truce.', tone: 'kind', fx: '🍖',
+        result: 'You leave a heap of food at the treeline; the bear takes it and lumbers off, sated. The wilds hold their breath for a while.',
+        effect: { compassion: 5, morale: 2, res: { food: -25 }, truce: 140 } },
+      { label: 'Stand to arms', desc: 'No tribute — let the guard answer. +Valor, +Justice; the beast may yet strike.', tone: 'just', fx: '🛡️', default: true,
+        result: 'You give no tribute and rouse the guard — the bear, eyeing your spears, thinks better of it and withdraws. The colony stands proud.',
+        effect: { valor: 8, justice: 3, morale: 2 } },
     ],
   },
   parley: {

@@ -965,4 +965,186 @@ console.log('Building textures (glyph treatment):');
   ok(`textured one-offs now vary by material (${nonWood} non-timber treatments)`);
 }
 
+// 29) Production chain: Mason → brick, Furnace → iron, Forge → armour; armour boosts defense.
+console.log('Production chain (Mason / Furnace / Forge + brick + armour):');
+{
+  const { BUILDINGS, RESOURCES, ARMOUR } = await import('../src/config.js');
+  const { totalOffense } = await import('../src/events.js');
+  // New resources & buildings exist with valid cost/produce/consume.
+  assert(RESOURCES.brick && RESOURCES.armour, 'brick & armour are real resources');
+  for (const t of ['mason', 'furnace', 'forge']) {
+    const d = BUILDINGS[t];
+    assert(d && d.category === 'Production', `${t} exists in Production`);
+    assert(d.cost && Object.values(d.cost).every(v => v > 0), `${t} has a valid cost`);
+    assert(d.produces && Object.values(d.produces).every(v => v > 0), `${t} has a valid produce`);
+    assert(d.consumes && Object.values(d.consumes).every(v => v > 0), `${t} consumes inputs`);
+  }
+  assert(BUILDINGS.mason.produces.brick && BUILDINGS.mason.consumes.stone, 'Mason: stone → brick');
+  assert(BUILDINGS.furnace.produces.iron && BUILDINGS.furnace.consumes.ironore, 'Furnace: ore → iron');
+  assert(BUILDINGS.forge.produces.armour && BUILDINGS.forge.consumes.iron && BUILDINGS.forge.consumes.planks, 'Forge: iron+planks → armour');
+  ok('Mason/Furnace/Forge exist with valid cost/consume/produce; brick & armour are resources');
+
+  const built = (s, type, x, y) => { s.buildings.push({ id: s.nextId++, type, x, y, active: true }); };
+
+  // Mason fires stone into brick.
+  const m = newGame(1200, 'mountains', 'syrian', 'Brick', {});
+  m.res = { stone: 400 };
+  built(m, 'mason', m.world.spawn.x + 2, m.world.spawn.y);
+  const b0 = m.res.brick || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(m, 0.2);
+  assert((m.res.brick || 0) > b0, `Mason turns stone → brick (${b0} → ${(m.res.brick || 0).toFixed(1)})`);
+  ok(`Mason produces brick (${(m.res.brick || 0).toFixed(1)})`);
+
+  // Furnace smelts ore + coal into iron.
+  const f = newGame(1201, 'mountains', 'syrian', 'Furn', {});
+  f.res = { ironore: 200, coal: 200 };
+  built(f, 'furnace', f.world.spawn.x + 2, f.world.spawn.y);
+  const i0 = f.res.iron || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(f, 0.2);
+  assert((f.res.iron || 0) > i0, `Furnace smelts ore → iron (${i0} → ${(f.res.iron || 0).toFixed(1)})`);
+  assert((f.res.ironore || 0) < 200, 'Furnace consumes ore');
+  ok(`Furnace smelts ore into iron (${(f.res.iron || 0).toFixed(1)})`);
+
+  // Forge hammers iron + planks into armour.
+  const g = newGame(1202, 'mountains', 'syrian', 'Forge', {});
+  g.res = { iron: 200, planks: 200 };
+  built(g, 'forge', g.world.spawn.x + 2, g.world.spawn.y);
+  const a0 = g.res.armour || 0;
+  for (let i = 0; i < 40; i++) stepEconomy(g, 0.2);
+  assert((g.res.armour || 0) > a0, `Forge makes armour (${a0} → ${(g.res.armour || 0).toFixed(2)})`);
+  assert((g.res.iron || 0) < 200 && (g.res.planks || 0) < 200, 'Forge consumes iron & planks');
+  ok(`Forge forges armour from iron + planks (${(g.res.armour || 0).toFixed(2)})`);
+
+  // Armour in store raises colony defense (and lends a little guard offense).
+  const d = newGame(1203, 'prairie', 'syrian', 'Armed', {});
+  d.res.armour = 0;
+  stepEconomy(d, 0.1);
+  const def0 = d.defense, off0 = totalOffense(d);
+  d.res.armour = 10;
+  stepEconomy(d, 0.1);
+  const def1 = d.defense, off1 = totalOffense(d);
+  assert(def1 > def0, `stored armour raises colony defense (${def0} → ${def1})`);
+  assert(off1 > off0, `stored armour arms the guard's offense (${off0} → ${off1})`);
+  // The contribution is capped — a huge stockpile can't trivialise threats.
+  d.res.armour = 9999; stepEconomy(d, 0.1);
+  assert(d.defense - def0 <= ARMOUR.defCap + 1e-6, `armour defense is capped at ${ARMOUR.defCap}`);
+  ok(`armour boosts defense ${def0}→${def1} & offense ${off0}→${off1} (capped at ${ARMOUR.defCap})`);
+}
+
+// 30) AI colonies compete for resource nodes (standing-driven contest / cede).
+console.log('AI colonies compete for nodes:');
+{
+  const { contestNode, resolveContest, expireContests, nodeContestFactor, hasContest, CONTEST } = await import('../src/factions.js');
+  const { FACTIONS } = await import('../src/config.js');
+
+  // A faction can contest a surface seam, dropping your yield there.
+  const s = newGame(1300, 'woodland', 'syrian', 'Compete', {});
+  const fid = Object.keys(FACTIONS)[0];
+  const surf = s.world.nodes.find(n => n.amount > 0 && !n.claimedBy);
+  assert(surf, 'a surface node to contest exists');
+  const node = contestNode(s, fid, 100);
+  assert(node && node.contestedBy === fid, 'a faction claims/contests a node');
+  assert(hasContest(s, fid), 'the contest is registered against the faction');
+  assert(Math.abs(nodeContestFactor(s, node) - CONTEST.yieldMul) < 1e-9, `a contested node yields only ×${CONTEST.yieldMul}`);
+  assert(nodeContestFactor(s, { amount: 5 }) === 1, 'an uncontested node yields fully');
+  ok(`an AI colony contests a node (yield ×${CONTEST.yieldMul} while disputed)`);
+
+  // Contesting actually reduces what a worker pulls from that very seam.
+  function harvestFrom(contested) {
+    const g = newGame(1301, 'woodland', 'syrian', 'Yield', {});
+    g.world.nodes.length = 0;
+    const sp = g.world.spawn;
+    const n = { id: 1, kind: 'trees', x: sp.x + 1, y: sp.y, amount: 500, max: 500 };
+    g.world.nodes.push(n);
+    if (contested) { n.contestedBy = Object.keys(FACTIONS)[0]; n.contestUntil = 1e9; }
+    const a0 = n.amount;
+    for (let i = 0; i < 120; i++) { for (const u of g.units) u.needs.energy = 100; stepEconomy(g, 0.2); }
+    return a0 - n.amount; // how much was drawn from the seam
+  }
+  const free = harvestFrom(false), disputed = harvestFrom(true);
+  assert(disputed < free, `a contested seam is drained slower (free ${free.toFixed(1)} > disputed ${disputed.toFixed(1)})`);
+  ok(`contesting a node cuts your real harvest from it (${free.toFixed(0)} → ${disputed.toFixed(0)})`);
+
+  // Standing drives the outcome: HIGH standing → the neighbour cedes & trades.
+  const hi = newGame(1302, 'woodland', 'syrian', 'Peace', {});
+  const n2 = contestNode(hi, fid, 100);
+  hi.factions[fid].standing = CONTEST.cedeStanding + 10; // on good terms
+  const offered = hi.res[FACTIONS[fid].offers] || 0;
+  const did = resolveContest(hi, fid);
+  assert(did && !n2.contestedBy, 'a high-standing neighbour cedes the contested seam');
+  assert((hi.res[FACTIONS[fid].offers] || 0) > offered, 'ceding comes with a goodwill trade of their offered goods');
+  ok('high standing → the AI colony cedes/trades the node back (peaceful outcome)');
+
+  // LOW standing → stepFactions drives an active contest (and never trades it away).
+  const lo = newGame(1303, 'woodland', 'syrian', 'Rival', {});
+  lo.env.lived = 4000; lo.disasters = true;
+  const fids = Object.keys(FACTIONS);
+  for (const id of fids) { lo.factions[id].standing = -50; lo.factions[id].interestTimer = 0.01; }
+  let contestedNow = false;
+  for (let i = 0; i < 5 && !contestedNow; i++) { stepEconomy(lo, 0.1); contestedNow = lo.world.nodes.some(n => n.contestedBy); }
+  assert(contestedNow, 'a low-standing AI colony actively contests a node via the faction step');
+  ok('low standing → the AI colony contests a node (hostile outcome)');
+
+  // Contests lapse once their timer runs out.
+  const ex = newGame(1304, 'woodland', 'syrian', 'Lapse', {});
+  const n3 = contestNode(ex, fid, 100);
+  expireContests(ex, n3.contestUntil + 1);
+  assert(!n3.contestedBy, 'a contest lapses after its duration');
+  ok('contests expire after their duration');
+
+  // Contest state survives a save/load roundtrip.
+  const rt = newGame(1305, 'woodland', 'syrian', 'Save', {});
+  const n4 = contestNode(rt, fid, 100);
+  const back = importSaveString(exportSave(rt));
+  assert(back.ok && back.state.world.nodes.some(n => n.contestedBy === fid), 'a contest persists through save/load');
+  ok('node contests persist through a save roundtrip');
+}
+
+// 31) More NPC animal events: wandering merchant + predator (beast) parley.
+console.log('NPC animal events (merchant & beast parley):');
+{
+  const { resolveDecree } = await import('../src/decrees.js');
+  const { DECREES } = await import('../src/config.js');
+
+  // The new events are registered in the decree pool, well-formed.
+  for (const id of ['merchant', 'beastParley']) {
+    const d = DECREES[id];
+    assert(d && d.id === id && d.title && d.prompt && typeof d.eligible === 'function', `${id} is a registered, well-formed event`);
+    assert(Array.isArray(d.choices) && d.choices.length >= 2, `${id} has choices`);
+    assert(d.choices.some(c => c.default), `${id} has a default choice for auto-resolve`);
+  }
+  ok('wandering merchant & beast-parley NPC events are registered & well-formed');
+
+  // Wandering merchant: trading food for goods applies its resolution effect.
+  const m = newGame(1400, 'woodland', 'syrian', 'Market', {});
+  m.res.food = 80; m.compassion = 50;
+  m.res.planks = 0; m.res.iron = 0; m.res.research = 0;
+  m.storageCap = 9999;
+  m.decree = { id: 'merchant', life: 75, born: 0 };
+  const f0 = m.res.food, c0 = m.compassion;
+  const applied = resolveDecree(m, 0); // trade food → planks/iron/research
+  assert(applied && m.decree === null, 'merchant decree resolves on a choice');
+  assert(m.res.food < f0, `the trade spends food (${f0} → ${m.res.food})`);
+  assert((m.res.planks || 0) > 0 && (m.res.iron || 0) > 0 && (m.res.research || 0) > 0, 'the trade yields planks, iron & research');
+  assert(m.compassion > c0, 'a fair trade raises Compassion');
+  ok(`wandering merchant: food → goods (food ${f0}→${m.res.food}, +planks/iron/research)`);
+
+  // Beast parley: an offering buys a truce (predators & raids hold off a while).
+  const b = newGame(1401, 'woodland', 'syrian', 'Bear', {});
+  b.res.food = 60; b.env.lived = 1000; b.truceUntil = 0;
+  b.decree = { id: 'beastParley', life: 75, born: 0 };
+  const bf0 = b.res.food;
+  resolveDecree(b, 0); // set out an offering → truce
+  assert((b.truceUntil || 0) > b.env.lived, 'the offering brokers a truce that stays predators & raids');
+  assert(b.res.food < bf0, 'the offering costs food');
+  ok('beast parley: an offering stalls the attack (food cost → truce)');
+
+  // Standing firm instead raises Valor (and risks the beast yet striking).
+  const b2 = newGame(1402, 'woodland', 'syrian', 'Stand', {});
+  b2.valor = 20; b2.decree = { id: 'beastParley', life: 75, born: 0 };
+  resolveDecree(b2, 1); // stand to arms
+  assert(b2.valor > 20, `standing to arms steels the colony (Valor ${20} → ${b2.valor})`);
+  ok('beast parley: standing firm raises Valor instead of spending food');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
