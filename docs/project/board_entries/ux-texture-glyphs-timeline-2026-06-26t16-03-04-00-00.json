@@ -1,0 +1,20 @@
+{
+  "op": "update",
+  "key": "ux:texture-glyphs",
+  "status": "Shipped",
+  "timeline": [
+    {
+      "at": "2026-06-26T15:52:14+00:00",
+      "status": "Done",
+      "note": "Per-material textured bases for one-off building glyphs; +1 smoke check"
+    },
+    {
+      "at": "2026-06-26T16:03:04+00:00",
+      "status": "Shipped",
+      "note": "PR #45 merged (release 656ab96)"
+    }
+  ],
+  "updated": "2026-06-26T16:03:04+00:00",
+  "pr": "45",
+  "release": "656ab96"
+}
