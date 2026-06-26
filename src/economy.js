@@ -1,12 +1,12 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, FEEDER_SERVES, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, FEEDER_SERVES, MINE_REPAIR, BURROW, BREEDING, GRID_W, GRID_H, RESCUE } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice, traitMul } from './state.js';
 import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
 import { JUSTICE } from './config.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
-import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathBudget } from './entities.js';
+import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathBudget, isMature } from './entities.js';
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
@@ -45,7 +45,10 @@ export function stepEconomy(state, dt) {
   // advance the pathing clock once before movers run, so path recomputes are
   // throttled colony-wide (see entities.js moveAlongPath).
   resetPathBudget(state);
-  for (const u of state.units) stepRodent(state, u, dt);
+  for (const u of state.units) {
+    u.age = (u.age ?? BREEDING.maturityAge) + dt; // age advances with sim time (juveniles → adults)
+    stepRodent(state, u, dt);
+  }
 
   // 2) Construction labour (sets _laborFactor), burrow upkeep, derived stats.
   updateConstruction(state, dt);
@@ -695,11 +698,16 @@ function updateDisease(state, dt) {
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) filth += wasteAt(world, b.x + dx, b.y + dy);
   }
   const vets = state._vets || 0;
-  // infection chance scales with filth; vets and sand-bath hygiene suppress it
-  const hygieneMul = 1 / (1 + (state._hygiene || 0) * 0.5);
+  // Sand-bath / cleaning hygiene suppresses both catching and progressing wet
+  // tail; vets help too. hygieneMul → 0 as hygiene climbs (clamped so a sand-bath
+  // colony is essentially immune). _hygiene is the colony's hygiene level.
+  const hygieneMul = Math.max(1 - WETTAIL.hygieneSuppress, 1 / (1 + (state._hygiene || 0) * 1.2));
+  // Infection needs a real pile of filth (infectAt), then scales with how much
+  // worse it gets — a tidy colony (filth ≤ infectAt) never catches it.
   const healthy = state.units.filter(u => !u.sick);
-  if (healthy.length && filth > 1) {
-    const risk = WETTAIL.riskPerFilth * filth * dt * (vets ? 0.4 : 1) * hygieneMul;
+  if (healthy.length && filth > WETTAIL.infectAt) {
+    const excess = filth - WETTAIL.infectAt;
+    const risk = WETTAIL.riskPerFilth * excess * dt * (vets ? 0.4 : 1) * hygieneMul;
     if (Math.random() < risk) {
       const u = healthy[Math.floor(Math.random() * healthy.length)];
       u.sick = true; u.sickT = 0;
@@ -707,16 +715,25 @@ function updateDisease(state, dt) {
       logMsg(state, `🤢 A rodent caught wet tail from filth! ${vets ? 'The vet is treating it.' : 'Build a Vet Clinic & a Composter!'}`);
     }
   }
-  // progress illnesses: vets heal; without care it worsens and can be fatal
+  // Progress wet-tail cases (outbreak illness is handled in updateOutbreak): vets
+  // heal; hygiene slows the slide and brightens the self-recovery odds; without
+  // any care it worsens slowly, but not every case is fatal.
+  const cleanFactor = Math.max(0.15, hygieneMul); // active cleaning strongly slows progression
   for (let i = state.units.length - 1; i >= 0; i--) {
     const u = state.units[i];
-    if (!u.sick) continue;
-    u.needs.health = Math.max(0, u.needs.health - WETTAIL.healthDrain * dt);
+    if (!u.sick || u.outbreak) continue;
+    u.needs.health = Math.max(0, u.needs.health - WETTAIL.healthDrain * cleanFactor * dt);
     if (vets > 0) {
       u.sickT -= WETTAIL.vetCureRate * vets * dt;
       if (u.sickT <= 0) { u.sick = false; u.sickT = 0; u.needs.health = Math.max(u.needs.health, 40); addFx(state, u.x, u.y, '❤️', 1.6); logMsg(state, '💉 The vet cured a rodent of wet tail.'); }
     } else {
-      u.sickT += dt;
+      u.sickT += dt * cleanFactor;
+      // A brief chance the rodent shakes off a mild case on its own (better with hygiene).
+      if (Math.random() < WETTAIL.selfRecover * (2 - cleanFactor) * dt) {
+        u.sick = false; u.sickT = 0; u.needs.health = Math.max(u.needs.health, 35);
+        addFx(state, u.x, u.y, '❤️', 1.4); logMsg(state, '🌿 A rodent shook off a mild case of wet tail.');
+        continue;
+      }
       if (u.sickT > WETTAIL.dieAfter && state.units.length > 1) {
         killUnit(state, u);
         logMsg(state, '💀 A rodent died of untreated wet tail. Bury it (Graveyard) & build a Vet Clinic!');
@@ -871,25 +888,29 @@ function updateMorale(state, dt) {
 }
 
 function updateBreeding(state, dt) {
-  const burrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed && !b.underConstruction && !b.degraded).length;
-  if (burrows === 0 || population(state) >= state.popCap) return;
+  // A child needs a HEALTHY breeding burrow with capacity headroom to be born in.
+  const breedBurrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed && !b.underConstruction && !b.degraded);
+  if (breedBurrows.length === 0 || population(state) >= state.popCap) return;
+  // …and a MATURE MALE + MATURE FEMALE in the colony. No mixed mature pair → none.
+  const matureMales = state.units.filter(u => u.sex === 'm' && isMature(u));
+  const matureFemales = state.units.filter(u => u.sex === 'f' && isMature(u));
+  if (matureMales.length === 0 || matureFemales.length === 0) return;
   const wb = wellbeingMul(state);
-  if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * diffBreedMul(state) * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
+  if (wb < 0.7 || (state.res.food || 0) < BREEDING.foodFloor) return;
+  // Gentle base rate (BREEDING.baseRate, far below the old 0.04) flexed by the
+  // same leadership / mega / doctrine / season / difficulty modifiers as before.
+  state._breed = (state._breed || 0) + dt * breedBurrows.length * wb * BREEDING.baseRate * diffBreedMul(state) * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
-    state.res.food -= 5;
-    const sp = state.world.spawn;
-    let child;
-    if (state.units.length >= 2) {
-      // Two specific parents — the child inherits their family, coat & traits.
-      const a = state.units[Math.floor(Math.random() * state.units.length)];
-      let b = a, guard = 0;
-      while (b === a && guard++ < 6) b = state.units[Math.floor(Math.random() * state.units.length)];
-      child = breedChild(state, a, b);
-    } else {
-      child = makeRodent(state, 'hamster', sp.x, sp.y);
-    }
+    state.res.food -= BREEDING.foodCost;
+    // Parents: a mature male + a mature female. Newborn spawns AT a breeding
+    // burrow with capacity (not the world spawn point).
+    const a = matureMales[Math.floor(Math.random() * matureMales.length)];
+    const b = matureFemales[Math.floor(Math.random() * matureFemales.length)];
+    const child = breedChild(state, a, b);
+    const burrow = breedBurrows[Math.floor(Math.random() * breedBurrows.length)];
+    child.x = burrow.x + (Math.random() - 0.5);
+    child.y = burrow.y + (Math.random() - 0.5);
     state.units.push(child);
     addFx(state, child.x, child.y, '🐣', 2);
     const fam = child.family ? ` ${child.family}` : '';

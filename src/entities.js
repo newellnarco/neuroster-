@@ -1,6 +1,6 @@
 // entities.js — rodent units: stats, per-creature needs, sleep, levels, AI,
 // and trait combination (breeding).
-import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H, HAMSTER_NAMES, FAMILY_NAMES, COAT_COLORS, COAT_PATTERNS } from './config.js';
+import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H, HAMSTER_NAMES, FAMILY_NAMES, COAT_COLORS, COAT_PATTERNS, BREEDING } from './config.js';
 import { traitMul, wellbeingMul, addRes, evoBonus, addFx, logMsg } from './state.js';
 import { isNight } from './environment.js';
 import { isSeen, nearestUnseen, isBlockedTile } from './world.js';
@@ -42,6 +42,8 @@ export function makeRodent(state, species, x, y) {
     species,
     name: randomGivenName(),       // every rodent has a name…
     family: randomFamily(),        // …and a family line
+    sex: Math.random() < 0.5 ? 'm' : 'f', // ~50/50; breeding needs a mature M+F pair
+    age: BREEDING.maturityAge,     // makeRodent defaults to an ADULT (founders/rescues); newborns set age 0
     x: x + (Math.random() - 0.5),
     y: y + (Math.random() - 0.5),
     job: 'gather',
@@ -63,6 +65,10 @@ export function makeRodent(state, species, x, y) {
   if (species === 'hamster') u.coat = { color: pick(Object.keys(COAT_COLORS)), pattern: pick(Object.keys(COAT_PATTERNS)) };
   return u;
 }
+
+// A rodent is mature (can reproduce) once its age reaches the breeding threshold.
+// Missing age (old saves) is treated as adult so legacy colonies keep breeding.
+export const isMature = (u) => (u.age ?? BREEDING.maturityAge) >= BREEDING.maturityAge;
 
 // ---- Effective stats (species × traits × tech × evolution × productivity) --
 export function productivity(state, u) {
@@ -406,6 +412,8 @@ export function breedChild(state, a, b) {
     }
   }
   child.x = sp.x + (Math.random() - 0.5); child.y = sp.y + (Math.random() - 0.5);
+  child.age = 0;                  // newborns start immature and grow into breeding age
+  child.sex = Math.random() < 0.5 ? 'm' : 'f'; // newborn sex ~50/50
   child.parents = [a.id, b.id];
   child.parentNames = [a.name, b.name];
   child.family = (Math.random() < 0.5 ? a.family : b.family) || a.family || b.family || randomFamily();

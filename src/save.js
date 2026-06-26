@@ -2,6 +2,7 @@
 // slot is what the running game autosaves to; the start screen lists all slots
 // so you can keep several hamsters and jump back into any one's latest autosave.
 // Time only advances while playing — there is NO offline progress.
+import { BREEDING } from './config.js';
 const PREFIX = 'neuroster.';
 const INDEX_KEY = PREFIX + 'slots';          // [{id,name,breed,biome,day,savedAt,version}]
 const ACTIVE_KEY = PREFIX + 'activeSlot';    // id of the slot the game writes to
@@ -131,4 +132,11 @@ function reattachTyped(state) {
   if (fl) state.world.flow = Array.isArray(fl) ? Int8Array.from(fl) : Int8Array.from(Object.values(fl));
   const w = state.world.waste;
   if (w) state.world.waste = Array.isArray(w) ? Float32Array.from(w) : Float32Array.from(Object.values(w));
+  // Back-compat for the sexed/aged breeding model: old saves predate sex & age.
+  // Default a random sex and treat existing rodents as adults so colonies keep
+  // breeding right where they left off.
+  if (Array.isArray(state.units)) for (const u of state.units) {
+    if (u.sex !== 'm' && u.sex !== 'f') u.sex = Math.random() < 0.5 ? 'm' : 'f';
+    if (typeof u.age !== 'number') u.age = BREEDING.maturityAge;
+  }
 }

@@ -250,6 +250,143 @@ console.log('Family & inheritance:');
   ok(`child "${child.name} ${child.family}" inherits coat & traits from ${a.name} & ${b.name}`);
 }
 
+// 10a) Starting housing fits the starting colony.
+console.log('Starting housing fit:');
+{
+  const { STARTING, BUILDINGS } = await import('../src/config.js');
+  const burrowCap = BUILDINGS[Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed)].popCap;
+  assert(STARTING.hamsters <= burrowCap, `a fresh colony (${STARTING.hamsters}) fits the first burrow (cap ${burrowCap})`);
+  const s = newGame(505, 'woodland', 'syrian', 'Fit', {});
+  assert(s.units.length <= burrowCap, `starting population ${s.units.length} ≤ first burrow popCap ${burrowCap}`);
+  ok(`starting colony (${s.units.length}) fits one burrow (cap ${burrowCap}) — no forced second burrow`);
+}
+
+// 10b) Sex + maturity age model.
+console.log('Sex & maturity:');
+{
+  const { makeRodent, breedChild, isMature } = await import('../src/entities.js');
+  const { BREEDING } = await import('../src/config.js');
+  const s = newGame(606, 'woodland', 'syrian', 'Age', {});
+  // Founders/starting hamsters spawn as ADULTS.
+  assert(s.units.every(u => isMature(u)), 'starting hamsters are mature adults');
+  // A fresh colony is GUARANTEED both sexes so it can always breed (random sexes
+  // could otherwise spawn single-sex). Check across many seeds.
+  let mixed = 0, COLS = 200;
+  for (let i = 0; i < COLS; i++) {
+    const g = newGame(700 + i, 'woodland', 'syrian', 'Mix', {});
+    if (g.units.some(u => u.sex === 'm') && g.units.some(u => u.sex === 'f')) mixed++;
+  }
+  assert(mixed === COLS, `every fresh colony has both sexes (got ${mixed}/${COLS})`);
+  // A newborn (from breeding) starts immature and below maturity.
+  const child = breedChild(s, s.units[0], s.units[1]);
+  assert(child.age === 0 && !isMature(child), 'a newborn is below maturity at birth');
+  // It becomes mature once enough sim time advances it past the threshold.
+  child.age += BREEDING.maturityAge;
+  assert(isMature(child), 'a juvenile matures after reaching the maturity age');
+  // Sex is assigned ~50/50 over many makeRodent calls.
+  let males = 0, N = 4000;
+  for (let i = 0; i < N; i++) { const u = makeRodent(s, 'hamster', 5, 5); if (u.sex === 'm') males++; }
+  const frac = males / N;
+  assert(frac > 0.42 && frac < 0.58, `sex is roughly 50/50 (got ${(frac * 100).toFixed(1)}% male)`);
+  ok(`adults spawn mature, newborns mature with age, sex ~50/50 (${(frac * 100).toFixed(1)}% male)`);
+}
+
+// 10c) Burrow-based, sexed, slower breeding.
+console.log('Sexed burrow breeding:');
+{
+  const { BREEDING, BUILDINGS } = await import('../src/config.js');
+  const burrowType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed);
+  // The new gentle base rate is well below the old 0.04.
+  assert(BREEDING.baseRate < 0.04, `breed base rate is gentler than before (${BREEDING.baseRate} < 0.04)`);
+
+  // Hold needs comfortable enough to breed (wellbeing ≥ 0.7) but below the
+  // wb > 0.95 threshold that draws unrelated WILD JOINERS — so the only way a
+  // new rodent appears here is through the breeding system under test.
+  const feed = (g) => g.units.forEach(u => { u.needs.food = 60; u.needs.water = 60; u.needs.fun = 60; u.needs.health = 60; });
+  function setup(seed) {
+    const g = newGame(seed, 'woodland', 'syrian', 'Brood', {});
+    g.res.food = 9999; g.popCap = 99;
+    for (let k = 0; k < 4; k++) g.buildings.push({ id: g.nextId++, type: burrowType, x: g.world.spawn.x + 1 + k, y: g.world.spawn.y, active: true });
+    feed(g);
+    return g;
+  }
+  const run = (g, ticks = 600) => {
+    const n0 = g.units.length;
+    for (let i = 0; i < ticks; i++) { feed(g); stepEconomy(g, 0.2); }
+    return g.units.length - n0;
+  };
+
+  // Only one sex present → no breeding.
+  const oneSex = setup(701); oneSex.units.forEach(u => u.sex = 'm');
+  assert(run(oneSex) === 0, 'no breeding with only one sex present');
+
+  // All candidates immature → no breeding.
+  const young = setup(702); young.units.forEach((u, i) => { u.sex = i % 2 ? 'm' : 'f'; u.age = 0; });
+  // Keep them juvenile across the run by holding age below maturity each tick.
+  {
+    const n0 = young.units.length;
+    for (let i = 0; i < 600; i++) { feed(young); young.units.forEach(u => u.age = 0); stepEconomy(young, 0.2); }
+    assert(young.units.length - n0 === 0, 'no breeding when all candidates are immature');
+  }
+
+  // A mature M+F pair + capacity + food → a newborn appears, born at a burrow.
+  const pair = setup(703);
+  pair.units[0].sex = 'm'; pair.units[0].age = BREEDING.maturityAge;
+  pair.units[1].sex = 'f'; pair.units[1].age = BREEDING.maturityAge;
+  const burrows = pair.buildings.filter(b => BUILDINGS[b.type]?.breed);
+  const sp = pair.world.spawn;
+  let born = 0, bornAtBurrow = false;
+  for (let i = 0; i < 1200; i++) {
+    feed(pair);
+    const pre = pair.units.length;
+    stepEconomy(pair, 0.2);
+    if (pair.units.length > pre) { // a newborn just arrived — check its BIRTH position (before it wanders off)
+      born++;
+      const baby = pair.units[pair.units.length - 1];
+      if (burrows.some(b => Math.hypot(baby.x - b.x, baby.y - b.y) < 1.0)) bornAtBurrow = true;
+    }
+  }
+  assert(born > 0, `a mature M+F pair with a burrow + food breeds a newborn (${born} born)`);
+  assert(bornAtBurrow, 'a newborn spawns at a breeding burrow, not the world spawn');
+  ok(`sexed burrow breeding: needs mature M+F (no one-sex/immature breeding), born at a burrow (${born} born)`);
+}
+
+// 10d) Wet tail is far less punishing — fair, not a fast wipe.
+console.log('Wet tail (fair disease):');
+{
+  const { WETTAIL, BUILDINGS } = await import('../src/config.js');
+  const burrowType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed);
+  const vetType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].vet);
+
+  // The retune: gentler illness with a real treatment window.
+  assert(WETTAIL.riskPerFilth < 0.0009, `riskPerFilth lowered (${WETTAIL.riskPerFilth} < 0.0009)`);
+  assert(WETTAIL.dieAfter > 55, `time-to-death lengthened (${WETTAIL.dieAfter} > 55)`);
+  assert(WETTAIL.healthDrain < 5, `health drain softened (${WETTAIL.healthDrain} < 5)`);
+  assert(WETTAIL.infectAt > 1, `infection needs a real filth pile (${WETTAIL.infectAt} > 1)`);
+
+  // A TIDY colony (no filth) essentially never catches wet tail.
+  {
+    const g = newGame(811, 'woodland', 'syrian', 'Tidy', {});
+    g.popCap = 99; g.res.food = 9999;
+    g.buildings.push({ id: g.nextId++, type: burrowType, x: g.world.spawn.x + 1, y: g.world.spawn.y, active: true });
+    let caught = false;
+    for (let i = 0; i < 3000; i++) { stepEconomy(g, 0.1); if (g.units.some(u => u.sick)) caught = true; }
+    assert(!caught, 'a tidy (clean) colony does not catch wet tail');
+  }
+
+  // An infected rodent recovers under a Vet Clinic.
+  {
+    const g = newGame(812, 'woodland', 'syrian', 'Cure', {});
+    g.popCap = 99; g.res = { ...g.res, planks: 999, iron: 999 };
+    g.buildings.push({ id: g.nextId++, type: vetType, x: g.world.spawn.x + 1, y: g.world.spawn.y, active: true });
+    g.units[0].sick = true; g.units[0].sickT = 5;
+    let cured = false;
+    for (let i = 0; i < 400 && !cured; i++) { stepEconomy(g, 0.2); if (!g.units[0].sick) cured = true; }
+    assert(cured, 'a Vet Clinic cures a wet-tail case (treatment works)');
+  }
+  ok(`wet tail retuned: tidy colony immune, vet cures, longer window (die after ${WETTAIL.dieAfter}s vs 55s)`);
+}
+
 // 11) Compassion & rescue (kindness as a mechanic).
 console.log('Compassion & rescue:');
 {
@@ -1312,12 +1449,15 @@ console.log('Species-specific evolution branches:');
     const s = newGame(1702, 'prairie', 'syrian', 'Brood', {});
     s.unlockedSpecies.rat = true;
     s.units.forEach(u => { u.species = 'rat'; u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
+    // a guaranteed mature male + female so the sexed pair requirement never blocks
+    s.units[0].sex = 'm'; s.units[1].sex = 'f';
     s.res.food = 9999;
     // plenty of housing so population cap never blocks breeding
     for (let k = 0; k < 12; k++) s.buildings.push({ id: s.nextId++, type: 'burrow', x: s.world.spawn.x + 1 + k, y: s.world.spawn.y, active: true });
     if (withEvo) { s.res.research = 999; s.evolutions.ratSwarm = true; }
     const n0 = s.units.length;
-    for (let i = 0; i < 90; i++) { s.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; }); stepEconomy(s, 0.2); }
+    // a longer window than before to see the deliberately gentler growth curve
+    for (let i = 0; i < 300; i++) { s.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; }); stepEconomy(s, 0.2); }
     return s.units.length - n0;
   }
   const plain = childrenOver(false), swarm = childrenOver(true);
@@ -1488,6 +1628,7 @@ console.log('Difficulty scales yields & breeding:');
     const g = newGame(2501, 'woodland', 'syrian', 'Breed', { difficulty: d });
     g.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
     g.res.food = 9999; g.popCap = 99;
+    g.units[0].sex = 'm'; g.units[1].sex = 'f'; // guarantee a mature M+F pair so the rate is deterministic
     for (let k = 0; k < 6; k++) g.buildings.push({ id: g.nextId++, type: 'burrow', x: g.world.spawn.x + 1 + k, y: g.world.spawn.y, active: true });
     g._breed = 0;
     g.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });

@@ -65,8 +65,8 @@ export const NODE_TYPES = {
 // effect categories are interpreted by economy.js / state.js.
 export const BUILDINGS = {
   burrow: {
-    name: 'Burrow', icon: '🕳️', desc: '+3 population cap. Breeds hamsters (uses food).',
-    cost: { wood: 20 }, category: 'Housing', popCap: 3, breed: true,
+    name: 'Burrow', icon: '🕳️', desc: '+6 population cap. Breeds hamsters (needs a mature ♂+♀ pair & food).',
+    cost: { wood: 20 }, category: 'Housing', popCap: 6, breed: true,
   },
   townhall: {
     name: 'Meeting Burrow', icon: '🏛️', desc: 'The leader rules by teaching, helping & raising hamsters — a colony-wide boost. But a hall too grand for everyone else\'s comforts breeds resentment. Click to upgrade.',
@@ -648,10 +648,13 @@ export const WASTE = {
   composterRate: 0.5,// droppings -> fertilizer per second per composter
 };
 export const WETTAIL = {
-  riskPerFilth: 0.0009, // infection chance per tick per unit of nearby filth
-  healthDrain: 5,       // health lost per second while sick
-  dieAfter: 55,         // seconds sick & untreated before it's fatal
-  vetCureRate: 1.6,     // recovery per second per vet clinic
+  infectAt: 8,           // filth must exceed this near burrows/food before infection can start (was 1)
+  riskPerFilth: 0.00018, // infection chance per tick per unit of nearby filth (was 0.0009 — a tidy colony ~never gets it)
+  healthDrain: 2,        // health lost per second while sick (was 5 — slower illness)
+  dieAfter: 120,         // seconds sick & untreated before it's fatal (was 55 — a real window to treat)
+  vetCureRate: 1.6,      // recovery per second per vet clinic
+  hygieneSuppress: 0.85, // how strongly sand-bath/clean hygiene suppresses infection & progression
+  selfRecover: 0.004,    // per-second chance a mild untreated case shakes it off (not every case is fatal)
 };
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
@@ -772,6 +775,19 @@ export const BURROW = {
   cleanRate: 1.2,   // dirt removed per second per caretaker
   filthAt: 35,      // above this, a burrow leaks droppings onto its tile
   degradeAt: 70,    // above this, the burrow degrades (no housing/breeding)
+};
+
+// ---- Breeding --------------------------------------------------------------
+// Reproduction is sexed and paced: a rodent must mature before it can breed,
+// and a colony needs a healthy breeding burrow with a mature MALE + FEMALE pair
+// for a newborn to arrive. The base rate is deliberately gentle — a calm growth
+// curve, not a population boom — and still flexes with leadership, doctrines,
+// megaprojects, season and difficulty (applied in economy.updateBreeding).
+export const BREEDING = {
+  maturityAge: 90,  // in-game seconds a rodent must reach before it can reproduce
+  baseRate: 0.012,  // base breed accumulator per second per breeding burrow (was 0.04)
+  foodCost: 5,      // food spent per newborn
+  foodFloor: 5,     // colony needs at least this much food to breed
 };
 
 // ---- Morale ----------------------------------------------------------------
