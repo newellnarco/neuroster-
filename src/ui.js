@@ -871,11 +871,26 @@ export function createUI(state, ctx) {
       if (b && BUILDINGS[b.type].tower) { b.mode = b.mode === 'defend' ? 'watch' : 'defend'; sfx('click'); flash(b.mode === 'defend' ? '🗡️ Tower → DEFEND (stronger, but costs morale)' : '👁️ Tower → WATCH (wide vision, gentle)'); return; }
       if (b && BUILDINGS[b.type].townhall) { const r = upgradeTownhall(state, b); flash(r.ok ? 'Town Hall upgraded' : r.reason || ''); return; }
       if (b && BUILDINGS[b.type].breed && (b.dirt || 0) >= 1) { const r = cleanBurrow(state, b); flash(r.ok ? '🧹 Burrow cleaned' : r.reason || ''); return; }
-      // A selected rodent + a click on open or fogged ground = "go there": it
-      // drops its current task, heads to that tile, and reveals fog en route.
+      // A selected rodent + a click on the world. If the tile holds a RESOURCE
+      // NODE, send the rodent to GATHER there: pin its job preference to the node's
+      // kind (so it keeps working that resource) and march it over. Otherwise it's
+      // a plain "go there" order that reveals fog en route.
       if (!b && view.selUnit) {
         const u = state.units.find(x => x.id === view.selUnit);
-        if (u) { u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null; sfx('click'); flash('🐾 On my way!'); renderRodents(); return; }
+        if (u) {
+          const node = state.world.nodes.find(n => n.x === t.x && n.y === t.y && n.amount > 0);
+          if (node && JOB_KINDS[node.kind]) {
+            u.jobPref = node.kind;
+            u.targetNode = null;           // re-pick under the new preference
+            u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null;
+            sfx('click');
+            const resName = RESOURCES[NODE_TYPES[node.kind].resource]?.name || node.kind;
+            flash(`🎯 → mining ${resName}`);
+            renderRodents();
+            return;
+          }
+          u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null; sfx('click'); flash('🐾 On my way!'); renderRodents(); return;
+        }
       }
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
