@@ -124,7 +124,7 @@
           <b>scroll</b> = zoom · <b>right-drag</b> = pan · <b>Esc</b> = back to arrow · <b>🔊</b> mute ·
           <b>🏷️</b> show labels. 1 in-game day = 15 real minutes; hamsters are <b>nocturnal</b>.</li>
         <li><b>Window:</b> drag the <b>grips</b> on the dividers (or their collapse buttons) to resize/hide the
-          side panel &amp; event log. The <b>☰ Menu</b> holds Save / Load / Settings / New / Export-Import;
+          side panel &amp; event log. The <b>☰ Menu</b> holds Save / Load / Settings / New;
           <b>🔄 Update</b> reloads the newest version. Click a resource/stat chip to <b>pin</b> its description.</li>
       </ul>
 
@@ -193,7 +193,6 @@
         <li><b>Autosaves</b> to your active hamster — no offline progress.</li>
         <li><b>Multiple hamsters:</b> <b>🆕 New Colony</b> starts a new one; <b>💾＋ Save As</b> forks a named copy;
           the start screen's <b>📂 Load</b> lists all your hamsters — click one to resume its latest autosave.</li>
-        <li><b>⬆️ Export / ⬇️ Import</b> to back up a colony or move it between machines.</li>
       </ul>
 
       <button id="help-close" class="modal-cancel">Got it — let's play! 🐹</button>
@@ -213,12 +212,9 @@
         <button id="btn-saveas" title="Save as a new hamster (fork this colony)">💾＋ Save as new hamster</button>
         <button id="btn-load" title="Switch to another colony / load a save slot">📂 Load / switch colony</button>
         <button id="btn-new" title="Start a brand-new colony">🆕 New colony</button>
-        <button id="btn-export" title="Download your colony as a save file">⬆️ Export save</button>
-        <button id="btn-import" title="Load a colony from a save file">⬇️ Import save</button>
         <button data-click="btn-update" title="Save &amp; reload to get the newest version">🔄 Update game</button>
         <button data-click="btn-help" title="Help &amp; game guide">❓ Help &amp; guide</button>
       </div>
-      <input id="import-file" type="file" accept=".json,application/json" hidden />
       <button id="menu-close" class="modal-cancel">Close</button>
     </div>
   </div>
