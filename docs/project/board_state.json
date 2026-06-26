@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T17:11:25Z",
+  "updated": "2026-06-26T17:26:34Z",
   "items": [
     {
       "key": "econ:1",
@@ -1356,19 +1356,24 @@
       "type": "New Feature",
       "area": "Engine",
       "priority": "P2",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "52",
+      "release": "72a1348",
       "detail": "Bigger refactor; makes tunnels physically gate movement and gophers travel underground; lets dams use real river geography.",
       "timeline": [
         {
           "at": "2026-06-26T17:09:36+00:00",
           "status": "Done",
           "note": "Pure A* core + mover integration behind steering fallback; 150 smoke checks"
+        },
+        {
+          "at": "2026-06-26T17:12:05+00:00",
+          "status": "Shipped",
+          "note": "PR #52 merged (release 72a1348)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T17:09:36+00:00"
+      "updated": "2026-06-26T17:12:05+00:00"
     },
     {
       "key": "add:river-dams",
@@ -1780,13 +1785,19 @@
       "type": "New Feature",
       "area": "Engine",
       "priority": "P2",
-      "status": "Done",
-      "pr": 0,
-      "release": null,
+      "status": "Shipped",
+      "pr": "52",
+      "release": "72a1348",
       "detail": "",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T17:12:05+00:00",
+          "status": "Shipped",
+          "note": "PR #52 merged (release 72a1348)"
+        }
+      ],
       "screenshots": [],
-      "updated": null,
+      "updated": "2026-06-26T17:12:05+00:00",
       "parent": "add:true-pathfinding"
     },
     {
@@ -1798,14 +1809,88 @@
       "type": "New Feature",
       "area": "Engine",
       "priority": "P2",
+      "status": "Shipped",
+      "pr": "52",
+      "release": "72a1348",
+      "detail": "",
+      "timeline": [
+        {
+          "at": "2026-06-26T17:12:05+00:00",
+          "status": "Shipped",
+          "note": "PR #52 merged (release 72a1348)"
+        }
+      ],
+      "screenshots": [],
+      "updated": "2026-06-26T17:12:05+00:00",
+      "parent": "add:true-pathfinding"
+    },
+    {
+      "key": "fix:build-mode",
+      "issue": null,
+      "title": "Build mode reverts to select after placing; re-click cancels",
+      "arch": null,
+      "phase": null,
+      "type": "Fix",
+      "area": "UI/UX",
+      "priority": "P1",
       "status": "Done",
       "pr": 0,
       "release": null,
       "detail": "",
       "timeline": [],
       "screenshots": [],
-      "updated": null,
-      "parent": "add:true-pathfinding"
+      "updated": null
+    },
+    {
+      "key": "fix:direct-gather",
+      "issue": null,
+      "title": "Click a resource node with a rodent selected to send it gathering",
+      "arch": null,
+      "phase": null,
+      "type": "Fix",
+      "area": "UI/UX",
+      "priority": "P1",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null
+    },
+    {
+      "key": "fix:sim-speed",
+      "issue": null,
+      "title": "Calmer normal speed + roomier event cadence",
+      "arch": null,
+      "phase": null,
+      "type": "Fix",
+      "area": "Balance",
+      "priority": "P1",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null
+    },
+    {
+      "key": "fix:skill-points",
+      "issue": null,
+      "title": "Any selected hamster can spend skill points (not just leader)",
+      "arch": null,
+      "phase": null,
+      "type": "Fix",
+      "area": "UI/UX",
+      "priority": "P1",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null
     }
   ]
 }

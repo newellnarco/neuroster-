@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T17:11:25Z · 78 items_
+_board_state.json updated: 2026-06-26T17:26:34Z · 82 items_
 
 ## Summary
 
@@ -13,13 +13,13 @@ _board_state.json updated: 2026-06-26T17:11:25Z · 78 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 3 |
-| Shipped | 68 |
+| Done | 4 |
+| Shipped | 71 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **78** |
+| **TOTAL** | **82** |
 
-**71 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**75 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -40,7 +40,7 @@ _board_state.json updated: 2026-06-26T17:11:25Z · 78 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (22)
+### (misc) (26)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -58,7 +58,7 @@ _board_state.json updated: 2026-06-26T17:11:25Z · 78 items_
 | None | Plastics & advanced refining (coal/oil → plastic) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
 | None | Job assignment UI (assign rodents to resources/buildings) | [#50](https://github.com/newellnarco/neuroster-/pull/50) | `b4293ba` |
-| None | True movement/pathfinding (gate tunnels, gopher travel, dams) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | True movement/pathfinding (gate tunnels, gopher travel, dams) | [#52](https://github.com/newellnarco/neuroster-/pull/52) | `72a1348` |
 | None | River geography for dams (real upstream tiles) | [#49](https://github.com/newellnarco/neuroster-/pull/49) | `2c8095b` |
 | None | Disease/health events + quarantine; Infirmary | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | More milestones/achievements (first hybrid, day 30, apex evolution…) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
@@ -66,6 +66,10 @@ _board_state.json updated: 2026-06-26T17:11:25Z · 78 items_
 | None | Species-specific evolution branches (beaver dams, rat swarms…) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | Per-unit need decay modified by traits (Vigor) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Tie Main Hamster level to more unlocks (buildings/species) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
+| None | Build mode reverts to select after placing; re-click cancels | — | `—` |
+| None | Click a resource node with a rodent selected to send it gathering | — | `—` |
+| None | Calmer normal speed + roomier event cadence | — | `—` |
+| None | Any selected hamster can spend skill points (not just leader) | — | `—` |
 
 ### CREATURES (4)
 
@@ -113,8 +117,8 @@ _board_state.json updated: 2026-06-26T17:11:25Z · 78 items_
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
-| None | A* grid pathfinder core (pure module + tests) | — | `—` |
-| None | Movers follow cached A* paths (fallback to steering) | — | `—` |
+| None | A* grid pathfinder core (pure module + tests) | [#52](https://github.com/newellnarco/neuroster-/pull/52) | `72a1348` |
+| None | Movers follow cached A* paths (fallback to steering) | [#52](https://github.com/newellnarco/neuroster-/pull/52) | `72a1348` |
 
 ### INFRA (3)
 

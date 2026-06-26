@@ -1,1 +1,0 @@
-{ "key": "fix:build-mode", "title": "Build mode reverts to select after placing; re-click cancels", "type": "Fix", "area": "UI/UX", "priority": "P1", "status": "Done", "pr": 0 }
