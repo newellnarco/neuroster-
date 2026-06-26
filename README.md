@@ -32,6 +32,9 @@ The colony runs on the home NAS — open it from any device on the network:
 
 ### **`http://192.168.1.90:8080`**
 
+📋 **Project wall on the LAN:** **`http://192.168.1.90:8080/docs/project/wall.html`** —
+the live board from any device on the network (same swimlanes as the localhost wall above).
+
 It's served by a Docker container (`node:*-alpine` running `node /app/server.js`)
 on a Synology **DS1517+** (DSM 7.1.1, legacy Docker package — see the NAS section
 below for the exact, no-compose setup). The container bind-mounts the repo source

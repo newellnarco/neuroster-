@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "add:true-pathfinding",
+  "status": "In Progress",
+  "timeline": [
+    {
+      "at": "2026-06-26T17:01:50+00:00",
+      "status": "In Progress",
+      "note": "Big-win pick from deferred architecture. Decomposed into pathfinder-core + pathfinder-integration; building behind a steering fallback"
+    }
+  ],
+  "updated": "2026-06-26T17:01:50+00:00",
+  "pr": "0"
+}
