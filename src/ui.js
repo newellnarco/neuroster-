@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
 import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR, NODE_TYPES } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, digDeeper, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, digDeeper, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine, useBuilding } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -909,6 +909,15 @@ export function createUI(state, ctx) {
         const r = takeInRescue(state); if (r.ok) sfx('care'); else flash(r.reason || '');
         renderResbar(); renderRodents(); return;
       }
+      const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
+      // BUILDING ACTIONS FIRST: if the clicked tile holds a building with a current
+      // action (clean a dirty burrow, repair/dig/upgrade, toggle a tower, upgrade
+      // the Town Hall), do it BEFORE trying to select a nearby rodent — so hamsters
+      // crowding a burrow no longer block cleaning it.
+      if (b) {
+        const r = useBuilding(state, b);
+        if (!r.none) { if (r.flash) flash(r.flash); if (r.ok) sfx('click'); renderResbar(); return; }
+      }
       // Pick the NEAREST rodent within a generous radius (its drawn position),
       // so clicking near a moving hamster still selects it.
       let best = null, bestD = 1.1;
@@ -917,13 +926,6 @@ export function createUI(state, ctx) {
         if (d < bestD) { bestD = d; best = u; }
       }
       if (best) { view.selUnit = best.id; sfx('click'); document.querySelector('[data-tab="rodents"]').click(); renderRodents(); return; }
-      const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
-      if (b && b.flooded) { const r = repairMine(state, b); if (!r.ok) flash(r.reason); return; }
-      if (b && BUILDINGS[b.type].deep && !b.underConstruction) { const r = digDeeper(state, b); flash(r.ok ? '⛏️ Digging deeper — richer gem yield' : r.reason || ''); return; }
-      if (b && (BUILDINGS[b.type].tunnel || BUILDINGS[b.type].bridge || BUILDINGS[b.type].wall)) { const r = upgradeTunnel(state, b); flash(r.ok ? '🔧 Improved!' : r.reason || ''); return; }
-      if (b && BUILDINGS[b.type].tower) { b.mode = b.mode === 'defend' ? 'watch' : 'defend'; sfx('click'); flash(b.mode === 'defend' ? '🗡️ Tower → DEFEND (stronger, but costs morale)' : '👁️ Tower → WATCH (wide vision, gentle)'); return; }
-      if (b && BUILDINGS[b.type].townhall) { const r = upgradeTownhall(state, b); flash(r.ok ? 'Town Hall upgraded' : r.reason || ''); return; }
-      if (b && BUILDINGS[b.type].breed && (b.dirt || 0) >= 1) { const r = cleanBurrow(state, b); flash(r.ok ? '🧹 Burrow cleaned' : r.reason || ''); return; }
       // A selected rodent + a click on the world. If the tile holds a RESOURCE
       // NODE, send the rodent to GATHER there: pin its job preference to the node's
       // kind (so it keeps working that resource) and march it over. Otherwise it's
