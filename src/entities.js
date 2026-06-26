@@ -1,8 +1,9 @@
 // entities.js — rodent units: stats, per-creature needs, sleep, levels, AI,
 // and trait combination (breeding).
 import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H, HAMSTER_NAMES, FAMILY_NAMES, COAT_COLORS, COAT_PATTERNS } from './config.js';
-import { traitMul, wellbeingMul, addRes, evoBonus, addFx } from './state.js';
+import { traitMul, wellbeingMul, addRes, evoBonus, addFx, logMsg } from './state.js';
 import { isNight } from './environment.js';
+import { isSeen, nearestUnseen } from './world.js';
 
 let _id = 1;
 // Worker assignment order, weighted toward the materials early colonies need most.
@@ -102,6 +103,48 @@ export function stepRodent(state, u, dt) {
   }
 
   const spd = speedOf(state, u) * 2.2;
+
+  // A rodent in a hamster ball doesn't work or haul — it just rolls around for
+  // travel & fun. Player orders (goto/explore) below steer it; with no order it
+  // wanders idly. (It never gathers, so balls are useless for transporting.)
+  if (u.inBall && !u.order) {
+    u._wanderT = (u._wanderT || 0) - dt;
+    if (u._wanderT <= 0 || u._wx == null) {
+      u._wanderT = 1.5 + Math.random() * 2.5;
+      u._wx = Math.max(1, Math.min(GRID_W - 2, u.x + (Math.random() - 0.5) * 6));
+      u._wy = Math.max(1, Math.min(GRID_H - 2, u.y + (Math.random() - 0.5) * 6));
+    }
+    moveToward(u, u._wx, u._wy, spd, dt);
+    return;
+  }
+
+  // ---- Player orders (the colony is mostly an auto-sim, but a selected rodent
+  // can be told to go somewhere or to explore). An order overrides auto-work;
+  // sleep/needs still take priority (handled above), and the order survives a
+  // nap. Fog is revealed by the per-tick exploration pass as the rodent travels.
+  if (u.order) {
+    if (u.order.kind === 'goto') {
+      if (moveToward(u, u.order.x, u.order.y, spd, dt)) {
+        u.order = null; u.phase = 'seek'; u.targetNode = null; // arrived → resume work
+      }
+      return;
+    }
+    if (u.order.kind === 'explore') {
+      // Aim for the nearest fogged tile; re-target once it (or the current
+      // target) has been revealed, sweeping outward until none remain.
+      if (!u._exTarget || isSeen(state.world, u._exTarget.x, u._exTarget.y)) {
+        u._exTarget = nearestUnseen(state.world, Math.round(u.x), Math.round(u.y));
+      }
+      if (!u._exTarget) { // whole map revealed → done
+        u.order = null; u._exTarget = null; u.phase = 'seek'; u.targetNode = null;
+        logMsg(state, `🧭 ${u.name} finished exploring — the map is fully revealed.`);
+        return;
+      }
+      if (moveToward(u, u._exTarget.x, u._exTarget.y, spd, dt)) u._exTarget = null;
+      return;
+    }
+  }
+
   switch (u.phase) {
     case 'seek': {
       if (!u.targetNode || u.targetNode.amount <= 0) {

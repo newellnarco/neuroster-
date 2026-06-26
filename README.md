@@ -11,6 +11,7 @@ natural disasters. It's a persistent world you keep building and maintaining.
 > [`LAYOUT.md`](./LAYOUT.md) (UI structure) ·
 > [`DECISIONS.md`](./DECISIONS.md) (why it's built this way) ·
 > [`TODO.md`](./TODO.md) (backlog) · [`ROADMAP.md`](./ROADMAP.md) (arcs & history) ·
+> [`SYSTEMS.md`](./SYSTEMS.md) (🗺️ **systems & flow map** — resources/structures/animals/skills + balancing) ·
 > [`docs/project/`](./docs/project/) (📋 **project wall** — plan & track work).
 
 ## 📋 Project wall (plan & track progress)

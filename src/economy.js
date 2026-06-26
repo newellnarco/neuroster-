@@ -1,7 +1,7 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
 import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
-import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice } from './state.js';
+import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice, traitMul } from './state.js';
 import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
 import { JUSTICE } from './config.js';
@@ -9,8 +9,8 @@ import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from '.
 import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
-import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction } from './environment.js';
-import { SEASONS, POLLUTION } from './config.js';
+import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
+import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -41,8 +41,13 @@ export function stepEconomy(state, dt) {
   // Dams hold back the river: each one cuts non-dam water sources' flow upstream.
   const dams = state.buildings.filter(b => BUILDINGS[b.type]?.upstreamPenalty).length;
   const upstreamMul = Math.max(0.3, 1 - 0.3 * dams);
-  // Weather can rain extra water into stores.
-  if (env.waterGain) addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4));
+  // Weather can rain extra water into stores; wooden Cisterns collect more of it.
+  // Grumpy beavers (over-taxed wood store) slacken the dams — water flow suffers.
+  const beaverFlow = 1 - (state._beaverSabotage || 0);
+  if (env.waterGain) {
+    const cisterns = state.buildings.filter(b => BUILDINGS[b.type]?.cistern && !b.underConstruction).length;
+    addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4) * (1 + cisterns * 0.5) * beaverFlow);
+  }
   const sun = solarFactor(state); // 0..1 daylight×weather, for solar panels
   let pollSrc = 0;                 // pollution emitted by running industry this tick
   // Pollution above a threshold poisons farmland (cuts food yield).
@@ -76,7 +81,7 @@ export function stepEconomy(state, dt) {
     }
     if (def.produces) for (const [k, v] of Object.entries(def.produces)) {
       // Non-dam water sources lose flow when dams hold the river upstream.
-      const r = (k === 'water' && !def.upstreamPenalty) ? rate * upstreamMul : rate;
+      const r = (k === 'water' && !def.upstreamPenalty) ? rate * upstreamMul * beaverFlow : rate;
       addRes(state, k, v * r);
     }
     if (def.pollutes && rate > 0) pollSrc += def.pollutes; // running industry emits smog
@@ -104,6 +109,9 @@ export function stepEconomy(state, dt) {
   updateLoyalty(state, dt);
   stepEvents(state, dt);
   stepFactions(state, dt);
+  updateSquirrels(state, dt); // oak → nut economy: squirrels trade or raid
+  updateBeavers(state, dt);   // beaver wood store + take-too-much sabotage
+  updateBalls(state, dt);     // hamster balls: joy → anxiety → pop out / heat death
   stepRescues(state, dt);
   stepDecrees(state, dt); // moral dilemmas: spend a virtue on purpose for the group
   // Seasons turn; each new season opens with a festival — a communal lift.
@@ -180,8 +188,12 @@ function updateConstruction(state, dt) {
   }
   W = Math.max(0.4, W);
   const perJob = Math.min(C.maxWorkersPerJob, W / jobs.length);
+  // Helpful squirrels (a kind colony with oaks/nuts drawing them) lend paws on
+  // TIMBER builds — wood structures rise ~35% faster while squirrels are friendly.
+  const squirrelHelp = ((state.squirrelPressure || 0) > 0 && (state.compassion ?? 50) >= SQUIRREL.kindAt) ? 0.35 : 0;
   for (const b of jobs) {
-    const inc = perJob * C.buildRate * dt;
+    const woodBuild = (BUILDINGS[b.type]?.cost?.wood || 0) > 0;
+    const inc = perJob * C.buildRate * dt * (1 + (woodBuild ? squirrelHelp : 0));
     if (b.underConstruction) {
       b.progress = (b.progress || 0) + inc;
       if (b.progress >= b.buildTime) {
@@ -333,7 +345,10 @@ function updatePerUnitNeeds(state, dt, env) {
 
   for (const u of state.units) {
     const n = u.needs;
-    const retain = Math.max(0.4, 1 - evoBonus(state, u.species, 'needRetain'));
+    // Per-unit Vigor (a 🔋 stamina trait) makes a rodent's food/water/energy
+    // drain slower — so investing skill points in Vigor visibly matters, not
+    // just the species-wide evolution bonus.
+    const retain = Math.max(0.4, 1 - evoBonus(state, u.species, 'needRetain')) / traitMul(u, 'stamina');
     u.bond = Math.max(0, (u.bond ?? 45) - BOND_DECAY * dt); // affection gently fades
 
     // Water: drain, then drink from stores if low.
@@ -379,6 +394,159 @@ function updateExploration(state, env) {
   for (const b of state.buildings) reveal(state.world, b.x, b.y, (BUILDINGS[b.type]?.tower && b.mode !== 'defend' && !b.underConstruction) ? 7 : 3);
 }
 
+// Oak → squirrel / nut economy. Oaks grow Nuts (handled by the production loop);
+// oaks + a nut hoard build "squirrel pressure" (state.squirrelPressure, 0..100).
+// When it peaks a band of squirrels arrives — a KIND colony (or a small hoard)
+// gets friendly foraging/barter (nuts ⇄ seeds + forest lore + goodwill); a big
+// hoard behind weak defenses gets RAIDED for nuts (respects peaceful mode). So
+// the nut balance tips the colony toward trade / cooperation / raids.
+function updateSquirrels(state, dt) {
+  const oaks = state.buildings.filter(b => BUILDINGS[b.type]?.produces?.nuts && !b.underConstruction).length;
+  const nuts = state.res.nuts || 0;
+  const pressure = Math.min(100, oaks * SQUIRREL.attractPerOak + nuts * SQUIRREL.attractPerNut);
+  state.squirrelPressure = pressure;
+  if (pressure <= 0) { state._squirrelT = 0; return; }
+  // Higher pressure → squirrels come sooner.
+  state._squirrelT = (state._squirrelT || 0) + dt * (pressure / 100);
+  if (state._squirrelT < SQUIRREL.interval) return;
+  state._squirrelT = 0;
+  const sp = state.world.spawn;
+  const friendly = (state.compassion ?? 50) >= SQUIRREL.kindAt || nuts < SQUIRREL.hoardAt;
+  if (friendly) {
+    // Cooperation: squirrels forage peacefully and barter nuts for seeds & lore.
+    addCompassion(state, 2);
+    if (nuts >= 10 && Math.random() < 0.5) {
+      const take = Math.min(nuts, 8);
+      state.res.nuts = nuts - take;
+      addRes(state, 'seeds', take * 1.5);
+      addRes(state, 'research', 4);
+      logMsg(state, `🐿️ Squirrels bartered ${take} nuts for seeds & forest lore (+4 research). Goodwill grows.`);
+    } else {
+      addRes(state, 'food', 6);
+      logMsg(state, '🐿️ Friendly squirrels foraged your oaks and shared a little food.');
+    }
+    addFx(state, sp.x, sp.y, '🐿️', 2.2);
+  } else if (state.disasters !== false) {
+    // Raid: a hoard behind weak defenses gets robbed. Defense & Justice blunt it.
+    const guard = Math.max(0.15, 1 - (state.defense || 0) * 0.03 - Math.max(0, (state.justice ?? 50) - 50) * 0.004);
+    const steal = Math.min(nuts, Math.round(nuts * 0.4 * guard) + 3);
+    state.res.nuts = Math.max(0, nuts - steal);
+    state.res.food = Math.max(0, (state.res.food || 0) - Math.round(steal * 0.5));
+    state.morale = Math.max(0, (state.morale ?? 100) - 4);
+    addFx(state, sp.x, sp.y, '🐿️💢', 2.2);
+    logMsg(state, `🐿️ Squirrels raided your nut hoard and stole ${steal} nuts! Guard it (defense) or share it (Compassion) to keep the peace.`);
+  }
+}
+
+// Beavers harvest wood for the colony's water works and keep their own wood
+// store (state.beaverWood). Hamsters tap it when colony wood runs low — but
+// over-take it and the beavers sour (state.beaverMood falls): a grumpy lodge
+// slackens the dams (state._beaverSabotage cuts water flow) and spills wood in
+// protest. Share fairly and their mood recovers. Self-contained social system.
+function updateBeavers(state, dt) {
+  const beavers = state.units.filter(u => u.species === 'beaver').length;
+  if (beavers === 0) { state.beaverWood = 0; state._beaverSabotage = 0; return; }
+  const cap = BEAVER.storeCap * beavers;
+  // Beavers are tireless wood-cutters — they top up their own cache.
+  state.beaverWood = Math.min(cap, (state.beaverWood || 0) + beavers * BEAVER.harvest * dt);
+  // Hamsters draw from the beaver store when the colony's own wood is low.
+  let took = 0;
+  if ((state.res.wood || 0) < BEAVER.shareWhenBelow && (state.beaverWood || 0) > 0) {
+    took = Math.min(state.beaverWood, beavers * BEAVER.giveRate * dt);
+    state.beaverWood -= took;
+    addRes(state, 'wood', took);
+  }
+  // Any sustained tapping wears on them; left alone (colony wood stocked, so the
+  // store rebuilds) their mood recovers. Chronically leaning on them sours them.
+  const wasGrumpy = (state.beaverMood ?? 70) < BEAVER.grumpyAt; // state BEFORE this tick
+  let mood = state.beaverMood ?? 70;
+  if (took > 0) mood -= took * BEAVER.upsetPerTake;
+  else mood += BEAVER.calm * dt;
+  state.beaverMood = Math.max(0, Math.min(100, mood));
+  // Grumpy lodge → sabotage the water works, and occasionally spill wood.
+  if (state.beaverMood < BEAVER.grumpyAt) {
+    state._beaverSabotage = BEAVER.sabotageWater;
+    if (!wasGrumpy) logMsg(state, '🦫 The beavers are unhappy — you\'ve been raiding their wood store. They\'re slackening the dams; water flow will suffer until they calm down.');
+    if (Math.random() < BEAVER.spillChance * dt && (state.beaverWood || 0) > 0) {
+      state.beaverWood = Math.max(0, state.beaverWood - 5);
+    }
+  } else {
+    if ((state._beaverSabotage || 0) > 0) logMsg(state, '🦫 The beavers have settled down — the dams are holding and water flows freely again.');
+    state._beaverSabotage = 0;
+  }
+}
+
+// ---- Hamster balls --------------------------------------------------------
+// A rodent in a ball rolls the world SAFE from predators (see events.js), gains
+// fun & curiosity early, but anxiety climbs until it pops out — and on a hot day
+// the ball overheats and can kill it. Made from plastic by a Ball Workshop.
+export function hasBallWorkshop(state) {
+  return state.buildings.some(b => b.type === 'ballworkshop' && !b.underConstruction);
+}
+export function enterBall(state, u) {
+  if (u.inBall) return { ok: true };
+  if (state.ballFear) return { ok: false, reason: 'The colony is too shaken — bury the lost hamster and destroy the broken ball first.' };
+  if (!hasBallWorkshop(state)) return { ok: false, reason: 'Build a Ball Workshop first' };
+  if (state.units.some(x => x.inBall)) return { ok: false, reason: 'Only one hamster can be in a ball at a time.' };
+  if ((state.res.balls || 0) < 1) return { ok: false, reason: 'No hamster balls in stock yet (make Plastic → Ball Workshop)' };
+  // Balls are for travel & fun, not hauling — drop whatever it's carrying first.
+  if (u.carrying) { addRes(state, u.carrying.res, u.carrying.amount); u.carrying = null; }
+  state.res.balls -= 1;           // check a ball out of the rack
+  u.inBall = true; u.anxiety = 0; u.targetNode = null; u.phase = 'idle';
+  return { ok: true };
+}
+export function exitBall(state, u) {
+  if (!u.inBall) return;
+  u.inBall = false; u.anxiety = 0;
+  state.res.balls = (state.res.balls || 0) + 1; // ball returned to the rack
+}
+function isHotDay(state) {
+  const w = currentWeather(state);
+  return seasonKey(state) === 'summer' || w === 'drought' || w === 'humid';
+}
+function updateBalls(state, dt) {
+  // The colony makes peace — and uses the balls again — once the lost hamster is
+  // BURIED and the broken ball is DESTROYED (demolished). Checked every tick (a
+  // death leaves nobody rolling, so this must run before the early-return below).
+  if (state.ballFear) {
+    const tainted = state.buildings.some(b => b.type === 'taintedball');
+    const unburied = (state.bodies || []).some(b => b.ballDeath);
+    if (!tainted && !unburied) {
+      state.ballFear = false;
+      logMsg(state, '🫧 The colony laid the lost one to rest and cleared away the broken ball — the hamster balls are in use again.');
+    }
+  }
+  const anyInBall = state.units.some(u => u.inBall);
+  if (!anyInBall) { state._ballHot = false; return; }
+  const hot = state._ballHot = isHotDay(state);
+  for (const u of state.units.slice()) { // slice: heat death may splice units
+    if (!u.inBall) continue;
+    u.anxiety = (u.anxiety || 0) + BALL.anxietyRise * dt;
+    // Early joy: happiness & curiosity (fun) rise while anxiety is still low.
+    if (u.anxiety < BALL.joyUntil) u.needs.fun = Math.min(100, u.needs.fun + BALL.funGain * dt);
+    // A hot day cooks the ball — health drains; freed in time they're fine.
+    if (hot) u.needs.health = Math.max(0, u.needs.health - BALL.heatDrain * dt);
+    if (u.needs.health <= 0 && state.units.length > 1) {
+      // Died inside: the ball is NOT returned — it becomes a broken/haunted ball
+      // on the map that must be destroyed, and the colony is too shaken to roll
+      // again until that ball is destroyed AND the hamster is buried.
+      u.inBall = false;
+      const bx = Math.round(u.x), by = Math.round(u.y);
+      killUnit(state, u);
+      const body = state.bodies[state.bodies.length - 1]; if (body) body.ballDeath = true;
+      state.buildings.push({ id: state.nextId++, type: 'taintedball', x: bx, y: by, active: true });
+      state.ballFear = true;
+      logMsg(state, `🫧💀 ${u.name} overheated and died inside its ball! The colony is shaken — they won't touch the balls until ${u.name} is buried and the broken ball is destroyed.`);
+      continue;
+    }
+    if (u.anxiety >= BALL.wantOut) { // too anxious — pops out for a break
+      exitBall(state, u);
+      addFx(state, u.x, u.y, '😵‍💫', 1.6);
+      logMsg(state, `🫧 ${u.name} got out of its ball — too much rolling makes a rodent anxious.`);
+    }
+  }
+}
+
 // Burrows accumulate filth; caretakers clean them; neglected ones degrade and
 // stop housing/breeding until cleaned (click a burrow to clean it).
 function updateBurrows(state, dt) {
@@ -412,7 +580,8 @@ function updateWaste(state, dt) {
       if (u.needs.health > 35 && u.phase !== 'sleep') addWaste(world, Math.round(u.x), Math.round(u.y), 1);
     }
   }
-  // composters convert nearby droppings into fertilizer
+  // Composters gather nearby droppings into stored MANURE (poop storage). A
+  // powered Fertilizer Mill later turns manure → fertilizer (which boosts farms).
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def?.composter || b.underConstruction) continue;
@@ -423,7 +592,7 @@ function updateWaste(state, dt) {
       if (have <= 0) continue;
       const take = Math.min(have, want);
       addWaste(world, wx, wy, -take); want -= take;
-      addRes(state, 'fertilizer', take * 1.5);
+      addRes(state, 'manure', take * 1.5);
     }
   }
   // natural decay (sparse scan for performance)

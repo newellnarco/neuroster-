@@ -25,11 +25,14 @@ export const RESOURCES = {
   wheat:    { name: 'Wheat',    icon: '🌾', kind: 'refined', color: '#d9b44a' },
   grain:    { name: 'Grain',    icon: '🟡', kind: 'refined', color: '#e0c060', nourish: 1.5 },
   pellets:  { name: 'Pellets',  icon: '🟤', kind: 'refined', color: '#b9853f', nourish: 2.4 },
-  fertilizer:{ name: 'Fertilizer', icon: '💩', kind: 'raw',  color: '#7a5a36' },
+  nuts:     { name: 'Nuts',     icon: '🌰', kind: 'refined', color: '#9c6b3f' },
+  manure:   { name: 'Manure',   icon: '💩', kind: 'raw',     color: '#6b4a2b' },
+  fertilizer:{ name: 'Fertilizer', icon: '🪴', kind: 'refined', color: '#7a5a36' },
   planks:   { name: 'Planks',   icon: '🟫', kind: 'refined', color: '#caa05a' },
   iron:     { name: 'Iron',     icon: '🔩', kind: 'refined', color: '#cfd6dd' },
   steel:    { name: 'Steel',    icon: '⚙️', kind: 'refined', color: '#9fb0c4' },
   plastic:  { name: 'Plastic',  icon: '🟦', kind: 'refined', color: '#6fa8dc' },
+  balls:    { name: 'Hamster Balls', icon: '🫧', kind: 'refined', color: '#bfe3ff' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
   research: { name: 'Research', icon: '🔬', kind: 'abstract', color: '#7e9cff' },
 };
@@ -81,7 +84,7 @@ export const BUILDINGS = {
     cost: { planks: 30, iron: 15 }, category: 'Food', produces: { pellets: 0.4 }, consumes: { grain: 0.6 },
   },
   composter: {
-    name: 'Composter', icon: '♻️', desc: 'Collects droppings nearby and turns them into Fertilizer.',
+    name: 'Composter', icon: '♻️', desc: 'Gathers nearby droppings into stored Manure (poop). A powered Fertilizer Mill turns Manure → Fertilizer, which boosts farm yield.',
     cost: { wood: 30, planks: 10 }, category: 'Food', composter: 1, radius: 5,
   },
   vet: {
@@ -133,8 +136,49 @@ export const BUILDINGS = {
     cost: { wood: 30, planks: 15, seeds: 10 }, category: 'Wellbeing', sanctuary: true, health: 3,
   },
   sapling: {
-    name: 'Plant Tree', icon: '🌳', desc: 'Plant a tree. Growing forests SCRUB pollution from the air and green the colony — replant what industry burns. (Oak groves draw squirrels — coming soon.)',
+    name: 'Plant Tree', icon: '🌳', desc: 'Plant a tree. Growing forests SCRUB pollution from the air and green the colony — replant what industry burns. (For nuts & squirrels, plant an Oak.)',
     cost: { seeds: 10, water: 6 }, category: 'Wellbeing', tree: true,
+  },
+  oak: {
+    name: 'Oak Tree', icon: '🌰', desc: 'Plant an oak. Over time it grows acorns into Nuts — a coveted forest crop. Oak groves and a nut hoard DRAW SQUIRRELS: a kind colony (Compassion) trades with them for seeds & lore; a big hoard behind weak defenses gets raided.',
+    cost: { seeds: 14, water: 8, wood: 6 }, category: 'Food', tree: true,
+    produces: { nuts: 0.5 },
+  },
+  sunflower: {
+    name: 'Sunflower Field', icon: '🌻', desc: 'A field of sunflowers — a steady crop of Seeds and a little Food. Seeds plant trees, oaks & farms.',
+    cost: { wood: 16, water: 10 }, category: 'Food', produces: { seeds: 0.6, food: 0.15 },
+  },
+  windmill: {
+    name: 'Windmill', icon: '🌬️', desc: 'A wooden windmill — clean Power that spins harder in WIND & storms (little on calm days). No pollution; a green alternative to coal.',
+    cost: { wood: 30, planks: 8 }, category: 'Automation', produces: { power: 0.7 },
+  },
+  watermill: {
+    name: 'Water Mill', icon: '🛞', desc: 'A wooden mill on the water — clean Power plus a steady trickle of Water. Build next to a river or pond. No pollution.',
+    cost: { wood: 32, planks: 10, stone: 8 }, category: 'Automation', produces: { power: 0.9, water: 0.3 }, needsWater: true, radius: 1,
+  },
+  fertilizerplant: {
+    name: 'Fertilizer Mill', icon: '⚙️', desc: 'A powered mill — processes stored Manure (poop, gathered by Composters & burrow cleaning) into Fertilizer. Needs Power (a wheel, windmill, water mill, or coal/steam plant). Fertilizer in store boosts every Farm\'s yield.',
+    cost: { wood: 28, planks: 12, stone: 10 }, category: 'Production', consumes: { manure: 0.4, power: 0.2 }, produces: { fertilizer: 0.3 },
+  },
+  cistern: {
+    name: 'Water Cistern', icon: '🛢️', desc: 'A wooden cistern — +300 storage and it COLLECTS RAINWATER (extra Water in rain & storms). Stockpile water for dry spells.',
+    cost: { wood: 26, planks: 8 }, category: 'Storage', storage: 300, cistern: true,
+  },
+  woodfence: {
+    name: 'Wooden Fence', icon: '🚧', desc: 'A cheap timber palisade — light defense vs ground predators & raids. Quick to ring the colony (wood can burn in wildfire).',
+    cost: { wood: 10 }, category: 'Defense', defense: 2,
+  },
+  ballworkshop: {
+    name: 'Ball Workshop', icon: '🫧', desc: 'Rolls Plastic into Hamster Balls (needs a Refinery making plastic). Select a rodent → 🫧 to send it rolling around the world SAFE from predators — happiness & curiosity rise. Only ONE rodent can roll at a time; balls are for travel & fun, not hauling. Anxiety builds, so it pops out before long; and on a HOT day it can OVERHEAT and die inside if you don\'t let it out in time.',
+    cost: { wood: 30, planks: 12, plastic: 10 }, category: 'Wellbeing',
+    consumes: { plastic: 0.12 }, produces: { balls: 0.1 },
+  },
+  taintedball: {
+    // Spawned (not buildable) where a hamster died inside its ball. The colony
+    // won't use the balls until this is DESTROYED (click → demolish) and the
+    // lost hamster is buried. Hidden from the build menu (noBuild).
+    name: 'Broken Hamster Ball', icon: '🫧', desc: 'A hamster died inside this ball. The colony is shaken and won\'t roll again until it is destroyed (click to demolish) and the lost one is buried.',
+    cost: {}, category: 'Wellbeing', noBuild: true, taintedBall: true,
   },
   statue: {
     name: 'Statue', icon: '🗿', desc: 'A proud monument. A steady, quiet lift to colony morale — and a focus for its better nature (Compassion).',
@@ -526,6 +570,60 @@ export const POLLUTION = {
   farmMax: 0.5,       // up to −50% food output at 100 pollution
   sickAt: 45,         // above this, rodents' health drains
   healthDrain: 0.05,  // per second at full pollution, scaled above sickAt
+};
+
+// Oak → squirrel / nut economy. Planting oaks grows Nuts (a coveted forest
+// crop); oaks and a nut hoard build "squirrel pressure". When it peaks, a band
+// of squirrels arrives — a KIND colony (Compassion ≥ kindAt) or a small hoard
+// keeps it to friendly foraging/barter (nuts ⇄ seeds + forest lore); a big
+// hoard (≥ hoardAt) behind weak defenses gets RAIDED (respects peaceful mode).
+// The nut balance tips the colony toward trade / cooperation / raids.
+export const SQUIRREL = {
+  attractPerOak: 12,   // squirrel pressure per standing oak (0..100)
+  attractPerNut: 0.4,  // …plus this per stored nut (a hoard tempts them)
+  interval: 80,        // seconds-at-full-pressure between squirrel visits
+  hoardAt: 20,         // nuts above this, with low Compassion, invites a raid
+  kindAt: 55,          // Compassion at/above this keeps squirrels friendly
+};
+
+// Beavers harvest wood for the colony's water works (aquifers, dams, irrigation)
+// and keep their OWN wood store. Hamsters may draw from it when colony wood runs
+// low — but TAKE TOO MUCH and the beavers sour: a grumpy lodge slackens the dams
+// (water flow drops) and spills wood in protest. Share fairly to keep them happy.
+export const BEAVER = {
+  storeCap: 60,        // wood each beaver will stockpile in its own cache
+  harvest: 0.5,        // wood/sec a beaver adds to the beaver store
+  giveRate: 1.2,       // wood/sec hamsters may draw when colony wood is low
+  shareWhenBelow: 30,  // colony wood below this → hamsters tap the beaver store
+  upsetPerTake: 5,     // mood lost per unit of wood hamsters take from the store
+  calm: 1.2,           // mood/sec recovered when the store is left to rebuild
+  grumpyAt: 35,        // below this mood, the beavers sabotage the water works
+  sabotageWater: 0.4,  // −40% water flow while grumpy
+  spillChance: 0.04,   // per-sec chance a grumpy lodge spills some hoarded wood
+};
+
+// Guard / soldier skill + equipment tiers. Any loyal rodent can be trained as a
+// GUARD (adds defense & offense to the colony, reluctant to kill — it would
+// rather capture & spare). Equipment upgrades (built from materials) raise its
+// protection and its damage. Each tier's def/atk is the guard's TOTAL at that
+// tier (index 0 = just trained, no gear). Edit freely to balance.
+export const GUARD_GEAR = [
+  { name: 'Trained',            icon: '🛡️', def: 1, atk: 1, cost: {} },
+  { name: 'Spear & Sling',      icon: '🔱', def: 2, atk: 3, cost: { wood: 20, planks: 8 } },
+  { name: 'Sword & Shield',     icon: '⚔️', def: 5, atk: 5, cost: { iron: 20, planks: 10 } },
+  { name: 'Steel Plate & Bow',  icon: '🏹', def: 9, atk: 9, cost: { steel: 15, iron: 10 } },
+];
+
+// Hamster balls — roll a rodent around the world SAFE from predators. A made-
+// from-plastic ball (Ball Workshop) lifts fun & curiosity at first, but anxiety
+// climbs the longer it's inside, so it pops out before long. On a HOT day the
+// ball cooks: health drains and the rodent DIES inside if you don't free it.
+export const BALL = {
+  funGain: 4,          // fun/curiosity gained per sec during the happy early phase
+  joyUntil: 45,        // anxiety below this = the happy phase (fun rises)
+  anxietyRise: 3.5,    // anxiety (0..100) gained per sec inside a ball
+  wantOut: 100,        // anxiety at which the rodent pops itself out for a break
+  heatDrain: 6,        // health/sec lost inside a ball on a hot day (→ death if not freed)
 };
 
 // Burrows get dirty as hamsters live in them. Left uncleaned they leak filth

@@ -1,0 +1,8 @@
+{
+  "key": "feat:beaver-wood-store",
+  "title": "Beaver wood store + take-too-much sabotage",
+  "arch": "SOCIAL", "phase": "19g",
+  "type": "New Feature", "area": "Gameplay", "priority": "P2", "status": "In Progress", "pr": "#43",
+  "detail": "Beavers harvest wood into their OWN store; hamsters tap it when colony wood is low. Sustained over-tapping sours them (beaverMood falls) -> they sabotage the dams (water flow drops) and spill wood. Keep colony wood stocked to keep them content. 🦫 env chip + 4 smoke checks.",
+  "timeline": [ { "at": "2026-06-26T02:50:00Z", "status": "In Progress", "note": "Shipped in PR #43; 72 smoke checks." } ]
+}

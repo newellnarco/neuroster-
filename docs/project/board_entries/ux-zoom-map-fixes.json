@@ -1,0 +1,16 @@
+{
+  "key": "ux:zoom-map-fixes",
+  "title": "Map zoom + landscape scaling, center-on-town, event-log snap-to-top",
+  "arch": "RENDER",
+  "phase": "18a",
+  "type": "Bug",
+  "area": "UI/UX",
+  "priority": "P1",
+  "status": "In Progress",
+  "pr": "#43",
+  "detail": "Wheel + +/-/reset zoom were dead (canvas became a flex item floored at its min-content backing width); fixed with flex-shrink:0. Map now contain-fits the landscape board (W+H) and re-fits on resize; view starts zoomed/centered on the colony. Event log snaps to top on a new item. UI ticket — owes a screenshot.",
+  "_after": "render:18",
+  "timeline": [
+    { "at": "2026-06-26T01:00:00Z", "status": "In Progress", "note": "Shipped in PR #43; verified in headless Chromium + 56 smoke checks." }
+  ]
+}

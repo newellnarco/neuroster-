@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "add:more-milestones",
+  "status": "In Progress",
+  "timeline": [
+    {
+      "at": "2026-06-26T01:55:11+00:00",
+      "status": "In Progress",
+      "note": "Added 6 goals (pop50, Cartographer/explore, plastic, doctrine, valor90, justice90); 25 total (PR #43)"
+    }
+  ],
+  "updated": "2026-06-26T01:55:11+00:00",
+  "pr": "43"
+}

@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "change:defense-screen",
+  "status": "In Progress",
+  "timeline": [
+    {
+      "at": "2026-06-26T06:18:39+00:00",
+      "status": "In Progress",
+      "note": "Guard/soldier per-unit skill + tiered equipment (Spear→Sword→Steel+Bow) adding colony def/offense; reluctant-to-kill (capture path pending) (PR #43)"
+    }
+  ],
+  "updated": "2026-06-26T06:18:39+00:00",
+  "pr": "43"
+}

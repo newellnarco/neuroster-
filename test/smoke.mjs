@@ -523,4 +523,348 @@ console.log('Burrow crowding:');
   ok(`burrow filth scales with crowding (sparse ${sparse.toFixed(2)} < crowded ${crowded.toFixed(2)})`);
 }
 
+// 18) Player orders: directable go-to + Explore (reveal the fog of war).
+console.log('Player orders (go-to + explore):');
+{
+  const seenCount = (s) => s.world.seen.reduce((a, b) => a + b, 0);
+
+  // go-to: send a rodent to a far tile; it should travel there and clear the
+  // order (resuming auto-work). Keep it awake so sleep doesn't skew the test.
+  const s = newGame(2468, 'prairie', 'syrian', 'Orders', {});
+  const u = s.units[0];
+  const tx = 36, ty = 24;
+  u.order = { kind: 'goto', x: tx, y: ty };
+  let guard = 0;
+  while (u.order && guard++ < 6000) { u.needs.energy = 100; stepEconomy(s, 0.1); }
+  assert(u.order === null, 'go-to order clears on arrival');
+  assert(Math.hypot(u.x - tx, u.y - ty) < 1.5, `rodent reaches the target tile (at ${u.x.toFixed(1)},${u.y.toFixed(1)})`);
+  ok('go-to: a selected rodent travels to the clicked tile, then resumes work');
+
+  // explore: roaming toward the unknown reveals new fog.
+  const before = seenCount(s);
+  const u2 = s.units[0];
+  u2.order = { kind: 'explore' };
+  for (let i = 0; i < 2000 && u2.order; i++) { u2.needs.energy = 100; stepEconomy(s, 0.1); }
+  assert(seenCount(s) > before, `explore reveals new fog (${before} → ${seenCount(s)} tiles)`);
+  ok(`explore: fog of war shrinks as the scout roams (${before} → ${seenCount(s)} seen)`);
+
+  // explore completes (clears its order) once the whole map is revealed.
+  const s2 = newGame(2469, 'prairie', 'syrian', 'Done', {});
+  s2.world.seen.fill(1); // pretend everything is already found
+  const u3 = s2.units[0];
+  u3.order = { kind: 'explore' }; u3.needs.energy = 100;
+  stepEconomy(s2, 0.1);
+  assert(u3.order === null, 'explore finishes when nothing is left to find');
+  ok('explore: ends automatically once every tile has been mapped');
+}
+
+// 19) Per-unit Vigor: a high-Vigor rodent's needs drain slower.
+console.log('Per-unit Vigor (stamina trait):');
+{
+  function drainOver(vigorLevel) {
+    const g = newGame(1357, 'prairie', 'syrian', 'Vig', {});
+    g.res.food = 0; g.res.water = 0; // no stores to refill from — isolate drain
+    const u = g.units[0];
+    u.traits = { vigor: vigorLevel };
+    u.needs.food = 100; u.needs.water = 100; u.phase = 'idle'; // not gathering
+    for (let i = 0; i < 60; i++) { u.phase = 'idle'; stepEconomy(g, 0.2); }
+    return u.needs.food + u.needs.water;
+  }
+  const weak = drainOver(0), tough = drainOver(6);
+  assert(tough > weak, `Vigor should slow need drain (vigor0 left ${weak.toFixed(1)} < vigor6 left ${tough.toFixed(1)})`);
+  ok(`per-unit Vigor slows food/water drain (vigor0 ${weak.toFixed(1)} → vigor6 ${tough.toFixed(1)} left)`);
+}
+
+// 20) New milestones: present and firing on the right conditions.
+console.log('Milestones (new goals):');
+{
+  const { MILESTONES, checkMilestones } = await import('../src/milestones.js');
+  const ids = new Set(MILESTONES.map(m => m.id));
+  for (const id of ['pop50', 'explored', 'plastic', 'doctrine', 'valor90', 'justice90'])
+    assert(ids.has(id), `milestone ${id} should exist`);
+  // Cartographer fires once the whole map is revealed (ties to the Explore task).
+  const s = newGame(321, 'prairie', 'syrian', 'Goals', {});
+  s.world.seen.fill(1);
+  assert(checkMilestones(s).some(m => m.id === 'explored'), 'revealing the whole map awards Cartographer');
+  // Valor / Justice thresholds award their milestones.
+  const s2 = newGame(322, 'prairie', 'syrian', 'Virtue', {});
+  s2.valor = 95; s2.justice = 95;
+  const got = checkMilestones(s2);
+  assert(got.some(m => m.id === 'valor90') && got.some(m => m.id === 'justice90'), 'high Valor & Justice award their milestones');
+  ok(`new milestones present & firing (total ${MILESTONES.length})`);
+}
+
+// 21) Oak → squirrel / nut economy.
+console.log('Oak → squirrel / nut economy:');
+{
+  const { BUILDINGS, SQUIRREL, RESOURCES } = await import('../src/config.js');
+  assert(RESOURCES.nuts && BUILDINGS.oak?.produces?.nuts, 'Nuts resource + nut-producing Oak exist');
+
+  // An oak grows nuts over time (via the standard production loop).
+  const g = newGame(606, 'prairie', 'syrian', 'Oaks', {});
+  const sp = g.world.spawn;
+  g.buildings.push({ id: 9001, type: 'oak', x: sp.x, y: sp.y, active: true }); // already built
+  const before = g.res.nuts || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(g, 0.2);
+  assert((g.res.nuts || 0) > before, `an oak produces nuts over time (${before} → ${(g.res.nuts || 0).toFixed(1)})`);
+  assert((g.squirrelPressure || 0) > 0, 'oaks + nuts build squirrel pressure');
+  ok(`oaks grow nuts (${(g.res.nuts || 0).toFixed(1)}) and raise squirrel pressure (${Math.round(g.squirrelPressure)})`);
+
+  // A nut hoard behind weak defenses + low Compassion gets raided (nuts stolen).
+  const r = newGame(607, 'prairie', 'syrian', 'Hoard', {});
+  r.res.nuts = 60; r.compassion = 40; r.defense = 0; r.justice = 50; r.disasters = true;
+  r._squirrelT = 1e4; // force the visit this tick
+  const hoard = r.res.nuts;
+  stepEconomy(r, 0.1);
+  assert((r.res.nuts || 0) < hoard, `a hoard behind weak defenses gets raided (${hoard} → ${r.res.nuts})`);
+  ok(`squirrels raid an unguarded nut hoard (${hoard} → ${r.res.nuts} nuts)`);
+
+  // A kind colony stays on friendly terms — no raid, Compassion grows.
+  const k = newGame(608, 'prairie', 'syrian', 'Kind', {});
+  k.res.nuts = 60; k.compassion = 80; k.disasters = true;
+  k._squirrelT = 1e4;
+  const c0 = k.compassion;
+  stepEconomy(k, 0.1);
+  assert(k.compassion >= c0, 'a kind colony keeps squirrels friendly (Compassion does not fall)');
+  ok('a kind colony trades with squirrels instead of being raided');
+}
+
+// 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
+//     fence, and friendly squirrels speeding timber builds.
+console.log('Wood economy (trees, mills, power, storage):');
+{
+  const { BUILDINGS } = await import('../src/config.js');
+  const built = (s, type, x, y, extra = {}) => { s.buildings.push({ id: s.nextId++, type, x, y, active: true, ...extra }); return s.buildings[s.buildings.length - 1]; };
+
+  // ~2.6× denser starting trees → a real timber supply.
+  const w = newGame(111, 'woodland', 'syrian', 'Woods', {});
+  const treeNodes = w.world.nodes.filter(n => n.kind === 'trees').length;
+  assert(treeNodes >= 15, `woodland seeds plenty of trees for a wood economy (got ${treeNodes})`);
+  ok(`denser tree cover: ${treeNodes} tree nodes on a woodland map`);
+
+  // Sunflower field grows seeds (+ a little food).
+  const g = newGame(112, 'prairie', 'syrian', 'Sun', {});
+  const sp = g.world.spawn;
+  const s0 = g.res.seeds || 0;
+  built(g, 'sunflower', sp.x + 2, sp.y);
+  for (let i = 0; i < 25; i++) stepEconomy(g, 0.2);
+  assert((g.res.seeds || 0) > s0, `sunflower field grows seeds (${s0} → ${(g.res.seeds || 0).toFixed(1)})`);
+  ok('sunflower field produces seeds');
+
+  // Wooden Windmill makes clean Power.
+  const p = newGame(113, 'prairie', 'syrian', 'Wind', {});
+  built(p, 'windmill', p.world.spawn.x + 2, p.world.spawn.y);
+  for (let i = 0; i < 20; i++) stepEconomy(p, 0.2);
+  assert((p.res.power || 0) > 0, 'a windmill generates power');
+  ok(`wooden windmill generates clean power (${(p.res.power || 0).toFixed(1)})`);
+
+  // Fertilizer Mill: Manure (poop) + Power → Fertilizer (the poop→fertilizer chain).
+  const m = newGame(114, 'prairie', 'syrian', 'Mill', {});
+  m.res = { manure: 200, power: 200 }; // leave storage room for the fertilizer
+  const f0 = m.res.fertilizer || 0;
+  built(m, 'fertilizerplant', m.world.spawn.x + 2, m.world.spawn.y);
+  for (let i = 0; i < 20; i++) stepEconomy(m, 0.2);
+  assert((m.res.fertilizer || 0) > f0, `fertilizer mill turns manure → fertilizer (${f0} → ${(m.res.fertilizer || 0).toFixed(1)})`);
+  assert((m.res.manure || 0) < 200, 'the fertilizer mill consumes manure');
+  ok('fertilizer mill turns manure + power into fertilizer');
+
+  // Cistern raises storage capacity (+300, wooden water storage).
+  const c = newGame(115, 'prairie', 'syrian', 'Cist', {});
+  stepEconomy(c, 0.1); const cap0 = c.storageCap;
+  built(c, 'cistern', c.world.spawn.x + 2, c.world.spawn.y);
+  stepEconomy(c, 0.1);
+  assert(c.storageCap === cap0 + 300, `cistern adds +300 storage (${cap0} → ${c.storageCap})`);
+  ok('wooden cistern expands storage');
+
+  // Wooden Fence adds light defense.
+  const d = newGame(116, 'prairie', 'syrian', 'Fence', {});
+  stepEconomy(d, 0.1); const def0 = d.defense;
+  built(d, 'woodfence', d.world.spawn.x + 2, d.world.spawn.y);
+  stepEconomy(d, 0.1);
+  assert(d.defense > def0, `wooden fence adds defense (${def0} → ${d.defense})`);
+  ok('wooden fence raises colony defense');
+
+  // Friendly squirrels speed up TIMBER builds (~35% faster on wood structures).
+  function woodBuildProgress(friendly) {
+    const s = newGame(117, 'prairie', 'syrian', 'Help', {});
+    if (friendly) { s.res.nuts = 40; s.compassion = 85; } // oaks/nuts draw helpful squirrels
+    const b = built(s, 'storage', s.world.spawn.x + 3, s.world.spawn.y, { underConstruction: true, progress: 0, buildTime: 400 });
+    for (let i = 0; i < 25; i++) {
+      if (friendly) { s.res.nuts = Math.max(20, s.res.nuts); s.compassion = 85; }
+      stepEconomy(s, 0.2);
+    }
+    return b.progress || 0;
+  }
+  const plain = woodBuildProgress(false), helped = woodBuildProgress(true);
+  assert(helped > plain, `friendly squirrels speed timber builds (plain ${plain.toFixed(1)} < helped ${helped.toFixed(1)})`);
+  ok(`friendly squirrels lend paws on wood builds (${plain.toFixed(0)} → ${helped.toFixed(0)} progress)`);
+}
+
+// 23) Beaver wood store + take-too-much sabotage.
+console.log('Beaver wood store & sabotage:');
+{
+  const mk = (seed) => { const s = newGame(seed, 'rivers', 'syrian', 'Beav', {}); s.units[0].species = 'beaver'; return s; };
+
+  // Beavers stockpile wood in their own store.
+  const s = mk(700);
+  for (let i = 0; i < 20; i++) stepEconomy(s, 0.2);
+  assert((s.beaverWood || 0) > 0, 'beavers stockpile wood in their own store');
+  ok(`beavers keep a wood store (${(s.beaverWood || 0).toFixed(1)})`);
+
+  // Hamsters tap the store when colony wood runs low (store is drawn down).
+  const d = mk(701);
+  for (let i = 0; i < 40; i++) stepEconomy(d, 0.2); // build up the store
+  d.res.wood = 1; // colony short on wood
+  const store0 = d.beaverWood;
+  stepEconomy(d, 0.2);
+  assert(d.beaverWood < store0, `the beaver store is tapped in a wood shortage (${store0.toFixed(1)} → ${d.beaverWood.toFixed(1)})`);
+  ok('hamsters draw from the beaver store when wood is low');
+
+  // Constant over-taking sours the beavers → they sabotage the water works.
+  const r = mk(702);
+  for (let i = 0; i < 90; i++) { r.res.wood = 0; stepEconomy(r, 0.2); }
+  assert((r.beaverMood ?? 70) < 35, `over-taxing the store makes beavers grumpy (mood ${(r.beaverMood ?? 70).toFixed(1)})`);
+  assert((r._beaverSabotage || 0) > 0, 'grumpy beavers sabotage the water works');
+  ok(`over-taken beavers turn grumpy & sabotage water (mood ${(r.beaverMood ?? 70).toFixed(0)})`);
+
+  // Fair use keeps them content — no sabotage.
+  const f = mk(703);
+  for (let i = 0; i < 40; i++) { f.res.wood = 500; stepEconomy(f, 0.2); }
+  assert((f.beaverMood ?? 70) >= 35 && !((f._beaverSabotage || 0) > 0), 'fairly-treated beavers stay content');
+  ok('fairly-treated beavers stay content (no sabotage)');
+}
+
+// 24) Fertilizer comes from POOP: composter & burrow-cleaning → manure → mill.
+console.log('Poop → manure → fertilizer chain:');
+{
+  const { BUILDINGS } = await import('../src/config.js');
+  const { cleanBurrow } = await import('../src/buildings.js');
+  const { addWaste } = await import('../src/world.js');
+  const breedType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed); // the burrow
+
+  // Composter gathers droppings into stored Manure (not fertilizer directly).
+  const s = newGame(800, 'woodland', 'syrian', 'Poop', {});
+  const sp = s.world.spawn;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) addWaste(s.world, sp.x + dx, sp.y + dy, 5);
+  s.buildings.push({ id: s.nextId++, type: 'composter', x: sp.x, y: sp.y, active: true });
+  const m0 = s.res.manure || 0;
+  for (let i = 0; i < 20; i++) stepEconomy(s, 0.2);
+  assert((s.res.manure || 0) > m0, `composter stockpiles droppings as manure (${m0} → ${(s.res.manure || 0).toFixed(1)})`);
+  assert((s.res.fertilizer || 0) === 0, 'a composter alone makes no fertilizer (needs the powered mill)');
+  ok('composter gathers droppings into manure (not fertilizer)');
+
+  // Cleaning a burrow yields manure (poop from houses).
+  const c = newGame(801, 'woodland', 'syrian', 'Clean', {});
+  const burrow = { id: c.nextId++, type: breedType, x: c.world.spawn.x + 1, y: c.world.spawn.y, active: true, dirt: 6 };
+  c.buildings.push(burrow);
+  const mb = c.res.manure || 0;
+  const r = cleanBurrow(c, burrow);
+  assert(r.ok && (c.res.manure || 0) > mb, `cleaning a burrow collects manure (${mb} → ${(c.res.manure || 0)})`);
+  ok('cleaning a burrow/house yields manure for fertilizer');
+}
+
+// 25) Hamster balls: workshop rolls plastic → balls; joy → anxiety → pop / heat death.
+console.log('Hamster balls:');
+{
+  const { BUILDINGS, DAYS_PER_SEASON, DAY_SECONDS } = await import('../src/config.js');
+  const { enterBall, exitBall } = await import('../src/economy.js');
+  assert(BUILDINGS.ballworkshop?.produces?.balls && BUILDINGS.ballworkshop.consumes?.plastic,
+    'Ball Workshop turns plastic → hamster balls');
+
+  // Workshop rolls plastic into balls.
+  const g = newGame(900, 'prairie', 'syrian', 'Balls', {});
+  g.res = { plastic: 100 }; // plenty of plastic, storage room for balls
+  g.buildings.push({ id: g.nextId++, type: 'ballworkshop', x: g.world.spawn.x + 2, y: g.world.spawn.y, active: true });
+  for (let i = 0; i < 40; i++) stepEconomy(g, 0.2);
+  assert((g.res.balls || 0) > 0, `Ball Workshop produces hamster balls (${(g.res.balls || 0).toFixed(2)})`);
+  ok(`Ball Workshop rolls plastic into balls (${(g.res.balls || 0).toFixed(1)})`);
+
+  // Entering a ball needs the workshop + a ball in stock; it checks one out.
+  const u = g.units[0];
+  g.res.balls = 5; // stock the rack for the enter checks
+  const balls0 = g.res.balls;
+  const r = enterBall(g, u);
+  assert(r.ok && u.inBall && Math.abs(g.res.balls - (balls0 - 1)) < 1e-9, 'entering checks a ball out of stock');
+  ok('a rodent enters a ball (one ball checked out)');
+
+  // Rolling lifts fun & curiosity early, then anxiety builds until it pops out.
+  u.needs.fun = 40; u.anxiety = 0;
+  for (let i = 0; i < 5; i++) stepEconomy(g, 0.2);
+  assert(u.needs.fun > 40 && (u.anxiety || 0) > 0, 'a ball lifts fun/curiosity early and builds anxiety');
+  for (let i = 0; i < 300 && u.inBall; i++) stepEconomy(g, 0.2);
+  assert(!u.inBall, 'high anxiety pops the rodent out of the ball');
+  ok('rolling: fun rises, then anxiety pops it out (ball returned)');
+
+  // Heat death: a rodent left in its ball on a HOT (summer) day overheats & dies.
+  const h = newGame(901, 'prairie', 'syrian', 'Heat', {});
+  h.env.dayTime = DAYS_PER_SEASON * DAY_SECONDS + 50; // summer → hot
+  h.buildings.push({ id: h.nextId++, type: 'ballworkshop', x: h.world.spawn.x + 2, y: h.world.spawn.y, active: true });
+  h.res.balls = 5;
+  const v = h.units[0];
+  enterBall(h, v);
+  assert(h.units.includes(v), 'rodent is in the colony before the hot roll');
+  for (let i = 0; i < 150 && h.units.includes(v); i++) stepEconomy(h, 0.2);
+  assert(!h.units.includes(v), 'a rodent left in a ball on a hot day overheats and dies');
+  ok('hamster-ball heat death on a hot day — get them out!');
+
+  // A ball death shakes the colony: a Broken Ball is left, balls are locked.
+  assert(h.ballFear === true, 'a ball death scares the colony (fear)');
+  assert(h.buildings.some(bb => bb.type === 'taintedball'), 'a Broken Hamster Ball is left where it died');
+  assert(!enterBall(h, h.units[0]).ok, 'no rodent will use a ball while the colony is shaken');
+  ok('a ball death scares the colony & locks every ball');
+
+  // Peace (and ball use) returns once the broken ball is DESTROYED and the lost
+  // hamster is BURIED.
+  h.buildings = h.buildings.filter(bb => bb.type !== 'taintedball'); // destroy the ball (demolish)
+  h.bodies = (h.bodies || []).filter(bb => !bb.ballDeath);           // bury the lost one
+  stepEconomy(h, 0.1);
+  assert(h.ballFear === false, 'fear lifts once the ball is destroyed and the hamster buried');
+  assert(enterBall(h, h.units[0]).ok, 'the colony rolls again after making peace');
+  ok('balls return only after burial + destroying the broken ball');
+
+  // Only ONE hamster can be in a ball at a time; balls aren't for hauling.
+  const o = newGame(902, 'prairie', 'syrian', 'Solo', {});
+  o.buildings.push({ id: o.nextId++, type: 'ballworkshop', x: o.world.spawn.x + 2, y: o.world.spawn.y, active: true });
+  o.res.balls = 5;
+  const a = o.units[0], b2 = o.units[1];
+  assert(enterBall(o, a).ok && !enterBall(o, b2).ok, 'only one hamster can roll at a time');
+  ok('one hamster in a ball at a time');
+  exitBall(o, a);
+  a.carrying = { res: 'wood', amount: 5 };
+  enterBall(o, a);
+  assert(!a.carrying, 'entering a ball drops any carried load (travel/fun, not transport)');
+  ok('balls are travel/fun only — no hauling');
+}
+
+// 26) Guard / soldier skill + equipment tiers.
+console.log('Guard skill & equipment:');
+{
+  const { toggleGuard, equipGuard } = await import('../src/buildings.js');
+  const { GUARD_GEAR } = await import('../src/config.js');
+  const { totalOffense } = await import('../src/events.js');
+  const s = newGame(1000, 'prairie', 'syrian', 'Guard', {});
+  s.env.lived = 4000;
+  const u = s.units[0];
+  const def0 = protectionAgainst(s, 'wolf'), off0 = totalOffense(s);
+  toggleGuard(s, u);
+  assert(u.guard, 'a loyal rodent can be trained as a guard');
+  const def1 = protectionAgainst(s, 'wolf'), off1 = totalOffense(s);
+  assert(def1 > def0 && off1 > off0, `a guard adds colony defense & offense (${def0}/${off0} → ${def1}/${off1})`);
+  ok(`training a guard raises defense ${def0}→${def1} & offense ${off0}→${off1}`);
+
+  // Equip the next tier — spends materials, raises protection & damage.
+  s.res = { wood: 999, planks: 999, iron: 999, steel: 999 };
+  const wood0 = s.res.wood;
+  const r = equipGuard(s, u);
+  assert(r.ok && u.gear === 1, 'a guard equips the next gear tier');
+  assert(s.res.wood < wood0, 'equipping spends materials');
+  const def2 = protectionAgainst(s, 'wolf'), off2 = totalOffense(s);
+  assert(def2 > def1 && off2 > off1, `equipment raises protection & damage (${def1}/${off1} → ${def2}/${off2})`);
+  ok(`equipping ${GUARD_GEAR[u.gear].name} adds more def/atk (${def1}/${off1} → ${def2}/${off2})`);
+
+  // Only a trained guard can be equipped.
+  assert(!equipGuard(s, s.units[1]).ok, 'an untrained rodent cannot be equipped');
+  ok('equipment requires the guard skill first');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

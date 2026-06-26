@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -11,6 +11,7 @@ import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount,
 import { resolveDecree, choiceAllowed, dismissDecree } from './decrees.js';
 import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
 import { learnDoctrine, doctrineStatus, hasDoctrine, doctrineCount } from './doctrines.js';
+import { enterBall, exitBall, hasBallWorkshop } from './economy.js';
 
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
@@ -52,6 +53,8 @@ export function createUI(state, ctx) {
       (((state.truceUntil || 0) > (state.env?.lived || 0)) ? `<span class="env" title="A brokered truce — raiders & predators hold off until it lapses.">🕊️ Truce ${Math.max(0, Math.ceil((state.truceUntil - (state.env?.lived || 0)) / 60))}m</span>` : '') +
       `<span class="env" title="Valor — martial pride, morally neutral. Rises by standing and winning fights. A proud, battle-hardened colony is fierce & happy in its strength (the Spartan path).">🦁 ${L ? 'Valor ' : ''}${Math.round(state.valor ?? 20)}</span>` +
       (((state.pollution ?? 0) > 8) ? `<span class="env${(state.pollution > 45) ? ' decree-due' : ''}" title="Pollution — coal industry (coal plant, smelter, steelworks, refinery, electric wheel) emits smog. It poisons farm yield and, when high, sickens rodents. Forests scrub it; clean power (wheels, solar, hydro) emits none.">🏭 ${L ? 'Pollution ' : ''}${Math.round(state.pollution)}</span>` : '') +
+      (((state.squirrelPressure ?? 0) > 5) ? `<span class="env${(state.squirrelPressure > 60) ? ' decree-due' : ''}" title="Squirrel pressure — oaks and a Nut hoard draw squirrels. A kind colony (Compassion) trades with them for seeds & lore; a big hoard behind weak defenses gets raided. Plant Oaks for Nuts; share or guard the hoard.">🐿️ ${L ? 'Squirrels ' : ''}${Math.round(state.squirrelPressure)}</span>` : '') +
+      ((state.beaverMood != null) ? `<span class="env${(state.beaverMood < 35) ? ' decree-due' : ''}" title="Beavers — they harvest wood into their OWN store (hamsters tap it when colony wood is low). Take too much and they sour and sabotage the dams (water flow drops). Keep colony wood stocked so you don't over-tap them. Store: ${Math.round(state.beaverWood || 0)} wood · Mood ${Math.round(state.beaverMood)}/100.">🦫 ${L ? 'Beavers ' : ''}${Math.round(state.beaverWood || 0)}w·${Math.round(state.beaverMood)}%</span>` : '') +
       `<span class="env" title="Defense / Offense">${L ? 'Defense ' : ''}🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
       `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>` +
       (megaCount(state) ? `<span class="env" title="Megaprojects completed — permanent colony-wide wonders">🏛️ ${megaCount(state)}</span>` : '');
@@ -78,7 +81,7 @@ export function createUI(state, ctx) {
   // ---- Build menu ----
   function renderBuild() {
     const cats = {};
-    for (const [id, def] of Object.entries(BUILDINGS)) (cats[def.category] ??= []).push([id, def]);
+    for (const [id, def] of Object.entries(BUILDINGS)) { if (def.noBuild) continue; (cats[def.category] ??= []).push([id, def]); }
     el('tab-build').innerHTML = Object.entries(cats).map(([cat, items]) => `
       <div class="cat">${cat}</div>
       <div class="grid">${items.map(([id, def]) => {
@@ -169,6 +172,30 @@ export function createUI(state, ctx) {
           title="${c.name}: +${c.amount} ${NEEDS[c.need].name}, +${c.bond} bond${Object.keys(c.cost).length ? ' · ' + costStr(c.cost) : ''}">
           ${c.icon}${ready ? '' : ` ${Math.ceil(cd)}s`}</button>`;
       }).join('')}</div>` : '';
+      // Per-rodent task control (selected unit only): send it exploring or clear
+      // its order. Click a fogged tile on the map to send it to a spot directly.
+      const orderLabel = u.inBall ? `🫧 rolling · anxiety ${Math.round(u.anxiety || 0)}`
+        : u.order?.kind === 'explore' ? '🧭 exploring…'
+        : u.order?.kind === 'goto' ? '🐾 heading out…' : '';
+      const taskRow = view.selUnit === u.id ? `<div class="care taskrow">
+          <button class="carebtn ${u.order?.kind === 'explore' ? 'on' : ''}" data-task="explore" data-tu="${u.id}"
+            title="Explore — roam toward the unknown, revealing the map until it's all found">🧭 Explore</button>
+          <button class="carebtn ${u.inBall ? 'on' : ''} ${(u.inBall || hasBallWorkshop(state)) ? '' : 'cd'}" data-task="ball" data-tu="${u.id}"
+            title="Hamster ball — roll the world SAFE from predators (fun & curiosity rise, but anxiety builds, so it pops out before long; on a HOT day get it out before it overheats & dies). Needs a Ball Workshop + plastic.">🫧 ${u.inBall ? 'Get out' : 'Ball'}</button>
+          <button class="carebtn ${(u.order || u.inBall) ? '' : 'cd'}" data-task="stop" data-tu="${u.id}"
+            title="Clear this rodent's order / get it out of its ball — back to auto work">✋ Stop</button>
+          ${orderLabel ? `<span class="sub">${orderLabel}</span>` : ''}
+          <span class="sub" title="Select a rodent, then click a tile (even fogged) to send it there">tip: click the map to send</span>
+        </div>` : '';
+      // Guard / soldier skill + equipment tiers (selected unit).
+      const nextGear = GUARD_GEAR[(u.gear || 0) + 1];
+      const guardRow = view.selUnit === u.id ? `<div class="care taskrow">
+          <button class="carebtn ${u.guard ? 'on' : ''}" data-guard="toggle" data-gu="${u.id}"
+            title="Guard / Soldier — adds colony defense & offense. Reluctant to kill — it would rather capture & spare a beaten foe.">🛡️ ${u.guard ? 'Guard ✓' : 'Train guard'}</button>
+          ${u.guard ? `<button class="carebtn ${nextGear && canAffordCost(nextGear.cost) ? '' : 'cd'}" data-guard="equip" data-gu="${u.id}"
+            title="Equip the next tier of arms & armour — spends materials for more protection & damage">⚔️ Equip</button>
+          <span class="sub">${GUARD_GEAR[u.gear || 0].icon} ${GUARD_GEAR[u.gear || 0].name}${nextGear ? ` → ${nextGear.name} (${costStr(nextGear.cost)})` : ' · max'}</span>` : ''}
+        </div>` : '';
       return `<div class="unit ${sel}" data-selunit="${u.id}">
         <div class="uhead">${sp.icon} ${name} ${phase}${hybrid}
           <button class="rename" data-rename="${u.id}" title="Rename this rodent">✏️</button>
@@ -176,7 +203,7 @@ export function createUI(state, ctx) {
           <span class="xpbar"><span style="width:${Math.min(100, 100 * u.xp / xpForLevel(u.level))}%"></span></span>
           <span class="sub">❤️${bond} · ${sleepInfo}</span></div>
         ${lineage ? `<div class="kinrow">${lineage}</div>` : ''}
-        <div class="traits">${traits}</div>${care}</div>`;
+        <div class="traits">${traits}</div>${care}${taskRow}${guardRow}</div>`;
     }).join('');
 
     const more = state.units.length > CAP ? `<div class="hint">Showing the top ${CAP} of ${population(state)} by level (select one to pin it to the top).</div>` : '';
@@ -201,6 +228,24 @@ export function createUI(state, ctx) {
       if (!u) return;
       const n = prompt('Name this rodent:', u.name || '');
       if (n != null && n.trim()) { u.name = n.trim().slice(0, 16); if (u.founder && state.founder) state.founder.name = u.name; sfx('care'); renderRodents(); }
+    });
+    bind('[data-task]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.tu);
+      if (!u) return;
+      const t = btn.dataset.task;
+      if (t === 'explore') { u.order = { kind: 'explore' }; u._exTarget = null; sfx('click'); flash('🧭 Exploring — mapping the unknown'); }
+      else if (t === 'ball') {
+        if (u.inBall) { exitBall(state, u); flash('🫧 Out of the ball'); }
+        else { const r = enterBall(state, u); if (r.ok) { sfx('care'); flash('🫧 Rolling out — safe from predators!'); } else flash(r.reason); }
+      } else { u.order = null; u._exTarget = null; if (u.inBall) exitBall(state, u); flash('✋ Order cleared — back to work'); }
+      renderRodents();
+    });
+    bind('[data-guard]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.gu);
+      if (!u) return;
+      if (btn.dataset.guard === 'toggle') { toggleGuard(state, u); sfx('click'); }
+      else { const r = equipGuard(state, u); msg(r); if (r.ok) sfx('place'); }
+      renderRodents(); renderEnv();
     });
     bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
   }
@@ -318,7 +363,23 @@ export function createUI(state, ctx) {
     });
   }
 
-  function renderLog() { el('log').innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join(''); }
+  // The newest event is unshifted to state.log[0], so it renders at the TOP.
+  // Track the current top entry: only rebuild when it actually changes, and when
+  // a NEW item is reported snap the scroll to the top so the latest line is in
+  // view. When nothing changed we leave the scroll alone, so you can read back
+  // through the story without it yanking to the top every refresh.
+  let lastLogTop = null;
+  function renderLog() {
+    const box = el('log');
+    if (!box) return;
+    const top = state.log[0];
+    const sig = top ? `${top.t}|${top.msg}` : '';
+    const isNew = sig !== lastLogTop;
+    if (!isNew && box.childElementCount) return; // unchanged — preserve scroll
+    box.innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join('');
+    lastLogTop = sig;
+    if (isNew) box.scrollTop = 0; // snap the newest item into view at the top
+  }
 
   // ---- Getting-started guide — a few first steps that auto-tick as you play ----
   const GUIDE_STEPS = [
@@ -582,14 +643,52 @@ export function createUI(state, ctx) {
   // ---- Canvas interaction ----
   function setupCanvas() {
     const c = ctx.canvas;
-    // Zoom: scale the canvas' CSS width; #board scrolls to pan when zoomed in.
-    const board = c.parentElement;
-    if (view.zoom == null) view.zoom = 1;
-    const applyZoom = () => { c.style.width = Math.round(view.zoom * 100) + '%'; };
-    // Min zoom 1 = the map always at least fills the window width (no empty
-    // margins when zooming out); zoom in up to 3.5×.
+    // Zoom model: at zoom 1 the WHOLE map is sized to CONTAIN within the board —
+    // it fills the landscape area in both width AND height (preserving the map's
+    // aspect ratio), centered. Zoom multiplies that base size and #viewport
+    // scrolls to pan. We size the canvas in pixels (not width:100%) so it scales
+    // to the available area on every layout/window change, not just the width.
+    const board = c.parentElement; // #viewport (overflow:auto scroller)
+    const MAP_ASPECT = GRID_W / GRID_H; // map native width:height (40:28)
+    // Start focused ON THE TOWN, not zoomed all the way out: default to a closer
+    // zoom and scroll-center on the colony spawn. The player can still zoom out
+    // to 1 (whole map). 1 = whole map fits; >1 = zoomed in, #viewport pans.
+    const START_ZOOM = 2;
+    if (view.zoom == null) view.zoom = START_ZOOM;
+    const applyZoom = () => {
+      const cs = getComputedStyle(board);
+      const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const availW = board.clientWidth - padX;
+      const availH = board.clientHeight - padY;
+      if (!(availW > 0 && availH > 0)) return; // not laid out yet
+      // Largest size that shows the whole map inside the board (contain fit).
+      const baseW = Math.min(availW, availH * MAP_ASPECT);
+      const w = Math.max(1, Math.round(baseW * view.zoom));
+      c.style.width = w + 'px';
+      c.style.height = Math.round(w / MAP_ASPECT) + 'px';
+    };
+    // Min zoom 1 = the whole map always fits the board (never clipped when zoomed
+    // out); zoom in up to 3.5×.
     const setZoom = (z) => { view.zoom = Math.max(1, Math.min(3.5, z)); applyZoom(); };
     applyZoom();
+    // Center the viewport on the colony once the board has real dimensions
+    // (retry across frames until laid out). Runs once, at game-view start.
+    let centered = false;
+    const centerOnTown = () => {
+      if (centered) return;
+      if (!(board.clientWidth > 0 && c.offsetWidth > 0)) { requestAnimationFrame(centerOnTown); return; }
+      const sp = state.world?.spawn || { x: GRID_W / 2, y: GRID_H / 2 };
+      const fracX = (sp.x + 0.5) / GRID_W, fracY = (sp.y + 0.5) / GRID_H;
+      board.scrollLeft = Math.max(0, fracX * c.offsetWidth - board.clientWidth / 2);
+      board.scrollTop = Math.max(0, fracY * c.offsetHeight - board.clientHeight / 2);
+      centered = true;
+    };
+    requestAnimationFrame(centerOnTown);
+    // Re-fit whenever the board area changes — window resize, or the sidebar/log
+    // dividers being dragged (which resize the board around the map).
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => applyZoom()).observe(board);
+    window.addEventListener('resize', applyZoom);
     el('zoom-in') && (el('zoom-in').onclick = () => setZoom(view.zoom + 0.25));
     el('zoom-out') && (el('zoom-out').onclick = () => setZoom(view.zoom - 0.25));
     el('zoom-reset') && (el('zoom-reset').onclick = () => setZoom(1));
@@ -651,6 +750,12 @@ export function createUI(state, ctx) {
       if (b && BUILDINGS[b.type].tower) { b.mode = b.mode === 'defend' ? 'watch' : 'defend'; sfx('click'); flash(b.mode === 'defend' ? '🗡️ Tower → DEFEND (stronger, but costs morale)' : '👁️ Tower → WATCH (wide vision, gentle)'); return; }
       if (b && BUILDINGS[b.type].townhall) { const r = upgradeTownhall(state, b); flash(r.ok ? 'Town Hall upgraded' : r.reason || ''); return; }
       if (b && BUILDINGS[b.type].breed && (b.dirt || 0) >= 1) { const r = cleanBurrow(state, b); flash(r.ok ? '🧹 Burrow cleaned' : r.reason || ''); return; }
+      // A selected rodent + a click on open or fogged ground = "go there": it
+      // drops its current task, heads to that tile, and reveals fog en route.
+      if (!b && view.selUnit) {
+        const u = state.units.find(x => x.id === view.selUnit);
+        if (u) { u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null; sfx('click'); flash('🐾 On my way!'); renderRodents(); return; }
+      }
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
     c.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!panMoved) { view.placing = null; renderBuild(); } });

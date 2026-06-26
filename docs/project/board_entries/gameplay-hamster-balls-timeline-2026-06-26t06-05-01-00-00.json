@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "gameplay:hamster-balls",
+  "status": "In Progress",
+  "timeline": [
+    {
+      "at": "2026-06-26T06:05:01+00:00",
+      "status": "In Progress",
+      "note": "Ball Workshop (plastic→balls); roll safe from predators, fun/curiosity up, anxiety builds → pops out, heat death on hot days (PR #43)"
+    }
+  ],
+  "updated": "2026-06-26T06:05:01+00:00",
+  "pr": "43"
+}

@@ -671,6 +671,16 @@ export function createRenderer(canvas, state, getView) {
       u._rx = u.x; u._ry = u.y;
       const cx = u.x * TILE + TILE / 2, cy = u.y * TILE + TILE / 2;
       drawCreatureRaw(cx, cy, u._face || 1, coatFor(u), t * 12 + u.id * 1.7, moved > 0.0015 && u.phase !== 'sleep', u.phase === 'sleep', !!u.carrying, t, u);
+      if (u.inBall) { // a hamster rolling inside a translucent ball
+        const rr = (VIS[u.species]?.size || 15) + 6;
+        ctx.save();
+        ctx.beginPath(); ctx.arc(cx, cy - 2, rr, 0, 7);
+        ctx.fillStyle = 'rgba(180,225,255,0.16)'; ctx.fill();
+        ctx.lineWidth = 1.8; ctx.strokeStyle = 'rgba(195,232,255,0.9)'; ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx - rr * 0.34, cy - rr * 0.5, rr * 0.26, 0, 7);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fill(); // glossy highlight
+        ctx.restore();
+      }
       if (u.sick) glyph('🤢', cx + 9, cy - 11, 12); // wet tail
       if (view.selUnit === u.id) { ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, (VIS[u.species]?.size || 15) + 3, 0, 7); ctx.stroke(); }
     }
