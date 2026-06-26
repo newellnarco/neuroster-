@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T16:40:58Z",
+  "updated": "2026-06-26T16:47:35Z",
   "items": [
     {
       "key": "econ:1",
@@ -977,13 +977,19 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Optional quality-of-life.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:46:22+00:00",
+          "status": "Done",
+          "note": "Built in UI/UX section"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:46:22+00:00"
     },
     {
       "key": "balance:pacing",
@@ -1144,19 +1150,24 @@
       "type": "Bug",
       "area": "Engine",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "49",
+      "release": "2c8095b",
       "detail": "Acceptable for now; revisit if it reads odd. Tied to true-pathfinding.",
       "timeline": [
         {
           "at": "2026-06-26T16:39:41+00:00",
           "status": "Done",
           "note": "Built in Engine section (lightweight, not the deferred A* refactor)"
+        },
+        {
+          "at": "2026-06-26T16:41:02+00:00",
+          "status": "Shipped",
+          "note": "PR #49 merged (release 2c8095b)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:39:41+00:00"
+      "updated": "2026-06-26T16:41:02+00:00"
     },
     {
       "key": "fix:balance-pass",
@@ -1302,8 +1313,8 @@
       "type": "New Feature",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Todo",
-      "pr": "43",
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Currently auto by prefKind; let players pin specific rodents.",
       "timeline": [
@@ -1316,10 +1327,15 @@
           "at": "2026-06-26T06:42:49+00:00",
           "status": "Todo",
           "note": "Reverted from In Progress: not delivered in PR #43 (no job-assignment UI in code); back to active queue"
+        },
+        {
+          "at": "2026-06-26T16:46:22+00:00",
+          "status": "Done",
+          "note": "Built in UI/UX section"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T06:42:49+00:00"
+      "updated": "2026-06-26T16:46:22+00:00"
     },
     {
       "key": "add:true-pathfinding",
@@ -1347,19 +1363,24 @@
       "type": "New Feature",
       "area": "Engine",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "49",
+      "release": "2c8095b",
       "detail": "Model real upstream/downstream so a dam visibly dries above & irrigates below (currently a global penalty).",
       "timeline": [
         {
           "at": "2026-06-26T16:39:41+00:00",
           "status": "Done",
           "note": "Built in Engine section (lightweight, not the deferred A* refactor)"
+        },
+        {
+          "at": "2026-06-26T16:41:02+00:00",
+          "status": "Shipped",
+          "note": "PR #49 merged (release 2c8095b)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:39:41+00:00"
+      "updated": "2026-06-26T16:41:02+00:00"
     },
     {
       "key": "add:disease-events",
