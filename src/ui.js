@@ -1,5 +1,5 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
-import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR } from './config.js';
+import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR, NODE_TYPES } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
 import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
@@ -190,6 +190,17 @@ export function createUI(state, ctx) {
           ${orderLabel ? `<span class="sub">${orderLabel}</span>` : ''}
           <span class="sub" title="Select a rodent, then click a tile (even fogged) to send it there">tip: click the map to send</span>
         </div>` : '';
+      // Job assignment (selected unit): bias this rodent toward a preferred
+      // resource. This is a soft preference over the auto-sim — "Auto" clears it
+      // and lets the colony decide; a pinned kind makes the rodent prefer that
+      // resource when one is available, falling back to the nearest otherwise.
+      const jobRow = view.selUnit === u.id ? `<div class="care taskrow jobrow">
+          <span class="sub" title="Bias this rodent toward gathering a resource. Soft preference: it prefers its assigned target when one's available, else takes the nearest.">🎯 Job:</span>
+          <button class="carebtn ${!u.jobPref ? 'on' : ''}" data-job="auto" data-ju="${u.id}"
+            title="Auto — let the colony decide what this rodent gathers">🤖 Auto</button>
+          ${Object.entries(JOB_KINDS).map(([kind, j]) => `<button class="carebtn ${u.jobPref === kind ? 'on' : ''}" data-job="${kind}" data-ju="${u.id}"
+            title="Prefer ${j.label} (${RESOURCES[NODE_TYPES[kind].resource]?.name || NODE_TYPES[kind].resource})${NODE_TYPES[kind].surface === false ? ' — needs a Mine on the seam' : ''}">${j.icon}</button>`).join('')}
+        </div>` : '';
       // Guard / soldier skill + equipment tiers (selected unit).
       const nextGear = GUARD_GEAR[(u.gear || 0) + 1];
       const guardRow = view.selUnit === u.id ? `<div class="care taskrow">
@@ -206,7 +217,7 @@ export function createUI(state, ctx) {
           <span class="xpbar"><span style="width:${Math.min(100, 100 * u.xp / xpForLevel(u.level))}%"></span></span>
           <span class="sub">❤️${bond} · ${sleepInfo}</span></div>
         ${lineage ? `<div class="kinrow">${lineage}</div>` : ''}
-        <div class="traits">${traits}</div>${care}${taskRow}${guardRow}</div>`;
+        <div class="traits">${traits}</div>${care}${taskRow}${jobRow}${guardRow}</div>`;
     }).join('');
 
     const more = state.units.length > CAP ? `<div class="hint">Showing the top ${CAP} of ${population(state)} by level (select one to pin it to the top).</div>` : '';
@@ -241,6 +252,16 @@ export function createUI(state, ctx) {
         if (u.inBall) { exitBall(state, u); flash('🫧 Out of the ball'); }
         else { const r = enterBall(state, u); if (r.ok) { sfx('care'); flash('🫧 Rolling out — safe from predators!'); } else flash(r.reason); }
       } else { u.order = null; u._exTarget = null; if (u.inBall) exitBall(state, u); flash('✋ Order cleared — back to work'); }
+      renderRodents();
+    });
+    bind('[data-job]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.ju);
+      if (!u) return;
+      const k = btn.dataset.job;
+      u.jobPref = k === 'auto' ? null : k;
+      u.targetNode = null; // re-pick a target now so the new preference takes effect immediately
+      sfx('click');
+      flash(u.jobPref ? `🎯 ${escHtml(u.name || 'Rodent')} → prefers ${JOB_KINDS[u.jobPref]?.label || u.jobPref}` : `🤖 ${escHtml(u.name || 'Rodent')} → Auto`);
       renderRodents();
     });
     bind('[data-guard]', (btn) => {
@@ -915,6 +936,16 @@ export function createUI(state, ctx) {
   return { init, update, flash, newColony: showCharacterCreation,
     renderAll: () => { renderResbar(); renderEnv(); renderNeeds(); renderBuild(); renderTech(); renderEvo(); renderRodents(); renderThreats(); renderTrade(); renderMega(); renderDoctrine(); renderLog(); renderAlerts(); renderGuide(); } };
 }
+
+// Assignable gathering jobs — each biases a rodent toward one resource node kind.
+// Icons read at a glance in the per-rodent Job row (the auto-sim honours the pick).
+const JOB_KINDS = {
+  trees:    { icon: '🌳', label: 'Wood (forage trees)' },
+  rock:     { icon: '🪨', label: 'Stone (quarry rock)' },
+  bush:     { icon: '🌿', label: 'Seeds (forage bushes)' },
+  orevein:  { icon: '⛰️', label: 'Iron ore (mine)' },
+  coalseam: { icon: '⚫', label: 'Coal (mine)' },
+};
 
 // Short, plain-language notes shown when you click a resource chip.
 const RESDESC = {

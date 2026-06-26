@@ -245,6 +245,12 @@ function moveToward(state, u, tx, ty, spd, dt) {
 }
 
 function nearestNode(state, u) {
+  // A rodent prefers a target resource. The player can pin an explicit job
+  // preference (u.jobPref) which biases selection toward that node kind; with no
+  // explicit pin it falls back to the auto round-robin prefKind. Either way it's
+  // a soft bias: when no preferred node is available it takes the nearest one, so
+  // the auto-sim never stalls.
+  const wantKind = u.jobPref || u.prefKind;
   let best = null, bd = Infinity, bestPref = null, bdPref = Infinity;
   for (const n of state.world.nodes) {
     if (n.amount <= 0) continue;
@@ -252,7 +258,7 @@ function nearestNode(state, u) {
     if (n.claimedBy) continue;                            // belt/mine already on it
     const d = (n.x - u.x) ** 2 + (n.y - u.y) ** 2;
     if (d < bd) { bd = d; best = n; }
-    if (n.kind === u.prefKind && d < bdPref) { bdPref = d; bestPref = n; }
+    if (n.kind === wantKind && d < bdPref) { bdPref = d; bestPref = n; }
   }
   return bestPref || best;
 }
