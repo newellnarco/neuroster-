@@ -2,7 +2,7 @@
 import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR } from './config.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
-import { spawnCaravan } from './factions.js';
+import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST } from './factions.js';
 
 // Repelling is a choice between kindness and preservation:
 //  • With a Vet Clinic you HEAL the injured attacker — morale rises, and a
@@ -239,6 +239,7 @@ function fireDisaster(state, key, d, elapsed) {
 export function stepFactions(state, dt) {
   if (!state.factions) return;
   const lived = state.env?.lived || 0;
+  expireContests(state, lived); // contests that have run their course lapse
   for (const [id, f] of Object.entries(FACTIONS)) {
     const st = state.factions[id] || (state.factions[id] = { standing: 0, raidTimer: 150 });
     // drift toward neutral
@@ -248,6 +249,17 @@ export function stepFactions(state, dt) {
     for (const r of f.covets) { const over = (state.res[r] || 0) - TRADE.hoardThreshold; if (over > 0) hoard += over; }
     if (hoard > 0) st.standing = Math.max(-100, st.standing - (0.06 + hoard * 0.0010) * dt);
     st.hoard = hoard;
+
+    // A neighbour on good terms peacefully cedes any seam it was contesting.
+    if (hasContest(state, id) && (st.standing || 0) >= CONTEST.cedeStanding) resolveContest(state, id);
+
+    // Standing-driven on-map competition: every so often a neighbour eyes a seam.
+    st.interestTimer = (st.interestTimer ?? CONTEST.interest * (0.5 + hash(id))) - dt;
+    if (st.interestTimer <= 0) {
+      st.interestTimer = CONTEST.interest * EVENT_PACE * (0.7 + 0.6 * hash(id + Math.floor(lived)));
+      stepCompetition(state, id, f, st, lived, hoard);
+    }
+
     // raid cadence
     st.raidTimer -= dt;
     if (st.raidTimer <= 0) {
@@ -258,6 +270,20 @@ export function stepFactions(state, dt) {
       if (pressure > 14) fireFactionRaid(state, id, f, pressure);
     }
   }
+}
+
+// Decide what a neighbour does about resource competition this round, by standing:
+//   high standing → it cedes / trades any claim back to you (or simply abstains);
+//   middling/low  → it contests a node, dropping your yield there;
+//   peaceful mode / truce → no aggression (still resolves friendly cessions).
+function stepCompetition(state, id, f, st, lived, hoard) {
+  const standing = st.standing || 0;
+  if (standing >= CONTEST.cedeStanding) { resolveContest(state, id); return; }
+  if (lived < GRACE_SECONDS || state.disasters === false) return; // peaceful early game / mode
+  if ((state.truceUntil || 0) > lived) return; // a truce stays competition too
+  // Envy (hoarding their coveted goods) makes even a neutral neighbour grab a seam.
+  const contestUrge = standing < CONTEST.contestBelow || hoard > 0;
+  if (contestUrge && !hasContest(state, id)) contestNode(state, id, lived);
 }
 
 function fireFactionRaid(state, id, f, pressure) {

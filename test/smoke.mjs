@@ -1031,4 +1031,73 @@ console.log('Production chain (Mason / Furnace / Forge + brick + armour):');
   ok(`armour boosts defense ${def0}→${def1} & offense ${off0}→${off1} (capped at ${ARMOUR.defCap})`);
 }
 
+// 30) AI colonies compete for resource nodes (standing-driven contest / cede).
+console.log('AI colonies compete for nodes:');
+{
+  const { contestNode, resolveContest, expireContests, nodeContestFactor, hasContest, CONTEST } = await import('../src/factions.js');
+  const { FACTIONS } = await import('../src/config.js');
+
+  // A faction can contest a surface seam, dropping your yield there.
+  const s = newGame(1300, 'woodland', 'syrian', 'Compete', {});
+  const fid = Object.keys(FACTIONS)[0];
+  const surf = s.world.nodes.find(n => n.amount > 0 && !n.claimedBy);
+  assert(surf, 'a surface node to contest exists');
+  const node = contestNode(s, fid, 100);
+  assert(node && node.contestedBy === fid, 'a faction claims/contests a node');
+  assert(hasContest(s, fid), 'the contest is registered against the faction');
+  assert(Math.abs(nodeContestFactor(s, node) - CONTEST.yieldMul) < 1e-9, `a contested node yields only ×${CONTEST.yieldMul}`);
+  assert(nodeContestFactor(s, { amount: 5 }) === 1, 'an uncontested node yields fully');
+  ok(`an AI colony contests a node (yield ×${CONTEST.yieldMul} while disputed)`);
+
+  // Contesting actually reduces what a worker pulls from that very seam.
+  function harvestFrom(contested) {
+    const g = newGame(1301, 'woodland', 'syrian', 'Yield', {});
+    g.world.nodes.length = 0;
+    const sp = g.world.spawn;
+    const n = { id: 1, kind: 'trees', x: sp.x + 1, y: sp.y, amount: 500, max: 500 };
+    g.world.nodes.push(n);
+    if (contested) { n.contestedBy = Object.keys(FACTIONS)[0]; n.contestUntil = 1e9; }
+    const a0 = n.amount;
+    for (let i = 0; i < 120; i++) { for (const u of g.units) u.needs.energy = 100; stepEconomy(g, 0.2); }
+    return a0 - n.amount; // how much was drawn from the seam
+  }
+  const free = harvestFrom(false), disputed = harvestFrom(true);
+  assert(disputed < free, `a contested seam is drained slower (free ${free.toFixed(1)} > disputed ${disputed.toFixed(1)})`);
+  ok(`contesting a node cuts your real harvest from it (${free.toFixed(0)} → ${disputed.toFixed(0)})`);
+
+  // Standing drives the outcome: HIGH standing → the neighbour cedes & trades.
+  const hi = newGame(1302, 'woodland', 'syrian', 'Peace', {});
+  const n2 = contestNode(hi, fid, 100);
+  hi.factions[fid].standing = CONTEST.cedeStanding + 10; // on good terms
+  const offered = hi.res[FACTIONS[fid].offers] || 0;
+  const did = resolveContest(hi, fid);
+  assert(did && !n2.contestedBy, 'a high-standing neighbour cedes the contested seam');
+  assert((hi.res[FACTIONS[fid].offers] || 0) > offered, 'ceding comes with a goodwill trade of their offered goods');
+  ok('high standing → the AI colony cedes/trades the node back (peaceful outcome)');
+
+  // LOW standing → stepFactions drives an active contest (and never trades it away).
+  const lo = newGame(1303, 'woodland', 'syrian', 'Rival', {});
+  lo.env.lived = 4000; lo.disasters = true;
+  const fids = Object.keys(FACTIONS);
+  for (const id of fids) { lo.factions[id].standing = -50; lo.factions[id].interestTimer = 0.01; }
+  let contestedNow = false;
+  for (let i = 0; i < 5 && !contestedNow; i++) { stepEconomy(lo, 0.1); contestedNow = lo.world.nodes.some(n => n.contestedBy); }
+  assert(contestedNow, 'a low-standing AI colony actively contests a node via the faction step');
+  ok('low standing → the AI colony contests a node (hostile outcome)');
+
+  // Contests lapse once their timer runs out.
+  const ex = newGame(1304, 'woodland', 'syrian', 'Lapse', {});
+  const n3 = contestNode(ex, fid, 100);
+  expireContests(ex, n3.contestUntil + 1);
+  assert(!n3.contestedBy, 'a contest lapses after its duration');
+  ok('contests expire after their duration');
+
+  // Contest state survives a save/load roundtrip.
+  const rt = newGame(1305, 'woodland', 'syrian', 'Save', {});
+  const n4 = contestNode(rt, fid, 100);
+  const back = importSaveString(exportSave(rt));
+  assert(back.ok && back.state.world.nodes.some(n => n.contestedBy === fid), 'a contest persists through save/load');
+  ok('node contests persist through a save roundtrip');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

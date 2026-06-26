@@ -12,7 +12,7 @@ import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
 import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR } from './config.js';
 import { megaBonuses } from './megaprojects.js';
-import { ensureCamps, stepCaravans } from './factions.js';
+import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
 
 // Run one simulation tick. dt is seconds per tick.
@@ -351,7 +351,8 @@ function runBeltNetworks(state, dt, wb) {
     let hauled = 0;
     for (const n of reach) {
       if (cap <= 0) break;
-      const got = Math.min(n.amount, cap);
+      // A contested seam yields less to your belts while a neighbour works it too.
+      const got = Math.min(n.amount, cap) * nodeContestFactor(state, n);
       n.amount -= got; cap -= got; hauled += got;
       addRes(state, NODE_TYPES[n.kind].resource, got);
     }

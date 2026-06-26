@@ -75,6 +75,17 @@ export function computeAlerts(state) {
     }
   }
 
+  // A neighbour AI colony is contesting a resource seam (your yield there drops).
+  {
+    const contested = (state.world?.nodes || []).filter(n => n.contestedBy);
+    if (contested.length) {
+      const fid = contested[0].contestedBy;
+      const f = FACTIONS[fid];
+      push('warning', 'contest', f?.icon || '⛏️',
+        `${f?.name || 'A neighbour'} colony is contesting ${contested.length} resource seam(s) — improve standing (trade/gift) to win it back.`, 'trade');
+    }
+  }
+
   // Imminent disaster with thin defenses for this biome.
   const biome = state.world?.biome;
   for (const [key, d] of Object.entries(DISASTERS)) {
