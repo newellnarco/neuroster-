@@ -25,6 +25,18 @@ export function seasonKey(state) {
 }
 export function currentSeason(state) { return SEASONS[seasonKey(state)] || SEASONS.spring; }
 
+// A gentle per-season colour wash painted over the whole map (one fill/frame).
+// Each season returns a DISTINCT rgba tint so the time of year is felt without
+// obscuring gameplay: a fresh green spring, warm golden summer, amber autumn,
+// cool blue-white winter. Pure (takes a season key) so it's unit-testable.
+const SEASON_TINTS = {
+  spring: 'rgba(150,210,140,0.05)',
+  summer: 'rgba(255,224,130,0.05)',
+  autumn: 'rgba(214,120,40,0.10)',
+  winter: 'rgba(150,180,225,0.12)',
+};
+export function seasonTint(key) { return SEASON_TINTS[key] || SEASON_TINTS.spring; }
+
 export function initEnv(state) {
   // dayTime = clock position; lived = total seconds actually played (for pacing).
   state.env = { dayTime: DAY_SECONDS * 0.3, lived: 0, weather: defaultWeather(state), weatherTimer: 0 };

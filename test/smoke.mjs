@@ -279,7 +279,7 @@ console.log('Compassion & rescue:');
 // 12) Seasons & festivals (recurring return hook).
 console.log('Seasons & festivals:');
 {
-  const { seasonKey, currentSeason, envMods } = await import('../src/environment.js');
+  const { seasonKey, currentSeason, envMods, seasonTint } = await import('../src/environment.js');
   const { DAY_SECONDS, DAYS_PER_SEASON } = await import('../src/config.js');
   const s = newGame(70, 'woodland', 'syrian', 'Seasons', {});
   // Day 1 → spring; advancing a season's worth of days → summer.
@@ -292,6 +292,15 @@ console.log('Seasons & festivals:');
   assert(seasonKey(s) === 'winter', `reaches winter (got ${seasonKey(s)})`);
   assert(envMods(s).needDrain > 0 && envMods(s).foodMul < 0, 'winter is harsher (needs up, food down)');
   ok('seasons cycle spring→summer→…→winter with distinct modifiers');
+
+  // Seasonal atmosphere wash: each season returns a DISTINCT rgba tint (one
+  // cheap fill per frame), and they're well-formed rgba() strings.
+  const tints = ['spring', 'summer', 'autumn', 'winter'].map(seasonTint);
+  for (const tn of tints) assert(/^rgba\(\d+,\s*\d+,\s*\d+,\s*[\d.]+\)$/.test(tn), `season tint is rgba(): ${tn}`);
+  assert(new Set(tints).size === 4, 'each of the 4 seasons gets a distinct colour wash');
+  assert(seasonTint('spring') === seasonTint('spring'), 'seasonTint is deterministic per season');
+  assert(seasonTint('nonsense') === seasonTint('spring'), 'an unknown season falls back to spring');
+  ok('seasonTint gives each season a distinct, well-formed colour wash');
 
   // A festival fires when the season changes (morale lifts).
   const s2 = newGame(71, 'prairie', 'syrian', 'Fest', {});
