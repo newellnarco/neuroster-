@@ -1,0 +1,67 @@
+name: compact-board
+
+# The ONLY writer of the derived board files on `main`.
+#
+# PRs never edit docs/project/board_state.json or docs/project/PROJECT_STATUS.md
+# directly — they add docs/project/board_entries/*.json FRAGMENTS instead
+# (distinct filenames, so concurrent PRs can't conflict). After each push to
+# main this job compacts the pending fragments into board_state.json, deletes
+# the consumed fragment files, re-renders PROJECT_STATUS.md, and commits
+# "[auto] ..." ONLY when something changed.
+#
+# Loop guards (belt and suspenders):
+#   1. skip when the head commit is our own "[auto]" commit;
+#   2. even if it ran, a compacted tree has no fragments -> no diff -> no
+#      commit -> no follow-on push event.
+#
+# Customize: change `branches` if your default branch isn't `main`. The two
+# docs/project paths below are replaced by the find/replace pass; if you keep
+# the default docs/project they need no edit. Tools read wall.config.json at
+# runtime, so the owner/repo placeholders don't appear here.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to push the [auto] commit back to main
+
+jobs:
+  compact-board-fragments:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      !startsWith(github.event.head_commit.message, '[auto]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Compact fragments + re-render status page
+        run: |
+          python tools/compact_board_fragments.py
+          # compact_board_fragments.py already re-runs render_board.py, but
+          # call it explicitly too so PROJECT_STATUS.md is regenerated even on a
+          # no-fragment run where only the renderer changed.
+          python tools/render_board.py
+          git add -A
+
+      - name: Commit + push when changed
+        run: |
+          if git diff --cached --quiet; then
+            echo "No board changes — nothing to commit."
+            exit 0
+          fi
+          git config user.name "board-compactor"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "[auto] compact board fragments + re-render status"
+          git push origin HEAD:main
