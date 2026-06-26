@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T17:26:34Z · 82 items_
+_board_state.json updated: 2026-06-26T17:41:09Z · 83 items_
 
 ## Summary
 
@@ -13,13 +13,13 @@ _board_state.json updated: 2026-06-26T17:26:34Z · 82 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 4 |
-| Shipped | 71 |
+| Done | 1 |
+| Shipped | 75 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **82** |
+| **TOTAL** | **83** |
 
-**75 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**76 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -66,12 +66,12 @@ _board_state.json updated: 2026-06-26T17:26:34Z · 82 items_
 | None | Species-specific evolution branches (beaver dams, rat swarms…) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | Per-unit need decay modified by traits (Vigor) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Tie Main Hamster level to more unlocks (buildings/species) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
-| None | Build mode reverts to select after placing; re-click cancels | — | `—` |
-| None | Click a resource node with a rodent selected to send it gathering | — | `—` |
-| None | Calmer normal speed + roomier event cadence | — | `—` |
-| None | Any selected hamster can spend skill points (not just leader) | — | `—` |
+| None | Build mode reverts to select after placing; re-click cancels | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
+| None | Click a resource node with a rodent selected to send it gathering | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
+| None | Calmer normal speed + roomier event cadence | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
+| None | Any selected hamster can spend skill points (not just leader) | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
 
-### CREATURES (4)
+### CREATURES (5)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -79,6 +79,7 @@ _board_state.json updated: 2026-06-26T17:26:34Z · 82 items_
 | 3 | Rodent species + recruiting + hybrids | — | `—` |
 | 4 | Per-creature needs (food/water/energy/fun/health) | — | `—` |
 | 5 | Sleep cycles per species/level | — | `—` |
+| None | Breeding overhaul: sexes + maturity, burrow-based slower breeding, gentler wet tail, starting housing | — | `—` |
 
 ### DEFENSE (1)
 

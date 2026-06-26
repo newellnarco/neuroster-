@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T17:26:34Z",
+  "updated": "2026-06-26T17:41:09Z",
   "items": [
     {
       "key": "econ:1",
@@ -1833,13 +1833,19 @@
       "type": "Fix",
       "area": "UI/UX",
       "priority": "P1",
-      "status": "Done",
-      "pr": 0,
-      "release": null,
+      "status": "Shipped",
+      "pr": "53",
+      "release": "3d89078",
       "detail": "",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T17:26:36+00:00",
+          "status": "Shipped",
+          "note": "PR #53 merged (release 3d89078)"
+        }
+      ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T17:26:36+00:00"
     },
     {
       "key": "fix:direct-gather",
@@ -1850,13 +1856,19 @@
       "type": "Fix",
       "area": "UI/UX",
       "priority": "P1",
-      "status": "Done",
-      "pr": 0,
-      "release": null,
+      "status": "Shipped",
+      "pr": "53",
+      "release": "3d89078",
       "detail": "",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T17:26:36+00:00",
+          "status": "Shipped",
+          "note": "PR #53 merged (release 3d89078)"
+        }
+      ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T17:26:36+00:00"
     },
     {
       "key": "fix:sim-speed",
@@ -1867,13 +1879,19 @@
       "type": "Fix",
       "area": "Balance",
       "priority": "P1",
-      "status": "Done",
-      "pr": 0,
-      "release": null,
+      "status": "Shipped",
+      "pr": "53",
+      "release": "3d89078",
       "detail": "",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T17:26:36+00:00",
+          "status": "Shipped",
+          "note": "PR #53 merged (release 3d89078)"
+        }
+      ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T17:26:36+00:00"
     },
     {
       "key": "fix:skill-points",
@@ -1883,6 +1901,29 @@
       "phase": null,
       "type": "Fix",
       "area": "UI/UX",
+      "priority": "P1",
+      "status": "Shipped",
+      "pr": "53",
+      "release": "3d89078",
+      "detail": "",
+      "timeline": [
+        {
+          "at": "2026-06-26T17:26:36+00:00",
+          "status": "Shipped",
+          "note": "PR #53 merged (release 3d89078)"
+        }
+      ],
+      "screenshots": [],
+      "updated": "2026-06-26T17:26:36+00:00"
+    },
+    {
+      "key": "feat:breeding-overhaul",
+      "issue": null,
+      "title": "Breeding overhaul: sexes + maturity, burrow-based slower breeding, gentler wet tail, starting housing",
+      "arch": "CREATURES",
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
       "priority": "P1",
       "status": "Done",
       "pr": 0,
