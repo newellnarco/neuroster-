@@ -33,6 +33,7 @@ export const RESOURCES = {
   steel:    { name: 'Steel',    icon: '⚙️', kind: 'refined', color: '#9fb0c4' },
   brick:    { name: 'Brick',    icon: '🧱', kind: 'refined', color: '#b5562f' },
   armour:   { name: 'Armour',   icon: '🛡️', kind: 'refined', color: '#8c97a6' },
+  oil:      { name: 'Oil',      icon: '🛢️', kind: 'raw',     color: '#2b2b33' },
   plastic:  { name: 'Plastic',  icon: '🟦', kind: 'refined', color: '#6fa8dc' },
   balls:    { name: 'Hamster Balls', icon: '🫧', kind: 'refined', color: '#bfe3ff' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
@@ -52,6 +53,7 @@ export const NODE_TYPES = {
   bush:     { resource: 'seeds',   icon: '🌿', amount: 200, color: '#558b2f', surface: true },
   orevein:  { resource: 'ironore', icon: '⛰️', amount: 300, color: '#8d6e63', surface: false },
   coalseam: { resource: 'coal',    icon: '⚫', amount: 300, color: '#37474f', surface: false },
+  oilseep:  { resource: 'oil',     icon: '🛢️', amount: 260, color: '#23232a', surface: false },
 };
 
 // ---- Buildings -------------------------------------------------------------
@@ -278,8 +280,12 @@ export const BUILDINGS = {
     cost: { planks: 20, iron: 20 }, category: 'Automation', belt: { rate: 2.4, tier: 3 }, radius: 3, needsNode: true,
   },
   refinery: {
-    name: 'Refinery', icon: '🛢️', desc: 'Refines Coal into Plastic for advanced belts & parts.',
+    name: 'Refinery', icon: '🛢️', desc: 'Refines Coal into Plastic for advanced belts & parts (plastic conveyors, hamster balls, solar panels).',
     cost: { stone: 40, iron: 20 }, category: 'Production', produces: { plastic: 0.3 }, consumes: { coal: 0.4 }, pollutes: 0.9,
+  },
+  oilrefinery: {
+    name: 'Oil Refinery', icon: '⚗️', desc: 'The advanced refining tier: cracks Oil (from an oil seep, mined) into far more Plastic per unit than coal — and burns cleaner. Plastic feeds plastic conveyors, the Ball Workshop & Solar Panels.',
+    cost: { brick: 18, iron: 25, steel: 8 }, category: 'Production', produces: { plastic: 0.6 }, consumes: { oil: 0.5 }, pollutes: 0.4,
   },
   lab: {
     name: 'Research Lab', icon: '🔬', desc: 'Generates Research points.',
@@ -364,6 +370,7 @@ export const BUILDING_TEX = {
   steelworks:      { tex: 'brick', base: '#b86a4e' },
   coalplant:       { tex: 'brick', base: '#9a4f3a' },
   refinery:        { tex: 'brick', base: '#a85a42' },
+  oilrefinery:     { tex: 'stone', base: '#4a4a55' },
   fertilizerplant: { tex: 'brick', base: '#b08a5a' },
   pelletpress:     { tex: 'brick', base: '#b9853f' },
   mason:           { tex: 'brick', base: '#b5562f' },

@@ -1147,4 +1147,58 @@ console.log('NPC animal events (merchant & beast parley):');
   ok('beast parley: standing firm raises Valor instead of spending food');
 }
 
+// 32) Plastics & advanced refining: coal/oil → plastic; plastic feeds consumers.
+console.log('Plastics & advanced refining:');
+{
+  const { BUILDINGS, RESOURCES, NODE_TYPES } = await import('../src/config.js');
+  const built = (s, type, x, y) => { s.buildings.push({ id: s.nextId++, type, x, y, active: true }); };
+
+  // The refining tier exists: oil resource + oil seep node + two refineries.
+  assert(RESOURCES.oil && RESOURCES.oil.kind === 'raw', 'Oil is a real raw resource');
+  assert(NODE_TYPES.oilseep && NODE_TYPES.oilseep.resource === 'oil' && NODE_TYPES.oilseep.surface === false,
+    'Oil seep is an underground node yielding oil');
+  assert(BUILDINGS.refinery?.consumes?.coal && BUILDINGS.refinery?.produces?.plastic, 'Refinery: coal → plastic');
+  assert(BUILDINGS.oilrefinery?.consumes?.oil && BUILDINGS.oilrefinery?.produces?.plastic, 'Oil Refinery: oil → plastic');
+  // The advanced tier is more plastic-efficient per input than the coal refinery.
+  const coalEff = BUILDINGS.refinery.produces.plastic / BUILDINGS.refinery.consumes.coal;
+  const oilEff = BUILDINGS.oilrefinery.produces.plastic / BUILDINGS.oilrefinery.consumes.oil;
+  assert(oilEff > coalEff && BUILDINGS.oilrefinery.pollutes < BUILDINGS.refinery.pollutes,
+    'Oil refining is more efficient & cleaner than coal refining');
+  ok('refining tier present: coal/oil → plastic, oil being the cleaner, richer route');
+
+  // Coal Refinery converts coal → plastic in the production tick.
+  const c = newGame(1500, 'mountains', 'syrian', 'CoalPlas', {});
+  c.res = { coal: 200 };
+  built(c, 'refinery', c.world.spawn.x + 2, c.world.spawn.y);
+  const p0 = c.res.plastic || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(c, 0.2);
+  assert((c.res.plastic || 0) > p0, `Refinery turns coal → plastic (${p0} → ${(c.res.plastic || 0).toFixed(1)})`);
+  assert((c.res.coal || 0) < 200, 'Refinery consumes coal');
+  ok(`coal Refinery refines plastic (${(c.res.plastic || 0).toFixed(1)})`);
+
+  // Oil Refinery converts oil → plastic, faster than the coal route.
+  const o = newGame(1501, 'mountains', 'syrian', 'OilPlas', {});
+  o.res = { oil: 200 };
+  built(o, 'oilrefinery', o.world.spawn.x + 2, o.world.spawn.y);
+  const op0 = o.res.plastic || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(o, 0.2);
+  assert((o.res.plastic || 0) > op0, `Oil Refinery turns oil → plastic (${op0} → ${(o.res.plastic || 0).toFixed(1)})`);
+  assert((o.res.oil || 0) < 200, 'Oil Refinery consumes oil');
+  assert((o.res.plastic || 0) > (c.res.plastic || 0), 'oil refining out-produces coal refining over the same time');
+  ok(`oil Refinery refines plastic faster (${(o.res.plastic || 0).toFixed(1)})`);
+
+  // Plastic is a usable resource for its consumers: the Ball Workshop eats it.
+  const w = newGame(1502, 'prairie', 'syrian', 'Consume', {});
+  w.res = { plastic: 100 };
+  built(w, 'ballworkshop', w.world.spawn.x + 2, w.world.spawn.y);
+  const plas0 = w.res.plastic;
+  for (let i = 0; i < 30; i++) stepEconomy(w, 0.2);
+  assert((w.res.plastic || 0) < plas0, `a plastic consumer (Ball Workshop) draws down plastic (${plas0} → ${(w.res.plastic || 0).toFixed(1)})`);
+  assert((w.res.balls || 0) > 0, 'plastic feeds the Ball Workshop into hamster balls');
+  // Plastic is also a build material for plastic conveyors & solar panels.
+  assert((BUILDINGS.conveyorPlastic.cost.plastic || 0) > 0 && (BUILDINGS.solar.cost.plastic || 0) > 0,
+    'plastic is a build cost for plastic conveyors & solar panels');
+  ok('plastic is a usable resource: consumed by the Ball Workshop & spent on plastic conveyors/solar');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

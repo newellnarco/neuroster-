@@ -60,7 +60,7 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
   const cx = Math.floor(GRID_W / 2), cy = Math.floor(GRID_H / 2);
   // Trees seeded ~2.6× denser than the rest: the wood economy (storage,
   // wooden power/mills/lifts, fences, bridges, conveyances) leans on timber.
-  const baseClusters = { trees: 13, rock: 3, orevein: 2, coalseam: 2, bush: 3 };
+  const baseClusters = { trees: 13, rock: 3, orevein: 2, coalseam: 2, oilseep: 1, bush: 3 };
 
   for (const kind of Object.keys(NODE_TYPES)) {
     const mul = ((biome.nodeMul && biome.nodeMul[kind]) || 1) * densityMul;
