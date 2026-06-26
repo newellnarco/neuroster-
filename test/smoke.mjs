@@ -1983,4 +1983,31 @@ console.log('Pathfinding (mover integration):');
   }
 }
 
+// 46) On-map labels: the 🏷️ toggle drives a render code path. collectMapLabels
+//     yields per-entity labels when labels are ON and nothing when OFF.
+console.log('On-map labels (🏷️ toggle):');
+{
+  const { collectMapLabels } = await import('../src/render.js');
+  const s = newGame(4242, 'woodland', 'syrian', 'Labels', {});
+  // Place a visible building so there's at least one named entity on the map.
+  const sp = s.world.spawn;
+  s.buildings.push({ id: 999, type: 'burrow', x: sp.x, y: sp.y, underConstruction: false });
+
+  const off = collectMapLabels(s, { showLabels: false, selUnit: null });
+  assert(Array.isArray(off) && off.length === 0, 'labels OFF → no on-map labels drawn');
+  ok('labels OFF yields an empty label set (no on-map labels)');
+
+  const on = collectMapLabels(s, { showLabels: true, selUnit: null });
+  assert(Array.isArray(on) && on.length > 0, 'labels ON → at least one on-map label');
+  assert(on.some(l => l.kind === 'building' && /Burrow/.test(l.text)), 'building names appear as labels when ON');
+  assert(on.every(l => typeof l.x === 'number' && typeof l.y === 'number' && l.text), 'each label has a position and text');
+  ok('labels ON draws building & node names near each entity');
+
+  // The selected rodent is labelled by name when one is selected.
+  const u = s.units[0];
+  const onSel = collectMapLabels(s, { showLabels: true, selUnit: u.id });
+  assert(onSel.some(l => l.kind === 'unit'), 'the selected rodent gets its own on-map label');
+  ok('the selected rodent is labelled by name when labels are ON');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

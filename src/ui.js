@@ -571,8 +571,6 @@ export function createUI(state, ctx) {
       const n = prompt('Save as a new hamster — name this copy:', state.founder?.name || 'Colony');
       if (n != null && n.trim()) ctx.onSaveAs?.(n.trim().slice(0, 16));
     };
-    if (el('btn-export')) el('btn-export').onclick = () => ctx.onExport?.();
-    if (el('btn-import')) el('btn-import').onclick = () => ctx.onImport?.();
     if (el('btn-help')) el('btn-help').onclick = showHelp;
     if (el('btn-settings')) el('btn-settings').onclick = showSettings;
     if (el('help-close')) el('help-close').onclick = hideHelp;
@@ -617,6 +615,9 @@ export function createUI(state, ctx) {
   function showSettings() {
     const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const card = el('settings-modal').querySelector('.modal-card');
+    // Reuse the start/new-colony screens' themed framing so Settings feels part of
+    // the game rather than a generic dialog.
+    card.classList.add('settings-card');
     const f = state.founder || {};
     const DIS = {
       on:  { icon: '⚡', name: 'On',  desc: 'Predators, disasters & raids strike.' },
@@ -624,14 +625,21 @@ export function createUI(state, ctx) {
     };
     const row = (group, data, current) => `<div class="grid" id="set-${group}">${Object.entries(data).map(([k, v]) =>
       `<button class="card opt ${k === current ? 'sel' : ''}" data-set${group}="${k}"><div class="ico">${v.icon}</div><div class="nm">${v.name}</div><div class="ds">${v.desc}</div></button>`).join('')}</div>`;
+    const crestIcon = BREEDS[f.breed]?.icon || '🐹';
     card.innerHTML = `
-      <h2>⚙️ Settings</h2>
-      <p>Adjust the challenge any time — changes save with this colony. Your hamster's identity (name, breed, coat), biome and map are fixed once founded.</p>
+      <div class="settings-head">
+        <h2>⚙️ Settings</h2>
+        <p>Adjust the challenge any time — changes save with this colony. Your hamster's identity, biome and map are fixed once founded.</p>
+      </div>
       <div class="cat">Difficulty</div>${row('difficulty', DIFFICULTIES, state.difficulty)}
       <div class="cat">Predators &amp; disasters</div>${row('disasters', DIS, state.disasters === false ? 'off' : 'on')}
-      <div class="cat">This colony (fixed)</div>
-      <div class="hint">🐹 <b>${esc(f.name)}</b> · ${esc(BREEDS[f.breed]?.name || '')} · ${esc(COAT_COLORS[f.coat?.color]?.name || 'Golden')} coat · ${esc(BIOMES[state.biome]?.name || state.biome)} · ${esc(DENSITIES[state.density]?.name || '')} resources · ${esc(DIFFICULTIES[state.difficulty]?.name || '')}</div>
-      <button id="set-close" class="modal-cancel">Done</button>`;
+      <div class="cat">This colony — set at founding</div>
+      <div class="colony-banner">
+        <span class="crest">${crestIcon}</span>
+        <span><b>${esc(f.name)}</b> · ${esc(BREEDS[f.breed]?.name || '')} · ${esc(COAT_COLORS[f.coat?.color]?.name || 'Golden')} coat<br>
+        ${esc(BIOMES[state.biome]?.name || state.biome)} · ${esc(DENSITIES[state.density]?.name || '')} resources · ${esc(DIFFICULTIES[state.difficulty]?.name || '')} difficulty</span>
+      </div>
+      <button id="set-close" class="settings-done">🐹 Done</button>`;
     el('settings-modal').classList.remove('hidden');
     const remark = (group) => card.querySelectorAll(`[data-set${group}]`).forEach(x => x.classList.toggle('sel',
       group === 'disasters' ? (x.dataset['set' + group] === (state.disasters === false ? 'off' : 'on')) : (x.dataset['set' + group] === state.difficulty)));

@@ -1,0 +1,15 @@
+{
+  "op": "update",
+  "key": "feat:breeding-overhaul",
+  "status": "Shipped",
+  "timeline": [
+    {
+      "at": "2026-06-26T17:41:17+00:00",
+      "status": "Shipped",
+      "note": "PR #54 merged (release 8c187b1)"
+    }
+  ],
+  "updated": "2026-06-26T17:41:17+00:00",
+  "pr": "54",
+  "release": "8c187b1"
+}
