@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Neuroster — Project Wall</title>
+    <!--
+      Optional theme sync: if you embed this wall in an app iframe, the app can
+      pass the active theme as ?theme=<name> and this early script repaints the
+      CSS palette to match. Standalone (no param) keeps the default green CRT.
+      Add palettes / rename to taste — purely cosmetic.
+    -->
+    <script>
+      (function () {
+        var PALETTES = {
+          // default (unset) is the green CRT look defined in :root below.
+          dark: { bg: "#06080c", panel: "#0c1018", grid: "#1a2230", primary: "#7ee8fa", secondary: "#9fc0d0", muted: "#5a7080", amber: "#ffb300", alert: "#ff4d4d", done: "#2a6b6b" },
+        };
+        try {
+          var t = new URLSearchParams(window.location.search).get("theme");
+          var p = t && PALETTES[t];
+          if (p) {
+            var s = document.documentElement.style;
+            for (var k in p) s.setProperty("--" + k, p[k]);
+            document.documentElement.setAttribute("data-wall-theme", t);
+          }
+        } catch (e) {
+          /* standalone / no URLSearchParams → keep the default palette */
+        }
+      })();
+    </script>
+    <!--
+      Neuroster Project Wall.
+
+      A standalone wall-display page for the whole project plan. Reads the LOCAL
+      board mirror (./board_state.json) — ZERO GitHub API calls, so it never hits
+      a Projects rate limit. With your repo syncing on a timer (auto-pull / CI),
+      the JSON refreshes on disk and this page re-fetches it on a timer, so the
+      wall stays live.
+
+      Read-only: ALL history, grouped BY STATUS, with hide-by-status toggles.
+      Toggles apply immediately for the session; COMMIT VIEW persists them to
+      localStorage as the saved default. PR # leads each card; shipped cards
+      carry the release SHA chip. The page self-reloads when wall.html itself
+      changes on disk.
+
+      Click-through: clicking any card opens a detail panel. For an item in an
+      arc (its `arch`), the panel lists every phase / sub-task in that arc —
+      each with its own status, PR, and detail — with the clicked item marked
+      current; sub-task rows are themselves clickable to navigate. Close with
+      CLOSE, a backdrop click, or Esc. Pure client-side over the same
+      board_state.json — still zero API.
+
+      Serve from the board directory (so ./board_state.json resolves):
+        python -m http.server -d docs/project 8011
+      then open http://localhost:8011/wall.html
+
+      OPTIONAL APP INTEGRATION (the queue strip + EXECUTE buttons): these light
+      up ONLY when this page is served same-origin by an app backend that
+      answers GET /api/queue/health. Served any other way (file://, plain http
+      server) the probe fails silently and the wall stays fully read-only +
+      zero-API. The /api/queue/* surface is NOT part of the kit — it is an
+      optional app-side feature. Delete the PR-QUEUE-marked blocks below if you
+      never want it. See INTEGRATION.md.
+    -->
+    <style>
+      :root {
+        --bg: #04140a;
+        --panel: #07200f;
+        --grid: #0c3a1c;
+        --primary: #00ff66;
+        --secondary: #41d67f;
+        --muted: #2f7a4d;
+        --amber: #ffcf4d;
+        --alert: #ff5a5a;
+        --done: #1f6b3f;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: var(--bg);
+        color: var(--secondary);
+        font-family: "Courier New", ui-monospace, monospace;
+        font-size: 13px;
+        line-height: 1.4;
+        padding: 14px 18px 40px;
+      }
+      a { color: var(--amber); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+
+      header {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--grid);
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 4px;
+        color: var(--primary);
+        text-shadow: 0 0 6px rgba(0, 255, 102, 0.5);
+      }
+      header .sub { color: var(--muted); font-size: 11px; }
+      header .spacer { flex: 1; }
+      header .meta { color: var(--muted); font-size: 11px; text-align: right; }
+
+      .controls {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 14px;
+        padding: 8px 10px;
+        background: var(--panel);
+        border: 1px solid var(--grid);
+      }
+      .controls .label { color: var(--muted); letter-spacing: 2px; font-size: 11px; }
+      .controls label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 12px;
+      }
+      .controls input { accent-color: var(--primary); }
+
+      .totals { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+      .total {
+        border: 1px solid var(--grid);
+        padding: 6px 12px;
+        min-width: 92px;
+        background: var(--panel);
+      }
+      .total .n { font-size: 22px; color: var(--primary); line-height: 1; }
+      .total .k { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-top: 4px; }
+      /* Zero-count status tiles stay visible (complete legend) but dimmed. */
+      .total.empty { opacity: 0.4; }
+
+      section.status-group { margin-bottom: 20px; }
+      section.status-group > h2 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        letter-spacing: 3px;
+        cursor: pointer;
+        border-bottom: 1px dashed var(--grid);
+        padding-bottom: 4px;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      section.status-group > h2 .count { color: var(--muted); font-size: 11px; }
+      section.status-group.collapsed .cards { display: none; }
+      section.status-group > h2 .caret { color: var(--muted); width: 12px; display: inline-block; }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+        gap: 8px;
+      }
+      .card {
+        border: 1px solid var(--grid);
+        border-left-width: 3px;
+        background: var(--panel);
+        padding: 8px 10px;
+      }
+      .card .title { color: var(--secondary); font-size: 12.5px; margin-bottom: 5px; }
+      .card .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+      .chip {
+        font-size: 9.5px;
+        letter-spacing: 1px;
+        padding: 1px 6px;
+        border: 1px solid var(--muted);
+        color: var(--muted);
+        border-radius: 2px;
+        white-space: nowrap;
+      }
+      .chip.arch { color: var(--amber); border-color: rgba(255, 207, 77, 0.45); }
+      .chip.pr { border-color: var(--primary); }
+      .chip.pr a { color: var(--primary); text-decoration: none; font-weight: bold; }
+      .chip.rel { color: var(--done); border-color: var(--done); }
+      .chip.prio-P0 { color: var(--alert); border-color: var(--alert); }
+      .chip.prio-P1 { color: var(--amber); border-color: rgba(255, 207, 77, 0.5); }
+      .card .title .title-pr { color: var(--primary); font-weight: bold; }
+
+      #commit-filters {
+        margin-left: 14px;
+        font: inherit;
+        font-size: 10.5px;
+        letter-spacing: 2px;
+        padding: 2px 10px;
+        background: transparent;
+        border: 1px solid var(--muted);
+        color: var(--muted);
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      #commit-filters:disabled { opacity: 0.45; cursor: default; }
+      #commit-filters.dirty { color: var(--amber); border-color: var(--amber); }
+
+      /* status accent on the card's left border */
+      .st-Backlog { border-left-color: var(--muted); }
+      .st-Planned { border-left-color: var(--secondary); }
+      .st-Todo { border-left-color: var(--secondary); }
+      .st-InProgress { border-left-color: var(--amber); }
+      .st-inCI { border-left-color: var(--amber); }
+      .st-Shipped { border-left-color: var(--primary); }
+      .st-Done { border-left-color: var(--done); }
+      .st-Deferred { border-left-color: var(--muted); }
+      .st-ClosedNoOp { border-left-color: #5a3a3a; }
+
+      .status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+      #error { color: var(--alert); padding: 10px; border: 1px solid var(--alert); }
+      .hidden { display: none !important; }
+
+      /* ---- click-through detail modal ---------------------------------- */
+      .card { cursor: pointer; }
+      .card:hover { border-color: var(--secondary); box-shadow: 0 0 6px rgba(0, 255, 102, 0.18); }
+
+      #detail-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 10, 5, 0.86);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 36px 16px;
+        overflow-y: auto;
+        z-index: 50;
+      }
+      .detail-panel {
+        background: var(--panel);
+        border: 1px solid var(--grid);
+        border-left: 3px solid var(--primary);
+        max-width: 900px;
+        width: 100%;
+        padding: 16px 18px 22px;
+        box-shadow: 0 0 24px rgba(0, 255, 102, 0.12);
+      }
+      .detail-panel .dh {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+        border-bottom: 1px dashed var(--grid);
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+      }
+      .detail-panel .dh h2 {
+        margin: 0;
+        font-size: 15px;
+        color: var(--primary);
+        letter-spacing: 1px;
+        text-shadow: 0 0 5px rgba(0, 255, 102, 0.4);
+      }
+      .detail-panel .dh-spacer { flex: 1; }
+      .detail-close {
+        font: inherit;
+        font-size: 11px;
+        letter-spacing: 2px;
+        padding: 3px 12px;
+        background: transparent;
+        border: 1px solid var(--muted);
+        color: var(--muted);
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      .detail-close:hover { color: var(--amber); border-color: var(--amber); }
+      .detail-panel .detail-body {
+        color: var(--secondary);
+        font-size: 12.5px;
+        margin: 10px 0 4px;
+        white-space: pre-wrap;
+      }
+      .detail-panel h3.subhead {
+        font-size: 11px;
+        letter-spacing: 3px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--grid);
+        padding-bottom: 4px;
+        margin: 16px 0 8px;
+      }
+      .phase-row {
+        border: 1px solid var(--grid);
+        border-left-width: 3px;
+        background: var(--bg);
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        cursor: pointer;
+      }
+      .phase-row:hover { border-color: var(--secondary); }
+      .phase-row.current { border-left-color: var(--primary); box-shadow: inset 0 0 0 1px rgba(0, 255, 102, 0.25); }
+      .phase-row .ph-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .phase-row .ph-no { color: var(--amber); font-weight: bold; font-size: 12px; min-width: 22px; text-align: center; }
+      .phase-row .ph-title { color: var(--secondary); font-size: 12.5px; }
+      .phase-row .ph-spacer { flex: 1; min-width: 8px; }
+      .phase-row .ph-status { font-size: 10px; letter-spacing: 1px; }
+      .phase-row .ph-detail { color: var(--muted); font-size: 11.5px; margin-top: 5px; white-space: pre-wrap; }
+
+      /* OPTIONAL APP INTEGRATION — queue strip + EXECUTE actions. Lit only when
+         an app backend answers GET /api/queue/health same-origin. Standalone
+         serving leaves the wall read-only + zero-API. Safe to delete. */
+      #queue-strip {
+        display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+        padding: 7px 14px; margin: 0 14px 10px; font-size: 11.5px;
+        border: 1px solid var(--primary); border-left-width: 3px;
+        background: rgba(0, 255, 102, 0.05); color: var(--secondary);
+      }
+      #queue-strip .qs-label { color: var(--primary); letter-spacing: 2px; font-weight: bold; }
+      #queue-strip .qs-spacer { flex: 1; }
+      #queue-strip a { color: var(--secondary); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+      .exec-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+      .exec-btn {
+        font-family: inherit; font-size: 11px; letter-spacing: 1px; cursor: pointer;
+        padding: 5px 12px; background: transparent; color: var(--primary);
+        border: 1px solid var(--primary);
+      }
+      .exec-btn:hover { background: var(--primary); color: var(--bg); }
+      .exec-btn:disabled { opacity: 0.4; cursor: default; }
+      .exec-msg { font-size: 11px; color: var(--amber); margin: 6px 0 0; }
+      .phase-row .ph-cb { margin-right: 6px; accent-color: var(--primary); cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Neuroster // PROJECT WALL</h1>
+      <span class="sub">local board mirror · zero GitHub API</span>
+      <span class="spacer"></span>
+      <span class="meta" id="meta">loading…</span>
+    </header>
+
+    <!-- OPTIONAL APP INTEGRATION — queue strip (hidden until the backend answers). -->
+    <div id="queue-strip" class="hidden"></div>
+
+    <div class="controls" id="controls">
+      <span class="label">HIDE BY STATUS:</span>
+      <!-- checkboxes injected here -->
+    </div>
+
+    <div class="totals" id="totals"></div>
+
+    <div id="board"></div>
+    <div id="error" class="hidden"></div>
+
+    <!-- click-through detail modal (hidden until a card is clicked) -->
+    <div id="detail-overlay" class="hidden">
+      <div class="detail-panel"></div>
+    </div>
+
+    <script>
+      // Status render order: active work first, terminal states last.
+      const STATUS_ORDER = [
+        "Backlog",
+        "Planned",
+        "Todo",
+        "In Progress",
+        "in CI",
+        "Shipped",
+        "Done",
+        "Deferred",
+        "Closed-No-Op",
+      ];
+      // Statuses hidden by default (terminal / noise) — toggle to show.
+      const HIDDEN_BY_DEFAULT = new Set(["Shipped", "Done", "Deferred", "Closed-No-Op"]);
+      const REFRESH_MS = 20000;
+      // localStorage key for persisting the hide-by-status toggle state.
+      const FILTER_STORAGE_KEY = "Neuroster_wall_status_filters";
+      // GitHub PR link base for the PR chips.
+      const GH_PR_BASE = "https://github.com/newellnarco/neuroster-/pull/";
+
+      function loadHidden() {
+        // Restore persisted toggles; fall back to defaults when absent/corrupt
+        // (first visit, cleared storage, or file:// contexts without storage).
+        try {
+          const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+          if (raw !== null) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) return new Set(arr.map(String));
+          }
+        } catch (e) {
+          /* storage unavailable or corrupt JSON — use defaults */
+        }
+        return new Set(HIDDEN_BY_DEFAULT);
+      }
+      function saveHidden() {
+        try {
+          localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...hidden]));
+        } catch (e) {
+          /* storage unavailable — toggles still work for this session */
+        }
+      }
+
+      const hidden = loadHidden();
+      let committed = new Set(hidden); // last persisted state (dirty tracking)
+      let collapsed = new Set();
+
+      function filtersDirty() {
+        if (hidden.size !== committed.size) return true;
+        for (const s of hidden) if (!committed.has(s)) return true;
+        return false;
+      }
+      function updateCommitButton() {
+        const btn = document.getElementById("commit-filters");
+        if (!btn) return;
+        if (filtersDirty()) {
+          btn.disabled = false;
+          btn.textContent = "COMMIT VIEW *";
+          btn.classList.add("dirty");
+        } else {
+          btn.disabled = true;
+          btn.textContent = "COMMIT VIEW";
+          btn.classList.remove("dirty");
+        }
+      }
+
+      function statusClass(s) {
+        return "st-" + String(s).replace(/[^A-Za-z0-9]/g, "");
+      }
+      function esc(s) {
+        return String(s ?? "").replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+      }
+      function statusColor(s) {
+        if (s === "Shipped") return "var(--primary)";
+        if (s === "Done") return "var(--done)";
+        if (s === "In Progress" || s === "in CI") return "var(--amber)";
+        if (s === "Closed-No-Op") return "#5a3a3a";
+        return "var(--muted)";
+      }
+
+      function renderControls(statuses, counts) {
+        const el = document.getElementById("controls");
+        el.querySelectorAll("label").forEach((n) => n.remove());
+        for (const s of statuses) {
+          // Every status gets a toggle + its live count — even when the count
+          // is 0 in the current board state — so the filter row is a stable,
+          // complete legend.
+          const n = counts[s] || 0;
+          const label = document.createElement("label");
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = hidden.has(s);
+          cb.addEventListener("change", () => {
+            // Toggles take effect immediately for this session; COMMIT VIEW
+            // persists them as the saved default (localStorage).
+            if (cb.checked) hidden.add(s);
+            else hidden.delete(s);
+            render(window.__board || []);
+          });
+          label.appendChild(cb);
+          label.appendChild(document.createTextNode(` ${s} (${n})`));
+          el.appendChild(label);
+        }
+        let btn = document.getElementById("commit-filters");
+        if (!btn) {
+          btn = document.createElement("button");
+          btn.id = "commit-filters";
+          btn.type = "button";
+          btn.title = "Save the current hide-by-status toggles as your default view";
+          btn.addEventListener("click", () => {
+            saveHidden();
+            committed = new Set(hidden);
+            updateCommitButton();
+            btn.textContent = "SAVED ✓";
+            setTimeout(updateCommitButton, 1200);
+          });
+        }
+        el.appendChild(btn); // re-append keeps it after the checkboxes
+        updateCommitButton();
+      }
+
+      function renderTotals(items) {
+        const counts = {};
+        for (const it of items) counts[it.status] = (counts[it.status] || 0) + 1;
+        const totals = document.getElementById("totals");
+        totals.innerHTML = "";
+        const all = document.createElement("div");
+        all.className = "total";
+        all.innerHTML = `<div class="n">${items.length}</div><div class="k">ALL ITEMS</div>`;
+        totals.appendChild(all);
+        // Show EVERY status tile, count included, even when 0 in the current
+        // state — plus any out-of-order extras that have items. Zero-count
+        // tiles dim so the present ones still stand out.
+        const extras = Object.keys(counts).filter((s) => !STATUS_ORDER.includes(s));
+        for (const s of [...STATUS_ORDER, ...extras]) {
+          const n = counts[s] || 0;
+          const d = document.createElement("div");
+          d.className = n ? "total" : "total empty";
+          d.innerHTML = `<div class="n" style="color:${statusColor(s)}">${n}</div><div class="k">${esc(s.toUpperCase())}</div>`;
+          totals.appendChild(d);
+        }
+      }
+
+      function chipsHtml(it) {
+        // PR number leads the chip row (and is echoed inline in the title)
+        // so "which PR is this?" is answerable at wall-display distance.
+        const chips = [];
+        if (it.pr) {
+          const url = GH_PR_BASE + esc(String(it.pr).replace(/^#/, ""));
+          chips.push(`<span class="chip pr"><a href="${url}" target="_blank" rel="noopener">PR #${esc(String(it.pr).replace(/^#/, ""))}</a></span>`);
+        }
+        if (it.release) chips.push(`<span class="chip rel">${esc(it.release)}</span>`);
+        if (it.arch) chips.push(`<span class="chip arch">${esc(it.arch)}${it.phase ? "·" + esc(it.phase) : ""}</span>`);
+        if (it.area) chips.push(`<span class="chip">${esc(it.area)}</span>`);
+        if (it.type) chips.push(`<span class="chip">${esc(it.type)}</span>`);
+        if (it.priority) chips.push(`<span class="chip prio-${esc(it.priority)}">${esc(it.priority)}</span>`);
+        return chips.join("");
+      }
+
+      function cardHtml(it) {
+        const prPrefix = it.pr ? `<span class="title-pr">#${esc(String(it.pr).replace(/^#/, ""))}</span> ` : "";
+        const title = esc(it.title || it.key || "(untitled)");
+        // data-key wires the click-through: clicking a card opens its detail
+        // panel (and, for any item in an arc, the full phase / sub-task list).
+        return `<div class="card ${statusClass(it.status)}" data-key="${esc(it.key)}"><div class="title">${prPrefix}${title}</div><div class="chips">${chipsHtml(it)}</div></div>`;
+      }
+
+      // ---- phase ordering inside an arc detail panel --------------------
+      // Arc parent (no phase) sorts first; numeric phases numerically;
+      // letter phases (e.g. slices b/c/d) alphabetically after the numbers.
+      function phaseRank(it) {
+        if (it.phase == null || it.phase === "") return -1;
+        const p = String(it.phase);
+        if (/^\d+$/.test(p)) return parseInt(p, 10);
+        return 50 + (p.toLowerCase().charCodeAt(0) - 97);
+      }
+
+      function phaseRowHtml(p, isCurrent, withCheckbox) {
+        const cls = "phase-row " + statusClass(p.status) + (isCurrent ? " current" : "");
+        const phNo = p.phase != null && p.phase !== "" ? esc(String(p.phase)) : "◆";
+        const pr = p.pr
+          ? `<span class="chip pr"><a href="${GH_PR_BASE}${esc(String(p.pr).replace(/^#/, ""))}" target="_blank" rel="noopener">PR #${esc(String(p.pr).replace(/^#/, ""))}</a></span>`
+          : "";
+        const rel = p.release ? `<span class="chip rel">${esc(p.release)}</span>` : "";
+        const prio = p.priority ? `<span class="chip prio-${esc(p.priority)}">${esc(p.priority)}</span>` : "";
+        // OPTIONAL APP INTEGRATION: a per-phase checkbox for EXECUTE SELECTED
+        // PHASES (only when the backend is reachable + this is an arc panel).
+        const cb =
+          withCheckbox && p.phase != null && p.phase !== ""
+            ? `<input type="checkbox" class="ph-cb" data-phase="${esc(String(p.phase))}" title="select phase" onclick="event.stopPropagation()">`
+            : "";
+        return (
+          `<div class="${cls}" data-key="${esc(p.key)}">` +
+          `<div class="ph-head">${cb}<span class="ph-no">${phNo}</span>` +
+          `<span class="status-dot" style="background:${statusColor(p.status)}"></span>` +
+          `<span class="ph-title">${esc(p.title || p.key)}</span><span class="ph-spacer"></span>` +
+          `<span class="ph-status" style="color:${statusColor(p.status)}">${esc(p.status)}</span>` +
+          pr + rel + prio + `</div>` +
+          (p.detail ? `<div class="ph-detail">${esc(p.detail)}</div>` : "") +
+          `</div>`
+        );
+      }
+
+      // Open the click-through detail for one board item. If the item belongs
+      // to an arc (has `arch`), the panel lists every phase / sub-task in that
+      // arc — each with its own status, PR, and detail — with the clicked item
+      // marked current. Sub-task rows are themselves clickable to navigate.
+      function openDetail(key) {
+        const items = window.__board || [];
+        const it = items.find((i) => i.key === key);
+        if (!it) return;
+        const overlay = document.getElementById("detail-overlay");
+        const panel = overlay.querySelector(".detail-panel");
+        const arcItems = it.arch ? items.filter((i) => i.arch === it.arch) : [it];
+        arcItems.sort(
+          (a, b) => phaseRank(a) - phaseRank(b) || String(a.key).localeCompare(String(b.key)),
+        );
+        const titlePr = it.pr ? `<span class="title-pr">#${esc(String(it.pr).replace(/^#/, ""))}</span> ` : "";
+        let html =
+          `<div class="dh"><span class="status-dot" style="background:${statusColor(it.status)}"></span>` +
+          `<h2>${titlePr}${esc(it.title || it.key)}</h2><span class="dh-spacer"></span>` +
+          `<button class="detail-close" type="button">CLOSE ✕</button></div>` +
+          `<div class="chips">${chipsHtml(it)}</div>`;
+        if (it.detail) html += `<div class="detail-body">${esc(it.detail)}</div>`;
+        // OPTIONAL APP INTEGRATION: EXECUTE actions — only when the app backend
+        // answered the health probe (window.__queueOk). Standalone stays read-only.
+        const qOk = window.__queueOk === true;
+        if (qOk) {
+          html += `<div class="exec-bar" data-key="${esc(it.key)}" data-arch="${esc(it.arch || "")}">`;
+          html += `<button class="exec-btn" data-exec="item" type="button">EXECUTE THIS →</button>`;
+          if (it.arch) {
+            html += `<button class="exec-btn" data-exec="arc" type="button">EXECUTE ARC →</button>`;
+            html += `<button class="exec-btn" data-exec="phases" type="button">EXECUTE SELECTED PHASES →</button>`;
+          }
+          html += `</div><div class="exec-msg" data-role="exec-msg"></div>`;
+        }
+        if (it.arch) {
+          html +=
+            `<h3 class="subhead">PHASES / SUB-TASKS · ${esc(it.arch)} (${arcItems.length})</h3>` +
+            arcItems.map((p) => phaseRowHtml(p, p.key === it.key, qOk)).join("");
+        }
+        panel.innerHTML = html;
+        panel.scrollTop = 0;
+        overlay.classList.remove("hidden");
+      }
+
+      function closeDetail() {
+        document.getElementById("detail-overlay").classList.add("hidden");
+      }
+
+      /* ---- OPTIONAL APP INTEGRATION: queue strip + EXECUTE -----------------
+         The wall is standalone + zero-API by default. ONLY when an app backend
+         answers a same-origin GET /api/queue/health (i.e. the wall is being
+         served by the backend at /wall) do we light the queue strip + the
+         EXECUTE actions. Served any other way (file://, a plain http server),
+         the probe fails silently and the wall stays read-only. The /api/queue/*
+         surface is NOT part of this kit — see INTEGRATION.md. */
+      async function probeQueue() {
+        const strip = document.getElementById("queue-strip");
+        try {
+          const h = await fetch("/api/queue/health", { cache: "no-store" });
+          if (!h.ok) throw new Error(String(h.status));
+          const health = await h.json();
+          if (!health.ok) throw new Error("not ready");
+          window.__queueOk = true;
+          const q = await fetch("/api/queue", { cache: "no-store" });
+          const snap = q.ok ? await q.json() : { open: 0, counts: {} };
+          const c = snap.counts || {};
+          strip.innerHTML =
+            `<span class="qs-label">QUEUE</span>` +
+            `<span>${snap.open || 0} open</span>` +
+            `<span>in-progress ${c.in_progress || 0} · queued ${c.queued || 0} · done ${c.done || 0}</span>` +
+            `<span class="qs-spacer"></span>` +
+            `<span>${health.auto_drain ? "auto-drain ON" : "click a card → EXECUTE to enqueue"}</span>`;
+          strip.classList.remove("hidden");
+        } catch (e) {
+          window.__queueOk = false;
+          strip.classList.add("hidden");
+        }
+      }
+
+      async function enqueue(payload, msgEl) {
+        if (msgEl) msgEl.textContent = "enqueuing…";
+        try {
+          const r = await fetch("/api/queue/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ source: "wall_click", priority: "P2", ...payload }),
+          });
+          if (!r.ok) {
+            if (msgEl) msgEl.textContent = "enqueue failed (" + r.status + ")";
+            return;
+          }
+          const item = await r.json();
+          if (msgEl) msgEl.textContent = "queued: " + (item.title || item.id);
+          probeQueue();
+        } catch (e) {
+          if (msgEl) msgEl.textContent = "enqueue error: " + String(e);
+        }
+      }
+
+      // Turn an EXECUTE button click into a /api/queue/add directive.
+      function handleExec(btn) {
+        // Re-entrancy guard so one EXECUTE can't enqueue twice.
+        if (btn.dataset.busy === "1") return;
+        const bar = btn.closest(".exec-bar");
+        if (!bar) return;
+        const key = bar.getAttribute("data-key");
+        const arch = bar.getAttribute("data-arch") || null;
+        const items = window.__board || [];
+        const it = items.find((i) => i.key === key) || {};
+        const msgEl = bar.parentElement.querySelector('[data-role="exec-msg"]');
+        const mode = btn.getAttribute("data-exec");
+        const fire = async (payload) => {
+          btn.dataset.busy = "1";
+          btn.disabled = true;
+          try {
+            await enqueue(payload, msgEl);
+          } finally {
+            setTimeout(() => {
+              btn.dataset.busy = "";
+              btn.disabled = false;
+            }, 1500);
+          }
+        };
+        if (mode === "item") {
+          fire({ directive: "execute_item", target_key: key, title: "Execute " + (it.title || key) });
+        } else if (mode === "arc") {
+          fire({ directive: "execute_arc", target_arch: arch, title: "Execute arc " + arch });
+        } else if (mode === "phases") {
+          const phases = Array.from(
+            bar.parentElement.querySelectorAll(".ph-cb:checked"),
+          ).map((cb) => cb.getAttribute("data-phase"));
+          if (!phases.length) {
+            if (msgEl) msgEl.textContent = "select at least one phase first";
+            return;
+          }
+          fire({
+            directive: "execute_phases",
+            target_arch: arch,
+            target_phases: phases,
+            title: "Execute " + arch + " phases " + phases.join(", "),
+          });
+        }
+      }
+
+      function render(items) {
+        const board = document.getElementById("board");
+        board.innerHTML = "";
+        renderTotals(items);
+
+        // Counts across ALL statuses (0 included) so the toggle row + totals
+        // are a complete, stable legend regardless of current state.
+        const counts = {};
+        for (const it of items) counts[it.status] = (counts[it.status] || 0) + 1;
+        // Any status not in our known order, appended so nothing is lost.
+        const extras = [...new Set(items.map((i) => i.status))].filter((s) => !STATUS_ORDER.includes(s));
+        renderControls([...STATUS_ORDER, ...extras], counts);
+
+        for (const s of [...STATUS_ORDER, ...extras]) {
+          if (hidden.has(s)) continue;
+          const group = items.filter((i) => i.status === s);
+          if (!group.length) continue;
+          group.sort((a, b) => (a.priority || "P9").localeCompare(b.priority || "P9") || (a.arch || "").localeCompare(b.arch || ""));
+          const sec = document.createElement("section");
+          sec.className = "status-group" + (collapsed.has(s) ? " collapsed" : "");
+          const caret = collapsed.has(s) ? "▸" : "▾";
+          sec.innerHTML =
+            `<h2><span class="caret">${caret}</span><span class="status-dot" style="background:${statusColor(s)}"></span>` +
+            `<span style="color:${statusColor(s)}">${esc(s.toUpperCase())}</span>` +
+            `<span class="count">${group.length}</span></h2>` +
+            `<div class="cards">${group.map(cardHtml).join("")}</div>`;
+          sec.querySelector("h2").addEventListener("click", () => {
+            if (collapsed.has(s)) collapsed.delete(s);
+            else collapsed.add(s);
+            render(window.__board || []);
+          });
+          board.appendChild(sec);
+        }
+      }
+
+      async function load() {
+        try {
+          const r = await fetch("./board_state.json?_=" + Date.now(), { cache: "no-store" });
+          if (!r.ok) throw new Error("board_state.json → " + r.status);
+          const data = await r.json();
+          const items = Array.isArray(data.items) ? data.items : [];
+          window.__board = items;
+          document.getElementById("error").classList.add("hidden");
+          document.getElementById("meta").textContent =
+            `${items.length} items · updated ${esc(data.updated || "?")} · refreshed ${new Date().toLocaleTimeString()}`;
+          render(items);
+        } catch (e) {
+          const err = document.getElementById("error");
+          err.classList.remove("hidden");
+          err.textContent =
+            "// could not load ./board_state.json — serve this page from docs/project " +
+            "(python -m http.server -d docs/project 8011). " + String(e);
+        }
+      }
+
+      // ---- self-reload when wall.html itself changes on disk -------------
+      // The data loop above refreshes board_state.json, but new wall
+      // FUNCTIONALITY (this file, landed by a sync every couple of minutes)
+      // only appears after a manual browser refresh. Poll our own URL's
+      // Last-Modified; when it moves, reload the page. Falls back silently
+      // (file:// or servers without the header).
+      let wallLastModified = null;
+      async function checkSelfUpdate() {
+        try {
+          const r = await fetch(location.pathname, { method: "HEAD", cache: "no-store" });
+          const lm = r.headers.get("Last-Modified");
+          if (!lm) return;
+          if (wallLastModified === null) wallLastModified = lm;
+          else if (lm !== wallLastModified) location.reload();
+        } catch (e) {
+          /* offline tick / file:// — try again next interval */
+        }
+      }
+
+      // ---- click-through wiring ----------------------------------------
+      // Delegated so it survives every re-render of #board.
+      document.getElementById("board").addEventListener("click", (e) => {
+        const card = e.target.closest(".card[data-key]");
+        if (card) openDetail(card.getAttribute("data-key"));
+      });
+      const overlay = document.getElementById("detail-overlay");
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) return closeDetail(); // backdrop click closes
+        if (e.target.closest(".detail-close")) return closeDetail();
+        // OPTIONAL APP INTEGRATION: EXECUTE buttons enqueue rather than navigate.
+        const execBtn = e.target.closest(".exec-btn");
+        if (execBtn) return handleExec(execBtn);
+        // A phase checkbox toggles selection without re-opening the panel.
+        if (e.target.closest(".ph-cb")) return;
+        // Navigating to a sub-task: re-open the panel with that phase current.
+        // Ignore clicks on links (PR chips) so they open in a new tab instead.
+        if (e.target.closest("a")) return;
+        const row = e.target.closest(".phase-row[data-key]");
+        if (row) openDetail(row.getAttribute("data-key"));
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeDetail();
+      });
+
+      load();
+      checkSelfUpdate();
+      probeQueue(); // OPTIONAL APP INTEGRATION: light the queue strip + EXECUTE if the app is up
+      setInterval(load, REFRESH_MS);
+      setInterval(checkSelfUpdate, REFRESH_MS);
+      setInterval(probeQueue, REFRESH_MS);
+    </script>
+  </body>
+</html>

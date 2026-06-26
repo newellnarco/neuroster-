@@ -10,7 +10,20 @@ natural disasters. It's a persistent world you keep building and maintaining.
 > [`ARCHITECTURE.md`](./ARCHITECTURE.md) (code map & sim order) ·
 > [`LAYOUT.md`](./LAYOUT.md) (UI structure) ·
 > [`DECISIONS.md`](./DECISIONS.md) (why it's built this way) ·
-> [`TODO.md`](./TODO.md) (backlog) · [`ROADMAP.md`](./ROADMAP.md) (arcs & history).
+> [`TODO.md`](./TODO.md) (backlog) · [`ROADMAP.md`](./ROADMAP.md) (arcs & history) ·
+> [`docs/project/`](./docs/project/) (📋 **project wall** — plan & track work).
+
+## 📋 Project wall (plan & track progress)
+
+A zero-API, git-native project board lives in [`docs/project/`](./docs/project/). It tracks
+every arc/task through a status lifecycle and renders both a terminal page and a visual wall.
+
+- **Browser wall:** run `npm start`, then open **`http://localhost:8080/docs/project/wall.html`**
+  (swimlanes by status, search/hide toggles, click-through arc detail — no GitHub API).
+- **Terminal view:** read [`docs/project/PROJECT_STATUS.md`](./docs/project/PROJECT_STATUS.md).
+- **To change the board:** never hand-edit `board_state.json` — drop a fragment into
+  `docs/project/board_entries/` (insert or `{op:update}`) and the on-main job folds it in.
+  See [`docs/project/README.md`](./docs/project/README.md).
 
 ## 🏠 LAN deployment (current)
 
