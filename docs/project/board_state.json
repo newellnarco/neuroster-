@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T16:02:46Z",
+  "updated": "2026-06-26T16:12:40Z",
   "items": [
     {
       "key": "econ:1",
@@ -181,19 +181,24 @@
       "type": "Enhancement",
       "area": "Graphics",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "45",
-      "release": null,
+      "release": "656ab96",
       "detail": "Swaying crops, chimney smoke, fireflies, seasonal motes; synthesised audio.js ambient soundscape + cues. Ongoing polish thread.",
       "timeline": [
         {
           "at": "2026-06-26T15:52:14+00:00",
           "status": "Done",
           "note": "Seasonal colour wash (seasonTint) + idle breathe animation; bounded tested slice; +2 smoke"
+        },
+        {
+          "at": "2026-06-26T16:03:04+00:00",
+          "status": "Shipped",
+          "note": "PR #45 merged (release 656ab96)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T15:52:14+00:00"
+      "updated": "2026-06-26T16:03:04+00:00"
     },
     {
       "key": "ux:zoom-map-fixes",
@@ -843,13 +848,19 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Furnace, Forge (armour → defense), Mason (clay→brick), plus a brick resource and an armour mechanic.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:11:00+00:00",
+          "status": "Done",
+          "note": "Mason/Furnace/Forge chain + brick & armour resources; armour boosts defense"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:11:00+00:00"
     },
     {
       "key": "gameplay:scout-waypoint",
@@ -888,13 +899,19 @@
       "type": "Enhancement",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Wandering merchant, predator parley to stall an attack, neighbour-colony aid requests (some exist as decrees; expand).",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:11:00+00:00",
+          "status": "Done",
+          "note": "Wandering merchant + beast-parley NPC events"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:11:00+00:00"
     },
     {
       "key": "ux:marquee-multiselect",
@@ -922,19 +939,24 @@
       "type": "Enhancement",
       "area": "Graphics",
       "priority": "P3",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "45",
-      "release": null,
+      "release": "656ab96",
       "detail": "Most are emoji on a textured timber base now; finish the stragglers.",
       "timeline": [
         {
           "at": "2026-06-26T15:52:14+00:00",
           "status": "Done",
           "note": "Per-material textured bases for one-off building glyphs; +1 smoke check"
+        },
+        {
+          "at": "2026-06-26T16:03:04+00:00",
+          "status": "Shipped",
+          "note": "PR #45 merged (release 656ab96)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T15:52:14+00:00"
+      "updated": "2026-06-26T16:03:04+00:00"
     },
     {
       "key": "ux:persist-zoom",
@@ -1170,13 +1192,19 @@
       "type": "Enhancement",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Todo",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Camps + caravans exist (factions.js); add competing for resource nodes, growth/shrink by standing, player-sent caravans/war parties.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:11:00+00:00",
+          "status": "Done",
+          "note": "AI colonies contest resource nodes; standing-driven trade/contest/raid"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:11:00+00:00"
     },
     {
       "key": "add:job-assignment",

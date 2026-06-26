@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T16:02:46Z · 76 items_
+_board_state.json updated: 2026-06-26T16:12:40Z · 76 items_
 
 ## Summary
 
@@ -10,27 +10,24 @@ _board_state.json updated: 2026-06-26T16:02:46Z · 76 items_
 |---|---|
 | In Progress | 0 |
 | in CI | 0 |
-| Todo | 2 |
+| Todo | 1 |
 | Planned | 0 |
-| Backlog | 18 |
-| Done | 2 |
-| Shipped | 50 |
+| Backlog | 16 |
+| Done | 3 |
+| Shipped | 52 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
 | **TOTAL** | **76** |
 
-**52 landed on `main`** · **20 open** (in-CI / todo / planned / backlog).
+**55 landed on `main`** · **17 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
-| Todo | P2 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | — | — |
 | Todo | P3 | None | Job assignment UI (assign rodents to resources/buildings) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
-| Backlog | P2 | PROD | Production chain: Furnace / Forge / Mason + brick + armour | — | — |
 | Backlog | P2 | None | Validate EVENT_PACE/GRACE feel across biomes & difficulties | — | — |
 | Backlog | P2 | None | True movement/pathfinding (gate tunnels, gopher travel, dams) | — | — |
-| Backlog | P3 | None | More NPC animal events (merchant, predator parley, aid requests) | — | — |
 | Backlog | P3 | None | Persist zoom level per colony | — | — |
 | Backlog | P3 | None | Scale feeder/waterer throughput with crowding | — | — |
 | Backlog | P3 | None | Re-check starting economy after first-10-min playtests | — | — |
@@ -57,13 +54,15 @@ _board_state.json updated: 2026-06-26T16:02:46Z · 76 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (6)
+### (misc) (8)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
 | None | Hamster balls — free-roam transport (heat + anxiety) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Directable exploration: scout waypoint | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
-| None | Texture the remaining one-off building glyphs | [#45](https://github.com/newellnarco/neuroster-/pull/45) | `—` |
+| None | More NPC animal events (merchant, predator parley, aid requests) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Texture the remaining one-off building glyphs | [#45](https://github.com/newellnarco/neuroster-/pull/45) | `656ab96` |
+| None | AI colonies compete for nodes + richer on-map diplomacy/combat | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
 | None | More milestones/achievements (first hybrid, day 30, apex evolution…) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Promote Threats panel → Defense & Military screen | [#44](https://github.com/newellnarco/neuroster-/pull/44) | `7f9ff2e` |
 | None | Per-unit need decay modified by traits (Vigor) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
@@ -124,6 +123,12 @@ _board_state.json updated: 2026-06-26T16:02:46Z · 76 items_
 |---|---|---|---|
 | 20 | ⚡ Power variety + 🏭 Pollution | — | `—` |
 
+### PROD (1)
+
+| Phase | Item | PR | Release |
+|---|---|---|---|
+| 1 | Production chain: Furnace / Forge / Mason + brick + armour | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+
 ### PROGRESSION (5)
 
 | Phase | Item | PR | Release |
@@ -138,7 +143,7 @@ _board_state.json updated: 2026-06-26T16:02:46Z · 76 items_
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
-| 18 | Animation & realism polish + seasonal atmosphere + audio | [#45](https://github.com/newellnarco/neuroster-/pull/45) | `—` |
+| 18 | Animation & realism polish + seasonal atmosphere + audio | [#45](https://github.com/newellnarco/neuroster-/pull/45) | `656ab96` |
 | 18a | Map zoom + landscape scaling, center-on-town, event-log snap-to-top | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | 2b | Animated pixel-art top-angle rendering + plush HiDPI creatures | — | `—` |
 | 2d | Procedural client-side textures + 64-colour palette | — | `—` |
