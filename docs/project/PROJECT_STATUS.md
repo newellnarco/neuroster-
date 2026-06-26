@@ -2,13 +2,13 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T06:50:24Z · 73 items_
+_board_state.json updated: 2026-06-26T07:14:04Z · 76 items_
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| In Progress | 2 |
+| In Progress | 5 |
 | in CI | 0 |
 | Todo | 3 |
 | Planned | 0 |
@@ -17,16 +17,19 @@ _board_state.json updated: 2026-06-26T06:50:24Z · 73 items_
 | Shipped | 45 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **73** |
+| **TOTAL** | **76** |
 
-**45 landed on `main`** · **24 open** (in-CI / todo / planned / backlog).
+**45 landed on `main`** · **27 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
-| In Progress | P2 | ECON | Multi-segment conveyor belt networks | — | — |
-| In Progress | P3 | None | Promote Threats panel → Defense & Military screen | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P2 | ECON | Multi-segment conveyor belt networks | — | [#44](https://github.com/newellnarco/neuroster-/pull/44) |
+| In Progress | P2 | INFRA | Always-on Playwright + committed browser smoke | — | [#44](https://github.com/newellnarco/neuroster-/pull/44) |
+| In Progress | P3 | None | Promote Threats panel → Defense & Military screen | — | [#44](https://github.com/newellnarco/neuroster-/pull/44) |
+| In Progress | P3 | ECON | Storage Depot capacity +200 → +1500 | — | [#44](https://github.com/newellnarco/neuroster-/pull/44) |
+| In Progress | P3 | RENDER | Double-stacked 4×2 folder-style section tabs | — | [#44](https://github.com/newellnarco/neuroster-/pull/44) |
 | Todo | P2 | RENDER | Animation & realism polish + seasonal atmosphere + audio | — | — |
 | Todo | P2 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | — | — |
 | Todo | P3 | None | Job assignment UI (assign rodents to resources/buildings) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
