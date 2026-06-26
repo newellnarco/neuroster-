@@ -105,7 +105,7 @@ export const BUILDINGS = {
   },
   mausoleum: {
     name: 'Grand Mausoleum', icon: '🏛️', desc: 'An honoured tomb for the fallen. Deep respect — large morale recovery per burial.',
-    cost: { stone: 80, iron: 30, planks: 30 }, category: 'Wellbeing', graveyard: 1, buryRestore: 22, buryInterval: 5,
+    cost: { stone: 80, iron: 30, planks: 30 }, category: 'Wellbeing', graveyard: 1, buryRestore: 22, buryInterval: 5, reqLevel: 8,
   },
   well: {
     name: 'Well', icon: '⛲', desc: 'Draws Water for the colony (place near a pond).',
@@ -220,7 +220,7 @@ export const BUILDINGS = {
   },
   steelworks: {
     name: 'Steelworks', icon: '🏭', desc: 'Forges Iron + Coal into Steel for the toughest structures. Burning coal pollutes.',
-    cost: { stone: 50, iron: 20 }, category: 'Production', pollutes: 1.0,
+    cost: { stone: 50, iron: 20 }, category: 'Production', pollutes: 1.0, reqLevel: 4,
     produces: { steel: 0.25 }, consumes: { iron: 0.4, coal: 0.3 },
   },
   mason: {
@@ -234,8 +234,8 @@ export const BUILDINGS = {
     produces: { iron: 0.35 }, consumes: { ironore: 0.45, coal: 0.25 }, pollutes: 0.6,
   },
   forge: {
-    name: 'Forge', icon: '⚒️', desc: 'Hammers Iron & Planks into Armour. Stored Armour outfits the colony — every set raises colony defense and arms the guard.',
-    cost: { brick: 16, iron: 15 }, category: 'Production',
+    name: 'Forge', icon: '⚒️', desc: 'Hammers Iron & Planks into Armour. Stored Armour outfits the colony — every set raises colony defense and arms the guard. (Unlocks at Main Hamster Lv.4.)',
+    cost: { brick: 16, iron: 15 }, category: 'Production', reqLevel: 4,
     produces: { armour: 0.12 }, consumes: { iron: 0.3, planks: 0.2 },
   },
   mine: {
@@ -254,12 +254,12 @@ export const BUILDINGS = {
   },
   coalplant: {
     name: 'Coal Plant', icon: '🏭', desc: 'Burns Coal for abundant Power — but belches Pollution that poisons farms & sickens rodents. Plant trees or go green (solar/hydro/wheels) to offset it.',
-    cost: { stone: 50, iron: 20 }, category: 'Automation',
+    cost: { stone: 50, iron: 20 }, category: 'Automation', reqLevel: 5,
     produces: { power: 1.7 }, consumes: { coal: 0.5 }, pollutes: 2.2,
   },
   solar: {
     name: 'Solar Panel', icon: '🔆', desc: 'Clean Power from sunlight — strong at midday, NOTHING at night, and weak in fog, snow & storms. Reliable only when the sun cooperates.',
-    cost: { planks: 20, iron: 15, plastic: 8 }, category: 'Automation',
+    cost: { planks: 20, iron: 15, plastic: 8 }, category: 'Automation', reqLevel: 5,
     produces: { power: 1.3 }, solar: true,
   },
   hydro: {
@@ -284,8 +284,8 @@ export const BUILDINGS = {
     cost: { stone: 40, iron: 20 }, category: 'Production', produces: { plastic: 0.3 }, consumes: { coal: 0.4 }, pollutes: 0.9,
   },
   oilrefinery: {
-    name: 'Oil Refinery', icon: '⚗️', desc: 'The advanced refining tier: cracks Oil (from an oil seep, mined) into far more Plastic per unit than coal — and burns cleaner. Plastic feeds plastic conveyors, the Ball Workshop & Solar Panels.',
-    cost: { brick: 18, iron: 25, steel: 8 }, category: 'Production', produces: { plastic: 0.6 }, consumes: { oil: 0.5 }, pollutes: 0.4,
+    name: 'Oil Refinery', icon: '⚗️', desc: 'The advanced refining tier: cracks Oil (from an oil seep, mined) into far more Plastic per unit than coal — and burns cleaner. Plastic feeds plastic conveyors, the Ball Workshop & Solar Panels. (Unlocks at Main Hamster Lv.6.)',
+    cost: { brick: 18, iron: 25, steel: 8 }, category: 'Production', produces: { plastic: 0.6 }, consumes: { oil: 0.5 }, pollutes: 0.4, reqLevel: 6,
   },
   lab: {
     name: 'Research Lab', icon: '🔬', desc: 'Generates Research points.',
@@ -327,8 +327,8 @@ export const BUILDINGS = {
     protect: { flood: 9 }, requiresSpecies: 'beaver', upstreamPenalty: true,
   },
   barracks: {
-    name: 'Barracks', icon: '⚔️', desc: 'Trains defenders. Offensive + defensive power.',
-    cost: { planks: 40, iron: 20 }, category: 'Defense', defense: 12, offense: 8,
+    name: 'Barracks', icon: '⚔️', desc: 'Trains defenders. Offensive + defensive power. (Unlocks at Main Hamster Lv.6.)',
+    cost: { planks: 40, iron: 20 }, category: 'Defense', defense: 12, offense: 8, reqLevel: 6,
     protect: { wolf: 4, hawk: 3, raid: 6 },
   },
   levee: {
@@ -475,6 +475,8 @@ export const TECH = {
                 effect: { carryMul: 0.5 } },
   refining1:  { name: 'Refining I',   icon: '🏭', cost: { research: 40 }, desc: '+30% production speed.',
                 effect: { prodMul: 0.3 } },
+  refining2:  { name: 'Refining II',  icon: '⚗️', cost: { research: 120, plastic: 40 }, reqLevel: 7, desc: '+40% production speed (advanced refining).',
+                effect: { prodMul: 0.4 } },
   agri1:      { name: 'Agriculture I',icon: '🌻', cost: { research: 30 }, desc: '+40% food production.',
                 effect: { foodMul: 0.4 } },
   // Species unlocks
@@ -484,9 +486,9 @@ export const TECH = {
                   desc: 'Unlock Gerbils (fast haulers).', effect: { unlock: 'gerbil' } },
   unlockMouse:  { name: 'Recruit Mice', icon: '🐁', cost: { research: 60, food: 120 },
                   desc: 'Unlock Mice (boost research).', effect: { unlock: 'mouse' } },
-  unlockBeaver: { name: 'Recruit Beavers', icon: '🦫', cost: { research: 90, planks: 80 },
+  unlockBeaver: { name: 'Recruit Beavers', icon: '🦫', cost: { research: 90, planks: 80 }, reqLevel: 4,
                   desc: 'Unlock Beavers (heavy builders; build Dams).', effect: { unlock: 'beaver' } },
-  unlockGopher: { name: 'Recruit Gophers', icon: '🦡', cost: { research: 80, stone: 80 },
+  unlockGopher: { name: 'Recruit Gophers', icon: '🦡', cost: { research: 80, stone: 80 }, reqLevel: 5,
                   desc: 'Unlock Gophers (fast underground repairs & digging).', effect: { unlock: 'gopher' } },
 };
 

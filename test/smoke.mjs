@@ -1326,4 +1326,48 @@ console.log('Species-specific evolution branches:');
   ok(`rat swarm branch applies: faster breeding (plain ${plain} → swarm ${swarm} born)`);
 }
 
+// 35) Main Hamster level unlocks: buildings/species/tech gated by level threshold.
+console.log('Main Hamster level unlocks:');
+{
+  const { BUILDINGS, TECH } = await import('../src/config.js');
+  const { canPlace, placeBuilding, researchTech, mainLevel } = await import('../src/buildings.js');
+
+  // Several advanced buildings now carry a level gate.
+  const gated = ['forge', 'steelworks', 'coalplant', 'barracks', 'mausoleum', 'solar', 'oilrefinery'];
+  for (const t of gated) assert((BUILDINGS[t]?.reqLevel || 0) > 0, `${t} is gated by Main Hamster level`);
+  ok(`advanced buildings are level-gated (${gated.join(', ')})`);
+
+  // A building is refused below its level threshold and allowed at/above it.
+  const s = newGame(1800, 'mountains', 'syrian', 'Levels', {});
+  for (const k of ['brick', 'iron', 'planks', 'stone', 'steel', 'plastic', 'coal']) s.res[k] = 999;
+  const sp = s.world.spawn;
+  assert(mainLevel(s) === 1, 'a fresh colony is Main level 1');
+  const need = BUILDINGS.forge.reqLevel;
+  const blocked = canPlace(s, 'forge', sp.x + 2, sp.y);
+  assert(!blocked.ok && /Lv\.|level/i.test(blocked.reason), `the Forge is locked below Lv.${need} (${blocked.reason})`);
+  // Level up the main hamster past the threshold.
+  s.units[0].level = need;
+  assert(canPlace(s, 'forge', sp.x + 2, sp.y).ok, `the Forge unlocks at Main Hamster Lv.${need}`);
+  assert(placeBuilding(s, 'forge', sp.x + 2, sp.y).ok, 'and it can actually be placed at the threshold');
+  ok(`a level-gated building unlocks at its threshold (Forge @ Lv.${need})`);
+
+  // A species unlock (tech) is also level-gated.
+  const t = newGame(1801, 'rivers', 'syrian', 'Recruit', {});
+  for (const k of ['research', 'planks', 'stone']) t.res[k] = 999;
+  const blockedTech = researchTech(t, 'unlockBeaver');
+  assert(!blockedTech.ok && /Lv\./.test(blockedTech.reason), 'unlocking Beavers needs a level first');
+  t.units[0].level = TECH.unlockBeaver.reqLevel;
+  assert(researchTech(t, 'unlockBeaver').ok && t.unlockedSpecies.beaver, 'reaching the level unlocks the Beaver recruitment tech');
+  ok(`a level-gated species unlock opens at its threshold (Beavers @ Lv.${TECH.unlockBeaver.reqLevel})`);
+
+  // An advanced ability/tech (Refining II) is gated on level too.
+  const r = newGame(1802, 'prairie', 'syrian', 'Ability', {});
+  r.res = { research: 999, plastic: 999 };
+  assert(!researchTech(r, 'refining2').ok, 'Refining II is locked below its level');
+  r.units[0].level = TECH.refining2.reqLevel;
+  assert(researchTech(r, 'refining2').ok && r.tech.refining2, 'Refining II unlocks at its level threshold and applies');
+  assert(r.mods.prodMul > 0, 'the unlocked ability folds its bonus into the colony');
+  ok(`a level-gated ability unlocks & applies at threshold (Refining II @ Lv.${TECH.refining2.reqLevel})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

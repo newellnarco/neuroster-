@@ -86,9 +86,10 @@ export function createUI(state, ctx) {
       <div class="cat">${cat}</div>
       <div class="grid">${items.map(([id, def]) => {
         const afford = canAffordCost(def.cost);
-        return `<button class="card ${view.placing === id ? 'sel' : ''} ${afford ? '' : 'poor'}" data-build="${id}">
-          <div class="ico">${def.icon}</div><div class="nm">${def.name}</div>
-          <div class="cost">${costStr(def.cost)}</div><div class="ds">${def.desc}</div>
+        const lvlLocked = def.reqLevel && mainLevel(state) < def.reqLevel;
+        return `<button class="card ${view.placing === id ? 'sel' : ''} ${afford && !lvlLocked ? '' : 'poor'} ${lvlLocked ? 'locked' : ''}" data-build="${id}" ${lvlLocked ? 'disabled' : ''}>
+          <div class="ico">${def.icon}</div><div class="nm">${def.name}${lvlLocked ? ' 🔒' : ''}</div>
+          <div class="cost">${costStr(def.cost)}${def.reqLevel ? ` · Lv.${def.reqLevel}` : ''}</div><div class="ds">${def.desc}</div>
         </button>`;
       }).join('')}</div>`).join('');
     bind('[data-build]', (btn) => { view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build; renderBuild(); });

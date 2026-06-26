@@ -95,6 +95,10 @@ export function canPlace(state, type, x, y) {
     return { ok: false, reason: 'Place near trees/rocks — or next to another conveyor to extend the network' };
   if (def.requiresSpecies && !state.units.some(u => u.species === def.requiresSpecies))
     return { ok: false, reason: `Needs a ${SPECIES[def.requiresSpecies].name} in the colony to build` };
+  // Advanced structures unlock as your Main Hamster levels up — leadership earns
+  // access to the heavier production & defense tiers.
+  if (def.reqLevel && mainLevel(state) < def.reqLevel)
+    return { ok: false, reason: `Unlocks at Main Hamster Lv.${def.reqLevel}` };
   if (!canAfford(state, def.cost))
     return { ok: false, reason: 'Not enough resources' };
   return { ok: true };
