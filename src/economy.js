@@ -485,10 +485,14 @@ export function hasBallWorkshop(state) {
 }
 export function enterBall(state, u) {
   if (u.inBall) return { ok: true };
+  if (state.ballFear) return { ok: false, reason: 'The colony is too shaken — bury the lost hamster and destroy the broken ball first.' };
   if (!hasBallWorkshop(state)) return { ok: false, reason: 'Build a Ball Workshop first' };
+  if (state.units.some(x => x.inBall)) return { ok: false, reason: 'Only one hamster can be in a ball at a time.' };
   if ((state.res.balls || 0) < 1) return { ok: false, reason: 'No hamster balls in stock yet (make Plastic → Ball Workshop)' };
+  // Balls are for travel & fun, not hauling — drop whatever it's carrying first.
+  if (u.carrying) { addRes(state, u.carrying.res, u.carrying.amount); u.carrying = null; }
   state.res.balls -= 1;           // check a ball out of the rack
-  u.inBall = true; u.anxiety = 0;
+  u.inBall = true; u.anxiety = 0; u.targetNode = null; u.phase = 'idle';
   return { ok: true };
 }
 export function exitBall(state, u) {
@@ -501,6 +505,17 @@ function isHotDay(state) {
   return seasonKey(state) === 'summer' || w === 'drought' || w === 'humid';
 }
 function updateBalls(state, dt) {
+  // The colony makes peace — and uses the balls again — once the lost hamster is
+  // BURIED and the broken ball is DESTROYED (demolished). Checked every tick (a
+  // death leaves nobody rolling, so this must run before the early-return below).
+  if (state.ballFear) {
+    const tainted = state.buildings.some(b => b.type === 'taintedball');
+    const unburied = (state.bodies || []).some(b => b.ballDeath);
+    if (!tainted && !unburied) {
+      state.ballFear = false;
+      logMsg(state, '🫧 The colony laid the lost one to rest and cleared away the broken ball — the hamster balls are in use again.');
+    }
+  }
   const anyInBall = state.units.some(u => u.inBall);
   if (!anyInBall) { state._ballHot = false; return; }
   const hot = state._ballHot = isHotDay(state);
@@ -512,8 +527,16 @@ function updateBalls(state, dt) {
     // A hot day cooks the ball — health drains; freed in time they're fine.
     if (hot) u.needs.health = Math.max(0, u.needs.health - BALL.heatDrain * dt);
     if (u.needs.health <= 0 && state.units.length > 1) {
-      exitBall(state, u); killUnit(state, u);
-      logMsg(state, `🫧🥵 ${u.name} overheated and died inside its ball — get them out of balls on hot days!`);
+      // Died inside: the ball is NOT returned — it becomes a broken/haunted ball
+      // on the map that must be destroyed, and the colony is too shaken to roll
+      // again until that ball is destroyed AND the hamster is buried.
+      u.inBall = false;
+      const bx = Math.round(u.x), by = Math.round(u.y);
+      killUnit(state, u);
+      const body = state.bodies[state.bodies.length - 1]; if (body) body.ballDeath = true;
+      state.buildings.push({ id: state.nextId++, type: 'taintedball', x: bx, y: by, active: true });
+      state.ballFear = true;
+      logMsg(state, `🫧💀 ${u.name} overheated and died inside its ball! The colony is shaken — they won't touch the balls until ${u.name} is buried and the broken ball is destroyed.`);
       continue;
     }
     if (u.anxiety >= BALL.wantOut) { // too anxious — pops out for a break

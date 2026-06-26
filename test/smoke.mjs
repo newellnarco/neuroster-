@@ -767,7 +767,7 @@ console.log('Poop → manure → fertilizer chain:');
 console.log('Hamster balls:');
 {
   const { BUILDINGS, DAYS_PER_SEASON, DAY_SECONDS } = await import('../src/config.js');
-  const { enterBall } = await import('../src/economy.js');
+  const { enterBall, exitBall } = await import('../src/economy.js');
   assert(BUILDINGS.ballworkshop?.produces?.balls && BUILDINGS.ballworkshop.consumes?.plastic,
     'Ball Workshop turns plastic → hamster balls');
 
@@ -806,6 +806,34 @@ console.log('Hamster balls:');
   for (let i = 0; i < 150 && h.units.includes(v); i++) stepEconomy(h, 0.2);
   assert(!h.units.includes(v), 'a rodent left in a ball on a hot day overheats and dies');
   ok('hamster-ball heat death on a hot day — get them out!');
+
+  // A ball death shakes the colony: a Broken Ball is left, balls are locked.
+  assert(h.ballFear === true, 'a ball death scares the colony (fear)');
+  assert(h.buildings.some(bb => bb.type === 'taintedball'), 'a Broken Hamster Ball is left where it died');
+  assert(!enterBall(h, h.units[0]).ok, 'no rodent will use a ball while the colony is shaken');
+  ok('a ball death scares the colony & locks every ball');
+
+  // Peace (and ball use) returns once the broken ball is DESTROYED and the lost
+  // hamster is BURIED.
+  h.buildings = h.buildings.filter(bb => bb.type !== 'taintedball'); // destroy the ball (demolish)
+  h.bodies = (h.bodies || []).filter(bb => !bb.ballDeath);           // bury the lost one
+  stepEconomy(h, 0.1);
+  assert(h.ballFear === false, 'fear lifts once the ball is destroyed and the hamster buried');
+  assert(enterBall(h, h.units[0]).ok, 'the colony rolls again after making peace');
+  ok('balls return only after burial + destroying the broken ball');
+
+  // Only ONE hamster can be in a ball at a time; balls aren't for hauling.
+  const o = newGame(902, 'prairie', 'syrian', 'Solo', {});
+  o.buildings.push({ id: o.nextId++, type: 'ballworkshop', x: o.world.spawn.x + 2, y: o.world.spawn.y, active: true });
+  o.res.balls = 5;
+  const a = o.units[0], b2 = o.units[1];
+  assert(enterBall(o, a).ok && !enterBall(o, b2).ok, 'only one hamster can roll at a time');
+  ok('one hamster in a ball at a time');
+  exitBall(o, a);
+  a.carrying = { res: 'wood', amount: 5 };
+  enterBall(o, a);
+  assert(!a.carrying, 'entering a ball drops any carried load (travel/fun, not transport)');
+  ok('balls are travel/fun only — no hauling');
 }
 
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

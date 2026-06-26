@@ -169,9 +169,16 @@ export const BUILDINGS = {
     cost: { wood: 10 }, category: 'Defense', defense: 2,
   },
   ballworkshop: {
-    name: 'Ball Workshop', icon: '🫧', desc: 'Rolls Plastic into Hamster Balls (needs a Refinery making plastic). Select a rodent → 🫧 to send it rolling around the world SAFE from predators — happiness & curiosity rise. But anxiety builds, so it pops out before long; and on a HOT day it can OVERHEAT and die inside if you don\'t let it out in time.',
+    name: 'Ball Workshop', icon: '🫧', desc: 'Rolls Plastic into Hamster Balls (needs a Refinery making plastic). Select a rodent → 🫧 to send it rolling around the world SAFE from predators — happiness & curiosity rise. Only ONE rodent can roll at a time; balls are for travel & fun, not hauling. Anxiety builds, so it pops out before long; and on a HOT day it can OVERHEAT and die inside if you don\'t let it out in time.',
     cost: { wood: 30, planks: 12, plastic: 10 }, category: 'Wellbeing',
     consumes: { plastic: 0.12 }, produces: { balls: 0.1 },
+  },
+  taintedball: {
+    // Spawned (not buildable) where a hamster died inside its ball. The colony
+    // won't use the balls until this is DESTROYED (click → demolish) and the
+    // lost hamster is buried. Hidden from the build menu (noBuild).
+    name: 'Broken Hamster Ball', icon: '🫧', desc: 'A hamster died inside this ball. The colony is shaken and won\'t roll again until it is destroyed (click to demolish) and the lost one is buried.',
+    cost: {}, category: 'Wellbeing', noBuild: true, taintedBall: true,
   },
   statue: {
     name: 'Statue', icon: '🗿', desc: 'A proud monument. A steady, quiet lift to colony morale — and a focus for its better nature (Compassion).',

@@ -104,6 +104,20 @@ export function stepRodent(state, u, dt) {
 
   const spd = speedOf(state, u) * 2.2;
 
+  // A rodent in a hamster ball doesn't work or haul — it just rolls around for
+  // travel & fun. Player orders (goto/explore) below steer it; with no order it
+  // wanders idly. (It never gathers, so balls are useless for transporting.)
+  if (u.inBall && !u.order) {
+    u._wanderT = (u._wanderT || 0) - dt;
+    if (u._wanderT <= 0 || u._wx == null) {
+      u._wanderT = 1.5 + Math.random() * 2.5;
+      u._wx = Math.max(1, Math.min(GRID_W - 2, u.x + (Math.random() - 0.5) * 6));
+      u._wy = Math.max(1, Math.min(GRID_H - 2, u.y + (Math.random() - 0.5) * 6));
+    }
+    moveToward(u, u._wx, u._wy, spd, dt);
+    return;
+  }
+
   // ---- Player orders (the colony is mostly an auto-sim, but a selected rodent
   // can be told to go somewhere or to explore). An order overrides auto-work;
   // sleep/needs still take priority (handled above), and the order survives a

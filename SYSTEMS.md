@@ -227,6 +227,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | 🏡 Sanctuary | 🪵 wood 30, 🟫 planks 15, 🌱 seeds 10 | — | — | +3 health |
 | 🌳 Plant Tree | 🌱 seeds 10, 💧 water 6 | — | — | tree (forest) |
 | 🫧 Ball Workshop | 🪵 wood 30, 🟫 planks 12, 🟦 plastic 10 | 🟦 plastic 0.12 | 🫧 balls 0.1 |  |
+| 🫧 Broken Hamster Ball | — | — | — |  |
 | 🗿 Statue | 🪨 stone 40, 🟫 planks 10 | — | — | morale + compassion |
 | ⚖️ Courthouse | 🟫 planks 30, 🪨 stone 25 | — | — |  |
 | 🎖️ Hall of Heroes | 🪨 stone 50, 🟫 planks 25, 🔩 iron 10 | — | — |  |
@@ -344,4 +345,4 @@ flowchart LR
 
 ---
 
-_Generated from `src/config.js` — 60 structures, 20 resources, 7 species. Run `node tools/gen_systems.mjs` to refresh._
+_Generated from `src/config.js` — 61 structures, 20 resources, 7 species. Run `node tools/gen_systems.mjs` to refresh._

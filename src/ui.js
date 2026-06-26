@@ -81,7 +81,7 @@ export function createUI(state, ctx) {
   // ---- Build menu ----
   function renderBuild() {
     const cats = {};
-    for (const [id, def] of Object.entries(BUILDINGS)) (cats[def.category] ??= []).push([id, def]);
+    for (const [id, def] of Object.entries(BUILDINGS)) { if (def.noBuild) continue; (cats[def.category] ??= []).push([id, def]); }
     el('tab-build').innerHTML = Object.entries(cats).map(([cat, items]) => `
       <div class="cat">${cat}</div>
       <div class="grid">${items.map(([id, def]) => {
