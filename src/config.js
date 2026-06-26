@@ -957,10 +957,14 @@ export const EVOLUTIONS = {
 };
 
 export const STARTING = {
-  // Generous starting stock so the first guided builds (Burrow, Farm, Well,
-  // Storage, Sawmill, Wheel) all land with margin to spare — including a few
-  // planks so the Wheel is buildable before a Sawmill exists.
-  resources: { wood: 140, stone: 75, food: 120, seeds: 60, water: 100, planks: 12 },
+  // Tuned for a good first-10-minutes curve now that far more early buildings
+  // exist (sunflower, toybox, sandbath, cistern, auto-waterer, feeder, …). WOOD
+  // is the dominant early currency — Burrow(20) Farm(30) Well(20) Storage(25)
+  // Sawmill(40) Wheel(35) already total ~170 — so it's the most generous; PLANKS
+  // are bumped a touch so a Feeder/Auto-Waterer (8 planks) is reachable before
+  // the Sawmill ramps; FOOD trimmed slightly so the Farm pulls its weight sooner.
+  // Total (521) stays comfortably under the 700 cap so nothing spills on day one.
+  resources: { wood: 160, stone: 75, food: 110, seeds: 60, water: 100, planks: 16 },
   hamsters: 5,
   storageCap: 700,
 };

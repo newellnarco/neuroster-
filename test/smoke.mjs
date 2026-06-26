@@ -1413,4 +1413,21 @@ console.log('Feeder/waterer crowding throughput:');
   ok(`feeder throughput degrades with crowding & recovers with more stations (${lightlyLoaded.toFixed(2)} vs ${overcrowded.toFixed(2)} → ${moreFeeders.toFixed(2)})`);
 }
 
+// 38) Starting economy: the re-tuned bundle is exact (normal) & within cap.
+console.log('Starting economy bundle:');
+{
+  const { STARTING } = await import('../src/config.js');
+  const intended = { wood: 160, stone: 75, food: 110, seeds: 60, water: 100, planks: 16 };
+  for (const [k, v] of Object.entries(intended))
+    assert(STARTING.resources[k] === v, `starting ${k} is ${v} (got ${STARTING.resources[k]})`);
+  const total = Object.values(STARTING.resources).reduce((a, b) => a + b, 0);
+  assert(total <= STARTING.storageCap, `the starting bundle fits the cap (${total} <= ${STARTING.storageCap})`);
+  // On normal difficulty (startMul 1) a fresh colony gets exactly the bundle, no spill.
+  const s = newGame(2400, 'woodland', 'syrian', 'Start', { difficulty: 'normal' });
+  for (const [k, v] of Object.entries(intended)) assert(s.res[k] === v, `new game stocks ${v} ${k} (got ${s.res[k]})`);
+  // Wood is the most generous (it's the dominant early currency).
+  assert(STARTING.resources.wood >= Math.max(...Object.entries(STARTING.resources).filter(([k]) => k !== 'wood').map(([, v]) => v)), 'wood is the largest starting stock');
+  ok(`starting bundle re-tuned & within cap (total ${total}/${STARTING.storageCap})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
