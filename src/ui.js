@@ -95,7 +95,13 @@ export function createUI(state, ctx) {
           <div class="cost">${active ? 'Placing… (click to cancel)' : costStr(def.cost) + (def.reqLevel ? ` · Lv.${def.reqLevel}` : '')}</div><div class="ds">${def.desc}</div>
         </button>`;
       }).join('')}</div>`).join('');
-    bind('[data-build]', (btn) => { view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build; renderBuild(); });
+    bind('[data-build]', (btn) => {
+      view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build;
+      // Choosing a building to place returns the cursor to the Select tool so the
+      // demolish cursor never lingers over a build action.
+      if (view.placing && view.tool !== 'select') { view.tool = 'select'; renderTools(); }
+      renderBuild();
+    });
   }
 
   // ---- Skill tree (tech) ----
@@ -555,6 +561,24 @@ export function createUI(state, ctx) {
     if (btn) btn.click();
   }
 
+  // ---- Tool modes (👆 Select / 🎩 Demolish) ----
+  // Reflect view.tool in the top-bar buttons' active state and the board cursor.
+  function renderTools() {
+    const sel = el('tool-select'), dem = el('tool-demolish');
+    if (sel) sel.classList.toggle('active', (view.tool || 'select') === 'select');
+    if (dem) dem.classList.toggle('active', view.tool === 'demolish');
+    const board = el('board');
+    if (board) board.classList.toggle('demolish-mode', view.tool === 'demolish');
+  }
+  // Switch tools. Picking a tool always cancels a held building so the two modes
+  // never fight; flag the change so the player sees what's active.
+  function setTool(tool) {
+    view.tool = tool;
+    if (view.placing) { view.placing = null; view.canPlace = false; renderBuild(); }
+    renderTools(); sfx('click');
+    flash(tool === 'demolish' ? '🎩 Demolish — click a building to tear it down' : '👆 Select — click hamsters & buildings');
+  }
+
   // ---- Tabs & controls ----
   function setupTabs() {
     document.querySelectorAll('.tabbtn').forEach(b => {
@@ -571,6 +595,11 @@ export function createUI(state, ctx) {
       const n = prompt('Save as a new hamster — name this copy:', state.founder?.name || 'Colony');
       if (n != null && n.trim()) ctx.onSaveAs?.(n.trim().slice(0, 16));
     };
+    // Tool modes: 👆 Select (default) / 🎩 Demolish. Picking a tool clears any
+    // held building; the active button + board cursor reflect the current tool.
+    if (el('tool-select')) el('tool-select').onclick = () => setTool('select');
+    if (el('tool-demolish')) el('tool-demolish').onclick = () => setTool('demolish');
+    renderTools();
     if (el('btn-help')) el('btn-help').onclick = showHelp;
     if (el('btn-settings')) el('btn-settings').onclick = showSettings;
     if (el('help-close')) el('help-close').onclick = hideHelp;
@@ -864,6 +893,15 @@ export function createUI(state, ctx) {
         }
         return;
       }
+      // Demolish tool: a left-click on a building tears it down IMMEDIATELY (no
+      // confirm dialog) for a 50% refund. Clicking bare ground or a hamster does
+      // nothing but a hint. Demolition happens ONLY in this mode.
+      if (view.tool === 'demolish') {
+        const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
+        if (b) { demolish(state, b); sfx('place'); flash('🏚️ Demolished (50% refund)'); renderBuild(); renderResbar(); }
+        else flash('🎩 Click a building to demolish it');
+        return;
+      }
       // select a rodent under the cursor
       const px = (e.offsetX) / c.getBoundingClientRect().width * GRID_W;
       const py = (e.offsetY) / c.getBoundingClientRect().height * GRID_H;
@@ -907,11 +945,17 @@ export function createUI(state, ctx) {
           u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null; sfx('click'); flash('🐾 On my way!'); renderRodents(); return;
         }
       }
-      if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
     c.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!panMoved) { view.placing = null; renderBuild(); } });
     // Escape also drops the held building → back to the arrow/select cursor.
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && view.placing) { view.placing = null; renderBuild(); flash('↩︎ Back to select'); } });
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      // Esc drops a held building AND returns to the Select tool (clears Demolish).
+      let did = false;
+      if (view.placing) { view.placing = null; renderBuild(); did = true; }
+      if (view.tool !== 'select') { view.tool = 'select'; renderTools(); did = true; }
+      if (did) flash('↩︎ Back to select');
+    });
   }
 
   // ---- helpers ----

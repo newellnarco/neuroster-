@@ -92,6 +92,13 @@ body {
   padding: 5px 10px; border-radius: 7px; cursor: pointer;
 }
 .controls button:hover { border-color: var(--accent); }
+/* Tool-mode toggles (👆 Select / 🎩 Demolish) — clear active state. */
+.controls button.toolbtn.active {
+  background: var(--accent); color: #1c1a17; border-color: var(--accent); font-weight: 700;
+}
+#tool-demolish.active { background: #d4574a; border-color: #d4574a; color: #fff; }
+/* Demolish mode swaps the board cursor so it's obvious you're tearing down. */
+#board.demolish-mode #game { cursor: crosshair; }
 
 /* Environment bar */
 .envbar {
