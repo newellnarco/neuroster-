@@ -231,7 +231,14 @@ export function createUI(state, ctx) {
     bind('[data-recruit]', (btn) => { msg(recruit(state, btn.dataset.recruit)); renderRodents(); });
     bind('[data-trait]', (btn) => {
       const u = state.units.find(x => x.id == btn.dataset.unit);
-      if (u) msg(upgradeTrait(state, u, btn.dataset.trait));
+      if (!u) return;
+      // Spending a trait point works for ANY rodent (founder or not) that earned
+      // skill points by leveling. Also pin the unit as selected so its controls
+      // surface — clicking a non-leader's trait shouldn't feel inert.
+      view.selUnit = u.id;
+      const r = upgradeTrait(state, u, btn.dataset.trait);
+      if (r?.ok && r.paidWith === 'skillPoint') { sfx('level'); flash(`⭐ ${escHtml(u.name || 'Rodent')} → ${TRAITS[btn.dataset.trait]?.name || 'trait'} up!`); }
+      else msg(r);
       renderRodents();
     });
     bind('[data-care]', (btn) => {
