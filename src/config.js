@@ -64,8 +64,8 @@ export const BUILDINGS = {
     cost: { wood: 35, planks: 15 }, category: 'Housing', townhall: true,
   },
   storage: {
-    name: 'Storage Depot', icon: '📦', desc: '+200 storage. Haul drop-off point.',
-    cost: { wood: 25 }, category: 'Storage', storage: 200,
+    name: 'Storage Depot', icon: '📦', desc: '+1500 storage. Haul drop-off point.',
+    cost: { wood: 25 }, category: 'Storage', storage: 1500,
   },
   farm: {
     name: 'Farm', icon: '🌾', desc: 'Turns Seeds into Food. Much better on fertile ground (near water).',
@@ -249,15 +249,15 @@ export const BUILDINGS = {
     produces: { power: 1.2 }, needsWater: true, radius: 3, upstreamPenalty: true,
   },
   conveyor: {
-    name: 'Conveyor (Wood)', icon: '🛞', desc: 'Animated belt: auto-moves a nearby node\'s output to storage.',
+    name: 'Conveyor (Wood)', icon: '🛞', desc: 'Animated belt: auto-hauls nearby trees/rocks to storage. Place belts side by side to chain into a NETWORK — it reaches every node along the chain and hauls at the combined rate.',
     cost: { wood: 30, planks: 10 }, category: 'Automation', belt: { rate: 1.0, tier: 1 }, radius: 2, needsNode: true,
   },
   conveyorPlastic: {
-    name: 'Conveyor (Plastic)', icon: '🟦', desc: 'Faster plastic belt: better throughput than wood.',
+    name: 'Conveyor (Plastic)', icon: '🟦', desc: 'Faster plastic belt: better throughput than wood. Chains with any belt to extend a network.',
     cost: { plastic: 20, planks: 10 }, category: 'Automation', belt: { rate: 1.6, tier: 2 }, radius: 2, needsNode: true,
   },
   conveyorMetal: {
-    name: 'Conveyor (Metal)', icon: '⚙️', desc: 'Fastest metal belt: highest throughput from nearby nodes.',
+    name: 'Conveyor (Metal)', icon: '⚙️', desc: 'Fastest metal belt: highest throughput from nearby nodes. Chains with any belt to extend a network.',
     cost: { planks: 20, iron: 20 }, category: 'Automation', belt: { rate: 2.4, tier: 3 }, radius: 3, needsNode: true,
   },
   refinery: {

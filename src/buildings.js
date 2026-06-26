@@ -90,8 +90,9 @@ export function canPlace(state, type, x, y) {
     return { ok: false, reason: 'Place near water (a pond/river)' };
   if (def.mine && !undergroundNear(state, x, y, def.radius || 1))
     return { ok: false, reason: 'Place on an underground iron-ore or coal seam' };
-  if (def.needsNode && !surfaceNodeNear(state, x, y, def.radius || 2))
-    return { ok: false, reason: 'Place near trees/rocks to feed the belt' };
+  // Belts feed off a nearby node OR chain off an adjacent belt (multi-segment networks).
+  if (def.needsNode && !surfaceNodeNear(state, x, y, def.radius || 2) && !beltNear(state, x, y))
+    return { ok: false, reason: 'Place near trees/rocks — or next to another conveyor to extend the network' };
   if (def.requiresSpecies && !state.units.some(u => u.species === def.requiresSpecies))
     return { ok: false, reason: `Needs a ${SPECIES[def.requiresSpecies].name} in the colony to build` };
   if (!canAfford(state, def.cost))
@@ -106,6 +107,11 @@ function hasWaterNear(state, x, y, r) {
 }
 function surfaceNodeNear(state, x, y, r) {
   return state.world.nodes.some(n => n.amount > 0 && NODE_TYPES[n.kind].surface !== false && Math.abs(n.x - x) <= r && Math.abs(n.y - y) <= r);
+}
+// A conveyor sits within BELT_LINK tiles of an existing belt, so the two chain
+// into one network (mirrors BELT_LINK in economy.js — kept in sync deliberately).
+function beltNear(state, x, y) {
+  return state.buildings.some(b => BUILDINGS[b.type]?.belt && Math.abs(b.x - x) + Math.abs(b.y - y) <= 2);
 }
 function undergroundNear(state, x, y, r) {
   return state.world.nodes.some(n => n.amount > 0 && !n.claimedBy && NODE_TYPES[n.kind].surface === false && Math.abs(n.x - x) <= r && Math.abs(n.y - y) <= r);

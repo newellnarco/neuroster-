@@ -479,7 +479,7 @@ console.log('Pollution & power:');
     g.pollution = pollution;
     g.units.forEach(u => u.needs.food = 100); // keep them from eating the output
     const f = g.world.spawn;
-    g.buildings.push({ type: 'storage', x: f.x + 1, y: f.y }, { type: 'storage', x: f.x + 2, y: f.y }); // +400 cap
+    g.buildings.push({ type: 'storage', x: f.x + 1, y: f.y }, { type: 'storage', x: f.x + 2, y: f.y }); // depots add storage headroom for the harvest
     g.buildings.push({ type: 'farm', x: f.x, y: f.y });
     const before = g.res.food; for (let i = 0; i < 25; i++) stepEconomy(g, 0.2); return g.res.food - before;
   }
@@ -865,6 +865,59 @@ console.log('Guard skill & equipment:');
   // Only a trained guard can be equipped.
   assert(!equipGuard(s, s.units[1]).ok, 'an untrained rodent cannot be equipped');
   ok('equipment requires the guard skill first');
+}
+
+// 27) Multi-segment conveyor belt networks: belts chain to extend reach + rate.
+console.log('Belt networks (multi-segment conveyors):');
+{
+  const { placeBuilding, canPlace } = await import('../src/buildings.js');
+  // Quiet world: clear nodes so only the seam we plant feeds the belts.
+  const s = newGame(2727, 'prairie', 'syrian', 'Belts', {});
+  s.res = { wood: 80, planks: 120, plastic: 40, iron: 40 }; // headroom under the 700 cap
+  s.world.nodes.length = 0;
+  const sp = s.world.spawn;
+  // A wood node well clear of the colony, and a belt sitting right on it.
+  const nx = sp.x + 8, ny = sp.y;
+  s.world.nodes.push({ id: 1, kind: 'trees', x: nx, y: ny - 2, amount: 200, max: 400 });
+  const head = placeBuilding(s, 'conveyor', nx, ny);
+  assert(head.ok, 'a conveyor places next to a node: ' + (head.reason || ''));
+
+  // A relay belt sitting on bare ground (no node in range) still places, because
+  // it chains off the head belt — this is the multi-segment network rule.
+  const relay = placeBuilding(s, 'conveyor', nx + 2, ny);
+  assert(relay.ok, 'a relay conveyor places by chaining off another belt: ' + (relay.reason || ''));
+  // A lone belt far from both nodes and belts is rejected.
+  assert(!canPlace(s, 'conveyor', sp.x - 9, sp.y + 9).ok, 'a stranded belt (no node, no neighbour) is refused');
+  ok('belts place on a node OR chain off an adjacent belt (network extension)');
+
+  const isBelt = (b) => /^conveyor/.test(b.type);
+  for (const b of s.buildings) if (isBelt(b)) b.underConstruction = false;
+  const wood0 = s.res.wood, amt0 = s.world.nodes[0].amount;
+  for (let i = 0; i < 20; i++) stepEconomy(s, 0.2);
+  assert(s.res.wood > wood0, `the belt network hauls wood to storage (${wood0} → ${s.res.wood.toFixed(1)})`);
+  assert(s.world.nodes[0].amount < amt0, 'the network drains the source node');
+  assert(s.buildings.filter(isBelt).every(b => b._flow === 1), 'every belt in a live network animates');
+  ok(`a 2-belt network drains a node into storage (node ${amt0} → ${s.world.nodes[0].amount.toFixed(1)})`);
+
+  // Reach via chaining: a node sits next to the FAR relay only (out of the head
+  // belt's own radius). A connected network still reaches and drains it.
+  const far = newGame(2728, 'prairie', 'syrian', 'Reach', {});
+  far.res = { wood: 120, planks: 80 }; // headroom under the cap
+  far.world.nodes.length = 0;
+  const fx = far.world.spawn.x + 7, fy = far.world.spawn.y; // clear of the colony
+  // A bush feeds the head belt; a rock sits 4 tiles out, reachable only via relays.
+  far.world.nodes.push({ id: 1, kind: 'bush', x: fx, y: fy + 1, amount: 30, max: 200 });
+  // Rock 6 tiles out — only the last relay (at fx+4) is within radius of it.
+  const farNode = { id: 2, kind: 'rock', x: fx + 6, y: fy, amount: 100, max: 500 };
+  far.world.nodes.push(farNode);
+  assert(placeBuilding(far, 'conveyor', fx, fy).ok, 'head belt places (feeds off the near bush)');
+  assert(placeBuilding(far, 'conveyor', fx + 2, fy).ok, 'relay 1 chains off the head');
+  assert(placeBuilding(far, 'conveyor', fx + 4, fy).ok, 'relay 2 chains out toward the far rock');
+  for (const b of far.buildings) if (isBelt(b)) b.underConstruction = false;
+  const rock0 = farNode.amount;
+  for (let i = 0; i < 20; i++) stepEconomy(far, 0.2);
+  assert(farNode.amount < rock0, `a 3-belt chain reaches a node only the far end touches (${rock0} → ${farNode.amount.toFixed(1)})`);
+  ok('a longer chain extends reach to nodes no single belt could touch');
 }
 
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
