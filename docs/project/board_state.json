@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T17:53:13Z",
+  "updated": "2026-06-26T18:06:06Z",
   "items": [
     {
       "key": "econ:1",
@@ -1948,13 +1948,19 @@
       "type": "Change",
       "area": "UI/UX",
       "priority": "P2",
-      "status": "Done",
-      "pr": 0,
-      "release": null,
+      "status": "Shipped",
+      "pr": "55",
+      "release": "e5945f1",
       "detail": "",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T17:53:34+00:00",
+          "status": "Shipped",
+          "note": "PR #55 merged (release e5945f1)"
+        }
+      ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T17:53:34+00:00"
     },
     {
       "key": "fix:map-labels",
@@ -1965,6 +1971,46 @@
       "type": "Fix",
       "area": "UI/UX",
       "priority": "P1",
+      "status": "Shipped",
+      "pr": "55",
+      "release": "e5945f1",
+      "detail": "",
+      "timeline": [
+        {
+          "at": "2026-06-26T17:53:34+00:00",
+          "status": "Shipped",
+          "note": "PR #55 merged (release e5945f1)"
+        }
+      ],
+      "screenshots": [],
+      "updated": "2026-06-26T17:53:34+00:00"
+    },
+    {
+      "key": "feat:art-spec",
+      "issue": null,
+      "title": "Art-asset specification (docs/ART_SPEC.md) for sprite-sheet replacement art",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Docs",
+      "priority": "P3",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null
+    },
+    {
+      "key": "feat:systems-diagram",
+      "issue": null,
+      "title": "Data-driven systems-map PNG diagram + generator (tools/gen_diagram.mjs)",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Docs",
+      "priority": "P2",
       "status": "Done",
       "pr": 0,
       "release": null,

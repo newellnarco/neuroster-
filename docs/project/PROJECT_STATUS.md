@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T17:53:13Z · 85 items_
+_board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
 
 ## Summary
 
@@ -14,12 +14,12 @@ _board_state.json updated: 2026-06-26T17:53:13Z · 85 items_
 | Planned | 0 |
 | Backlog | 3 |
 | Done | 2 |
-| Shipped | 76 |
+| Shipped | 78 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **85** |
+| **TOTAL** | **87** |
 
-**78 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**80 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -40,7 +40,7 @@ _board_state.json updated: 2026-06-26T17:53:13Z · 85 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (28)
+### (misc) (30)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -70,8 +70,10 @@ _board_state.json updated: 2026-06-26T17:53:13Z · 85 items_
 | None | Click a resource node with a rodent selected to send it gathering | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
 | None | Calmer normal speed + roomier event cadence | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
 | None | Any selected hamster can spend skill points (not just leader) | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
-| None | Themed Settings window (matches start/hamster screens); drop import/export | — | `—` |
-| None | Persistent on-map labels via the 🏷️ toggle (not hover-only) | — | `—` |
+| None | Themed Settings window (matches start/hamster screens); drop import/export | [#55](https://github.com/newellnarco/neuroster-/pull/55) | `e5945f1` |
+| None | Persistent on-map labels via the 🏷️ toggle (not hover-only) | [#55](https://github.com/newellnarco/neuroster-/pull/55) | `e5945f1` |
+| None | Art-asset specification (docs/ART_SPEC.md) for sprite-sheet replacement art | — | `—` |
+| None | Data-driven systems-map PNG diagram + generator (tools/gen_diagram.mjs) | — | `—` |
 
 ### CREATURES (5)
 
