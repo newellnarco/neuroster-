@@ -10,10 +10,17 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './e
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
+
+// Difficulty doesn't only scale combat/events — it modulates the whole economy.
+// yieldMul scales resource OUTPUT (production buildings, mines, belt hauling);
+// breedMul scales BREEDING speed. Easier settings produce & breed faster, harder
+// settings slower (see config.js DIFFICULTIES). Exported for the smoke test.
+export function diffYieldMul(state) { return DIFFICULTIES[state?.difficulty]?.yieldMul ?? 1; }
+export function diffBreedMul(state) { return DIFFICULTIES[state?.difficulty]?.breedMul ?? 1; }
 
 // Run one simulation tick. dt is seconds per tick.
 export function stepEconomy(state, dt) {
@@ -38,6 +45,7 @@ export function stepEconomy(state, dt) {
   // 3) Building production / refining.
   const wb = wellbeingMul(state);
   const powerMul = powerMultiplier(state);
+  const diffY = diffYieldMul(state); // difficulty scales economic output (yields)
   // Dams hold back the river: each one cuts non-dam water sources' flow upstream.
   const dams = state.buildings.filter(b => BUILDINGS[b.type]?.upstreamPenalty).length;
   const upstreamMul = Math.max(0.3, 1 - 0.3 * dams);
@@ -59,7 +67,7 @@ export function stepEconomy(state, dt) {
     if (def.mine) { runMine(state, b, def, dt, wb); continue; }
     if (def.belt) { continue; } // belts run as connected networks — see runBeltNetworks below
 
-    let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)) * (state.quarantine ? (1 - DISEASE.quarantineOutput) : 1); // leader inspires; builders divert labour; play distracts; a quarantine confines the colony
+    let rate = dt * wb * powerMul * diffY * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)) * (state.quarantine ? (1 - DISEASE.quarantineOutput) : 1); // difficulty yield; leader inspires; builders divert labour; play distracts; a quarantine confines the colony
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
       let bonus = state.mods.foodMul + env.foodMul + (mega.foodMul || 0) + (doc.foodMul || 0);
@@ -306,7 +314,7 @@ function runMine(state, b, def, dt, wb) {
   }
   const n = state.world.nodes.find(o => o.id === b.nodeId);
   if (!n || n.amount <= 0) { collapseMine(state, b, n); return; }
-  const got = Math.min(n.amount, (def.rate || 1.2) * dt * wb * (1 + state.mods.mineMul + (state._mega?.mineMul || 0)));
+  const got = Math.min(n.amount, (def.rate || 1.2) * dt * wb * diffYieldMul(state) * (1 + state.mods.mineMul + (state._mega?.mineMul || 0)));
   n.amount -= got;
   b._remaining = Math.ceil(n.amount);
   addRes(state, NODE_TYPES[n.kind].resource, got);
@@ -345,7 +353,7 @@ function runBeltNetworks(state, dt, wb) {
     // Total haul this tick = sum of each belt's rate (higher tiers move more).
     let cap = 0;
     for (const b of net) { cap += BUILDINGS[b.type].belt.rate; b._flow = 0; }
-    cap *= dt * wb;
+    cap *= dt * wb * diffYieldMul(state); // difficulty scales haul yield
     // Every surface node within a belt's own radius of any belt in the network.
     const reach = state.world.nodes.filter(n => {
       if (n.amount <= 0 || NODE_TYPES[n.kind].surface === false) return false;
@@ -851,7 +859,7 @@ function updateBreeding(state, dt) {
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
+  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * diffBreedMul(state) * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
     state.res.food -= 5;

@@ -1430,4 +1430,44 @@ console.log('Starting economy bundle:');
   ok(`starting bundle re-tuned & within cap (total ${total}/${STARTING.storageCap})`);
 }
 
+// 39) Difficulty also scales resource YIELDS & BREEDING (not just combat/events).
+console.log('Difficulty scales yields & breeding:');
+{
+  const { diffYieldMul, diffBreedMul } = await import('../src/economy.js');
+  const { DIFFICULTIES } = await import('../src/config.js');
+  // The config knobs read in the intended direction (easier > 1 > harder).
+  assert(DIFFICULTIES.relaxed.yieldMul > 1 && DIFFICULTIES.harsh.yieldMul < 1, 'yieldMul >1 relaxed, <1 harsh');
+  assert(DIFFICULTIES.relaxed.breedMul > 1 && DIFFICULTIES.harsh.breedMul < 1, 'breedMul >1 relaxed, <1 harsh');
+
+  // Production yield: a Mason makes more brick on easier difficulty over the same time.
+  function brickOver(d) {
+    const g = newGame(2500, 'mountains', 'syrian', 'Yield', { difficulty: d });
+    g.res = { stone: 400 };
+    g.buildings.push({ id: g.nextId++, type: 'mason', x: g.world.spawn.x + 2, y: g.world.spawn.y, active: true });
+    const b0 = g.res.brick || 0;
+    for (let i = 0; i < 40; i++) stepEconomy(g, 0.2);
+    return (g.res.brick || 0) - b0;
+  }
+  const easyY = brickOver('relaxed'), normY = brickOver('normal'), hardY = brickOver('harsh');
+  assert(easyY > normY && normY > hardY, `harder difficulty cuts yield (relaxed ${easyY.toFixed(1)} > normal ${normY.toFixed(1)} > harsh ${hardY.toFixed(1)})`);
+  assert(Math.abs(diffYieldMul({ difficulty: 'normal' }) - 1) < 1e-9, 'normal yield multiplier is 1 (the baseline)');
+  ok(`difficulty scales resource yields (${easyY.toFixed(1)}/${normY.toFixed(1)}/${hardY.toFixed(1)} brick)`);
+
+  // Breeding: the per-tick breed accumulator scales with difficulty.
+  function breedRate(d) {
+    const g = newGame(2501, 'woodland', 'syrian', 'Breed', { difficulty: d });
+    g.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
+    g.res.food = 9999; g.popCap = 99;
+    for (let k = 0; k < 6; k++) g.buildings.push({ id: g.nextId++, type: 'burrow', x: g.world.spawn.x + 1 + k, y: g.world.spawn.y, active: true });
+    g._breed = 0;
+    g.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
+    stepEconomy(g, 0.2);
+    return g._breed; // accumulator advance for one tick (before any birth resets it)
+  }
+  const easyB = breedRate('relaxed'), hardB = breedRate('harsh');
+  assert(easyB > hardB, `easier difficulty breeds faster (relaxed ${easyB.toFixed(4)} > harsh ${hardB.toFixed(4)})`);
+  assert(Math.abs(diffBreedMul({ difficulty: 'normal' }) - 1) < 1e-9, 'normal breed multiplier is 1 (the baseline)');
+  ok(`difficulty scales breeding speed (relaxed ${easyB.toFixed(3)} > harsh ${hardB.toFixed(3)} per tick)`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
