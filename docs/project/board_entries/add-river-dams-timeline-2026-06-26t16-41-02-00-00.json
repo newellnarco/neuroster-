@@ -1,0 +1,20 @@
+{
+  "op": "update",
+  "key": "add:river-dams",
+  "status": "Shipped",
+  "timeline": [
+    {
+      "at": "2026-06-26T16:39:41+00:00",
+      "status": "Done",
+      "note": "Built in Engine section (lightweight, not the deferred A* refactor)"
+    },
+    {
+      "at": "2026-06-26T16:41:02+00:00",
+      "status": "Shipped",
+      "note": "PR #49 merged (release 2c8095b)"
+    }
+  ],
+  "updated": "2026-06-26T16:41:02+00:00",
+  "pr": "49",
+  "release": "2c8095b"
+}
