@@ -330,7 +330,7 @@ export const BUILDINGS = {
     cost: { wood: 18, planks: 10 }, category: 'Defense', bridge: true,
   },
   dam: {
-    name: 'Beaver Dam', icon: '🦫', desc: 'Beavers dam the water to collect & hold it: lots of Water + strong flood protection (cuts flow upstream).',
+    name: 'Beaver Dam', icon: '🦫', desc: 'Beavers dam the water to collect & hold it: lots of Water + strong flood protection (cuts flow upstream). Dam a REAL river (not a still pond) to tap its current for extra Water.',
     cost: { wood: 50, stone: 20 }, category: 'Defense', produces: { water: 1.0 }, needsWater: true, radius: 2,
     protect: { flood: 9 }, requiresSpecies: 'beaver', upstreamPenalty: true,
   },

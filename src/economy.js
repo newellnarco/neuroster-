@@ -13,7 +13,15 @@ import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, curren
 import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
-import { reveal, isFertile, addWaste, wasteAt } from './world.js';
+import { reveal, isFertile, addWaste, wasteAt, riverNear } from './world.js';
+
+// A dam on a REAL river tile (true flowing watercourse, not a still pond) taps
+// the current and yields more water — and reads the flow geography to know it.
+// Returns the dam's water-yield multiplier (1 off-river, >1 on a river).
+export const RIVER_DAM_BONUS = 0.6; // +60% water yield when damming a real river
+export function damRiverFactor(state, b) {
+  return riverNear(state.world, b.x, b.y, BUILDINGS[b.type]?.radius || 2) ? 1 + RIVER_DAM_BONUS : 1;
+}
 
 // Difficulty doesn't only scale combat/events — it modulates the whole economy.
 // yieldMul scales resource OUTPUT (production buildings, mines, belt hauling);
@@ -88,8 +96,13 @@ export function stepEconomy(state, dt) {
       for (const [k, v] of Object.entries(def.consumes)) state.res[k] -= v * rate;
     }
     if (def.produces) for (const [k, v] of Object.entries(def.produces)) {
-      // Non-dam water sources lose flow when dams hold the river upstream.
-      const r = (k === 'water' && !def.upstreamPenalty) ? rate * upstreamMul * beaverFlow : rate;
+      let r = rate;
+      if (k === 'water') {
+        // Non-dam water sources lose flow when dams hold the river upstream.
+        if (!def.upstreamPenalty) r *= upstreamMul * beaverFlow;
+        // A dam (upstreamPenalty) built on a real river taps its current for more.
+        else if (def.needsWater) r *= damRiverFactor(state, b);
+      }
       addRes(state, k, v * r);
     }
     if (def.pollutes && rate > 0) pollSrc += def.pollutes; // running industry emits smog

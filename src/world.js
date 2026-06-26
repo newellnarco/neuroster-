@@ -50,12 +50,24 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
       for (let x = -r; x <= r; x++)
         if (x * x + y * y <= r * r) setTile(terrain, px + x, py + y, TERRAIN.water);
   }
+  // River geography: real flow direction per water tile so dams mean something.
+  //   river[i] = 1   → this tile is part of a flowing river (not a still pond)
+  //   flow[i]  = dy  → its downstream step (+1 south as the channel runs top→bottom;
+  //                    0 = source/still). Upstream is the opposite direction.
+  // Deterministic from the seed (carved alongside the channel below).
+  const river = new Uint8Array(GRID_W * GRID_H);
+  const flow = new Int8Array(GRID_W * GRID_H); // downstream Δy per river tile
   // Rivers: snaking water channels for river biomes.
   if (biome.rivers) {
     let rx = Math.floor(rng() * GRID_W);
     for (let y = 0; y < GRID_H; y++) {
       setTile(terrain, rx, y, TERRAIN.water);
       setTile(terrain, rx + 1, y, TERRAIN.water);
+      // Tag both channel tiles as a real river flowing downstream (south).
+      for (const cx of [rx, rx + 1]) if (inBounds(cx, y)) {
+        river[idx(cx, y)] = 1;
+        flow[idx(cx, y)] = (y < GRID_H - 1) ? 1 : 0; // +1 south; 0 at the mouth
+      }
       rx += Math.floor(rng() * 3) - 1;
       rx = clamp(rx, 1, GRID_W - 3);
     }
@@ -89,9 +101,12 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
     }
   }
 
-  // Make sure spawn tile is buildable land.
+  // Make sure spawn tile is buildable land (and drop any river flag it had).
   for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++)
-    if (getTile(terrain, cx + x, cy + y) === TERRAIN.water) setTile(terrain, cx + x, cy + y, TERRAIN.grass);
+    if (getTile(terrain, cx + x, cy + y) === TERRAIN.water) {
+      setTile(terrain, cx + x, cy + y, TERRAIN.grass);
+      if (inBounds(cx + x, cy + y)) { river[idx(cx + x, cy + y)] = 0; flow[idx(cx + x, cy + y)] = 0; }
+    }
 
   // Fertility: richest growing soil sits next to water (lakes/rivers), plus a
   // few scattered patches. Farms thrive on fertile tiles.
@@ -107,7 +122,25 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
   const seen = new Uint8Array(GRID_W * GRID_H);   // fog of war
   const waste = new Float32Array(GRID_W * GRID_H); // droppings per tile
 
-  return { terrain, seen, fertile, waste, nodes, spawn: { x: cx, y: cy }, seed, biome: biomeKey };
+  return { terrain, seen, fertile, waste, river, flow, nodes, spawn: { x: cx, y: cy }, seed, biome: biomeKey };
+}
+
+// ---- River flow geography (for dams) ---------------------------------------
+// A tile is a "real river" tile if generation tagged it as flowing water.
+export const isRiverTile = (world, x, y) => inBounds(x, y) && world.river && world.river[idx(x, y)] === 1;
+// Downstream Δy at a tile (+1 south as the channel runs; 0 = still/source). Upstream
+// is the negation. Returns null for non-river tiles.
+export function riverFlowAt(world, x, y) {
+  if (!isRiverTile(world, x, y)) return null;
+  const dy = world.flow ? world.flow[idx(x, y)] : 1;
+  return { downstream: { dx: 0, dy }, upstream: { dx: 0, dy: -dy } };
+}
+// Is there a real river tile within radius r of (x,y)? Dams read this to know
+// they sit on a true watercourse (vs a still pond) and earn the flow bonus.
+export function riverNear(world, x, y, r = 1) {
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++)
+    if (isRiverTile(world, x + dx, y + dy)) return { x: x + dx, y: y + dy, flow: riverFlowAt(world, x + dx, y + dy) };
+  return null;
 }
 
 export const isFertile = (world, x, y) => inBounds(x, y) && world.fertile && world.fertile[idx(x, y)] === 1;

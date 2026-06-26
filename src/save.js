@@ -107,13 +107,16 @@ export function importSaveString(raw) {
   return { ok: true, state };
 }
 
-// JSON loses typed-array typing; restore terrain/fog/fertile (Uint8) & waste (Float32).
+// JSON loses typed-array typing; restore terrain/fog/fertile/river (Uint8),
+// flow (Int8, signed) & waste (Float32).
 function reattachTyped(state) {
   if (!state.world) return;
-  for (const field of ['terrain', 'seen', 'fertile']) {
+  for (const field of ['terrain', 'seen', 'fertile', 'river']) {
     const v = state.world[field]; if (!v) continue;
     state.world[field] = Array.isArray(v) ? Uint8Array.from(v) : Uint8Array.from(Object.values(v));
   }
+  const fl = state.world.flow;
+  if (fl) state.world.flow = Array.isArray(fl) ? Int8Array.from(fl) : Int8Array.from(Object.values(fl));
   const w = state.world.waste;
   if (w) state.world.waste = Array.isArray(w) ? Float32Array.from(w) : Float32Array.from(Object.values(w));
 }
