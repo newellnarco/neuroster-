@@ -6,6 +6,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\"; [ -d node_modules/playwright-core ] || PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-audit --no-fund >/tmp/neuroster-npm-install.log 2>&1 || true; echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Playwright (playwright-core) is installed; Chromium ships in PLAYWRIGHT_BROWSERS_PATH (/opt/pw-browsers). Verify UI changes in a real browser with: npm run verify:browser\"}}'",
+            "statusMessage": "Ensuring Playwright…",
+            "timeout": 180
+          },
+          {
+            "type": "command",
             "command": "{ echo '📋 PROJECT WALL — session-start sweep is a STANDING RULE: reconcile stale board items BEFORE feature work. Verify In-Progress items against open/merged PRs, drop fragments via tools/board_lifecycle.py, run python tools/compact_board_fragments.py, then commit. Current audit:'; python3 tools/board_lifecycle.py audit 2>/dev/null; } | jq -Rs '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:.}}'",
             "statusMessage": "Auditing project wall…",
             "timeout": 30
