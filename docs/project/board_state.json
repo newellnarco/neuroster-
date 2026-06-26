@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T22:54:42Z",
+  "updated": "2026-06-26T22:59:17Z",
   "items": [
     {
       "key": "econ:1",
@@ -932,19 +932,24 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "60",
+      "release": "4f7b06a",
       "detail": "Deferred: the auto-sim has no unit commands to apply to a selection. Revisit if directable units (scout waypoint) land.",
       "timeline": [
         {
           "at": "2026-06-26T22:53:19+00:00",
           "status": "Done",
           "note": "Animals/Buildings/Demolish tools + left-drag marquee multi-select + group orders (gather/eat/drink/move) + bulk demolish/clean; 184 checks"
+        },
+        {
+          "at": "2026-06-26T22:54:48+00:00",
+          "status": "Shipped",
+          "note": "PR #60 merged (release 4f7b06a)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T22:53:19+00:00"
+      "updated": "2026-06-26T22:54:48+00:00"
     },
     {
       "key": "ux:texture-glyphs",
@@ -2112,6 +2117,23 @@
       ],
       "screenshots": [],
       "updated": "2026-06-26T22:43:31+00:00"
+    },
+    {
+      "key": "feat:help-systems-map",
+      "issue": null,
+      "title": "Embed the systems-map PNG as a 🗺️ tab in the in-game Help guide",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "UI/UX",
+      "priority": "P2",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null
     }
   ]
 }
