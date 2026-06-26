@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T16:24:41Z",
+  "updated": "2026-06-26T16:34:03Z",
   "items": [
     {
       "key": "econ:1",
@@ -994,13 +994,19 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P2",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "EVENT_PACE=1.7 + GRACE_SECONDS=420 — confirm during user testing; expose as a difficulty knob if needed.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:32:49+00:00",
+          "status": "Done",
+          "note": "Built in Balance section"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:32:49+00:00"
     },
     {
       "key": "balance:feeder-throughput",
@@ -1011,13 +1017,19 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Burrow filth already scales with crowding; consider the same for feeder/waterer throughput.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:32:49+00:00",
+          "status": "Done",
+          "note": "Built in Balance section"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:32:49+00:00"
     },
     {
       "key": "balance:starting-economy",
@@ -1028,13 +1040,19 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "140 wood / 75 stone / 120 food / 60 seeds / 100 water / 12 planks, cap 700.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:32:49+00:00",
+          "status": "Done",
+          "note": "Built in Balance section"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:32:49+00:00"
     },
     {
       "key": "fix:belt-networks",
@@ -1083,13 +1101,19 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Difficulty now scales disasters; extend it to yields & breeding too.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:32:50+00:00",
+          "status": "Done",
+          "note": "Built in Balance section"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:32:50+00:00"
     },
     {
       "key": "fix:worker-pathing",
@@ -1117,13 +1141,19 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Tune drains/yields after the next automation/buildings wave.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:32:50+00:00",
+          "status": "Done",
+          "note": "Built in Balance section"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:32:50+00:00"
     },
     {
       "key": "add:true-iso-camera",
@@ -1168,19 +1198,24 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "47",
+      "release": "7a4e749",
       "detail": "Feeds belts & T3 buildings (Refinery exists; deepen it).",
       "timeline": [
         {
           "at": "2026-06-26T16:23:11+00:00",
           "status": "Done",
           "note": "Built in Gameplay batch B"
+        },
+        {
+          "at": "2026-06-26T16:24:48+00:00",
+          "status": "Shipped",
+          "note": "PR #47 merged (release 7a4e749)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:23:11+00:00"
+      "updated": "2026-06-26T16:24:48+00:00"
     },
     {
       "key": "add:tunnels-underground",
@@ -1298,19 +1333,24 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "47",
+      "release": "7a4e749",
       "detail": "Infirmary becomes essential in marsh.",
       "timeline": [
         {
           "at": "2026-06-26T16:23:11+00:00",
           "status": "Done",
           "note": "Built in Gameplay batch B"
+        },
+        {
+          "at": "2026-06-26T16:24:48+00:00",
+          "status": "Shipped",
+          "note": "PR #47 merged (release 7a4e749)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:23:11+00:00"
+      "updated": "2026-06-26T16:24:48+00:00"
     },
     {
       "key": "add:more-milestones",
@@ -1403,19 +1443,24 @@
       "type": "Enhancement",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "47",
+      "release": "7a4e749",
       "detail": "Expand the evolution tree.",
       "timeline": [
         {
           "at": "2026-06-26T16:23:11+00:00",
           "status": "Done",
           "note": "Built in Gameplay batch B"
+        },
+        {
+          "at": "2026-06-26T16:24:48+00:00",
+          "status": "Shipped",
+          "note": "PR #47 merged (release 7a4e749)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:23:11+00:00"
+      "updated": "2026-06-26T16:24:48+00:00"
     },
     {
       "key": "change:per-unit-vigor",
@@ -1454,19 +1499,24 @@
       "type": "Enhancement",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "47",
+      "release": "7a4e749",
       "detail": "Not just a few evolutions.",
       "timeline": [
         {
           "at": "2026-06-26T16:23:12+00:00",
           "status": "Done",
           "note": "Built in Gameplay batch B"
+        },
+        {
+          "at": "2026-06-26T16:24:48+00:00",
+          "status": "Shipped",
+          "note": "PR #47 merged (release 7a4e749)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:23:12+00:00"
+      "updated": "2026-06-26T16:24:48+00:00"
     },
     {
       "key": "defer:map-size",

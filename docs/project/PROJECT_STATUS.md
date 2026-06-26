@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T16:24:41Z · 76 items_
+_board_state.json updated: 2026-06-26T16:34:03Z · 76 items_
 
 ## Summary
 
@@ -12,28 +12,23 @@ _board_state.json updated: 2026-06-26T16:24:41Z · 76 items_
 | in CI | 0 |
 | Todo | 1 |
 | Planned | 0 |
-| Backlog | 12 |
-| Done | 4 |
-| Shipped | 55 |
+| Backlog | 7 |
+| Done | 5 |
+| Shipped | 59 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
 | **TOTAL** | **76** |
 
-**59 landed on `main`** · **13 open** (in-CI / todo / planned / backlog).
+**64 landed on `main`** · **8 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
 | Todo | P3 | None | Job assignment UI (assign rodents to resources/buildings) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
-| Backlog | P2 | None | Validate EVENT_PACE/GRACE feel across biomes & difficulties | — | — |
 | Backlog | P2 | None | True movement/pathfinding (gate tunnels, gopher travel, dams) | — | — |
 | Backlog | P3 | None | Persist zoom level per colony | — | — |
-| Backlog | P3 | None | Scale feeder/waterer throughput with crowding | — | — |
-| Backlog | P3 | None | Re-check starting economy after first-10-min playtests | — | — |
-| Backlog | P3 | None | Extend BREEDS.difficulty to resource yields & breeding | — | — |
 | Backlog | P3 | None | Workers path in straight lines (no obstacle/water avoidance) | — | — |
-| Backlog | P3 | None | Balance pass once conveyors & more buildings land | — | — |
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
 | Backlog | P3 | None | Tunnels / underground levels (vertical expansion) | — | — |
@@ -50,7 +45,7 @@ _board_state.json updated: 2026-06-26T16:24:41Z · 76 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (12)
+### (misc) (17)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -58,14 +53,19 @@ _board_state.json updated: 2026-06-26T16:24:41Z · 76 items_
 | None | Directable exploration: scout waypoint | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | More NPC animal events (merchant, predator parley, aid requests) | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
 | None | Texture the remaining one-off building glyphs | [#45](https://github.com/newellnarco/neuroster-/pull/45) | `656ab96` |
-| None | Plastics & advanced refining (coal/oil → plastic) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Validate EVENT_PACE/GRACE feel across biomes & difficulties | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Scale feeder/waterer throughput with crowding | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Re-check starting economy after first-10-min playtests | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Extend BREEDS.difficulty to resource yields & breeding | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Balance pass once conveyors & more buildings land | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Plastics & advanced refining (coal/oil → plastic) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
-| None | Disease/health events + quarantine; Infirmary | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Disease/health events + quarantine; Infirmary | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | More milestones/achievements (first hybrid, day 30, apex evolution…) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Promote Threats panel → Defense & Military screen | [#44](https://github.com/newellnarco/neuroster-/pull/44) | `7f9ff2e` |
-| None | Species-specific evolution branches (beaver dams, rat swarms…) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Species-specific evolution branches (beaver dams, rat swarms…) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | Per-unit need decay modified by traits (Vigor) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
-| None | Tie Main Hamster level to more unlocks (buildings/species) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Tie Main Hamster level to more unlocks (buildings/species) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 
 ### CREATURES (4)
 
