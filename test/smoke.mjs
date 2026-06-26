@@ -1665,4 +1665,93 @@ console.log('Job assignment (resource bias):');
   ok('job assignments persist through save/load');
 }
 
+// 45) Pathfinding core: a pure A* grid pathfinder. Built on a controlled world
+//     so barriers are exact and assertions are deterministic.
+console.log('Pathfinding (A* core):');
+{
+  const { findPath } = await import('../src/pathfinding.js');
+  const { TERRAIN, idx, getTile } = await import('../src/world.js');
+  const { GRID_W, GRID_H } = await import('../src/config.js');
+
+  // A clean, all-grass world we can carve barriers into.
+  const mk = () => {
+    const s = newGame(9001, 'prairie', 'syrian', 'Path', {});
+    s.world.terrain.fill(TERRAIN.grass);
+    return s.world;
+  };
+  const blocked = (world, p) => world.terrain[idx(p.x, p.y)] === TERRAIN.water || world.terrain[idx(p.x, p.y)] === TERRAIN.mountain;
+
+  // Straight shot across open grass: a path exists, ends on the target, and
+  // every step is adjacent (no teleporting).
+  {
+    const w = mk();
+    const path = findPath(w, 2, 2, 10, 2);
+    assert(Array.isArray(path) && path.length > 0, 'open path returns waypoints');
+    const last = path[path.length - 1];
+    assert(last.x === 10 && last.y === 2, `path ends on the target (got ${last.x},${last.y})`);
+    let prevX = 2, prevY = 2, contiguous = true;
+    for (const p of path) { if (Math.max(Math.abs(p.x - prevX), Math.abs(p.y - prevY)) !== 1) contiguous = false; prevX = p.x; prevY = p.y; }
+    assert(contiguous, 'every waypoint is a single grid step from the last');
+    ok(`straight path across open ground (${path.length} steps, ends on target)`);
+  }
+
+  // start == target → empty path (already there, nothing to do).
+  {
+    const w = mk();
+    const path = findPath(w, 5, 5, 5, 5);
+    assert(Array.isArray(path) && path.length === 0, 'start==target yields an empty path');
+    ok('start == target returns an empty path');
+  }
+
+  // A full-height water wall with a single gap forces a detour: the path must
+  // route around through the gap and never step on a blocked tile.
+  {
+    const w = mk();
+    const wallX = 8;
+    for (let y = 0; y < GRID_H; y++) w.terrain[idx(wallX, y)] = TERRAIN.water;
+    const gapY = 13; w.terrain[idx(wallX, gapY)] = TERRAIN.grass; // the only door
+    const path = findPath(w, 4, 4, 20, 4, { budget: 2000 });
+    assert(path, 'a path exists around a walled barrier with a gap');
+    assert(path.every(p => !blocked(w, p)), 'no waypoint is a blocked (water/mountain) tile');
+    assert(path.some(p => p.x === wallX && p.y === gapY), 'the route threads the single gap in the wall');
+    ok(`path detours around a water wall through its only gap (${path.length} steps)`);
+  }
+
+  // A sealed-off target (wall with NO gap) is unreachable → null.
+  {
+    const w = mk();
+    for (let y = 0; y < GRID_H; y++) w.terrain[idx(10, y)] = TERRAIN.mountain;
+    const path = findPath(w, 4, 4, 20, 4, { budget: 5000 });
+    assert(path === null, 'a fully walled-off target is unreachable (null)');
+    ok('unreachable target returns null');
+  }
+
+  // A blocked target tile itself returns null (can't stand in water).
+  {
+    const w = mk();
+    w.terrain[idx(12, 6)] = TERRAIN.water;
+    assert(findPath(w, 2, 2, 12, 6) === null, 'a path INTO a blocked tile returns null');
+    ok('a target on a blocked tile returns null');
+  }
+
+  // A tiny budget forces an early give-up on a long search → null (the frame
+  // safety valve). The same query with an ample budget still succeeds.
+  {
+    const w = mk();
+    const tight = findPath(w, 0, 0, GRID_W - 1, GRID_H - 1, { budget: 3 });
+    assert(tight === null, 'an exhausted node budget returns null (never stalls the frame)');
+    const ample = findPath(w, 0, 0, GRID_W - 1, GRID_H - 1, { budget: 4000 });
+    assert(ample && ample.length > 0, 'the same query succeeds with an ample budget');
+    ok('budget cap: over-budget returns null; ample budget finds the path');
+  }
+
+  // Determinism: identical queries return identical paths (no RNG, stable order).
+  {
+    const w = mk();
+    const a = findPath(w, 1, 1, 15, 9), b = findPath(w, 1, 1, 15, 9);
+    assert(JSON.stringify(a) === JSON.stringify(b), 'findPath is deterministic for identical inputs');
+    ok('pathfinder is deterministic');
+  }
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
