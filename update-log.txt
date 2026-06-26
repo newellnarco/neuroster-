@@ -1,0 +1,262 @@
+ 
+=== Thu 06/25/2026 14:20:02.08 === 
+From https://github.com/newellnarco/neuroster-
+   fc4fef2..7d278e8  main       -> origin/main
+ + e932690...7d278e8 claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr  (forced update)
+Already on 'main'
+Your branch is behind 'origin/main' by 2 commits, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at 7d278e8 Systems: power variety + pollution (environmental tradeoffs) (#31)
+ 
+=== Thu 06/25/2026 14:25:02.16 === 
+From https://github.com/newellnarco/neuroster-
+   7d278e8..c4861b5  main       -> origin/main
+   7d278e8..c4861b5  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at c4861b5 Systems: Plant Tree (pollution scrubber) + Statue (#32)
+ 
+=== Thu 06/25/2026 14:30:02.09 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at c4861b5 Systems: Plant Tree (pollution scrubber) + Statue (#32)
+ 
+=== Thu 06/25/2026 14:34:29.29 === 
+From https://github.com/newellnarco/neuroster-
+   c4861b5..1309520  main       -> origin/main
+   c4861b5..1309520  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 14:35:02.04 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 14:40:02.10 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 14:45:02.09 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 14:50:02.12 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 14:55:02.12 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 15:00:02.10 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 15:05:02.14 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 15:10:02.12 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 15:15:02.12 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 15:20:02.14 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 15:25:02.14 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 1309520 Fix Synology Container Manager rejecting docker-compose.nas.yml (#33)
+ 
+=== Thu 06/25/2026 15:30:02.15 === 
+From https://github.com/newellnarco/neuroster-
+   1309520..b8b9e15  main       -> origin/main
+   1309520..3af890a  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at b8b9e15 Zoom + fill-the-window for the map (#34)
+ 
+=== Thu 06/25/2026 15:35:02.21 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at b8b9e15 Zoom + fill-the-window for the map (#34)
+ 
+=== Thu 06/25/2026 15:40:02.17 === 
+From https://github.com/newellnarco/neuroster-
+   b8b9e15..00b49cc  main       -> origin/main
+ + 3af890a...00b49cc claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr  (forced update)
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at 00b49cc Onboarding: gentler start, easier selection, in-game updater (#35)
+ 
+=== Thu 06/25/2026 15:45:02.17 === 
+From https://github.com/newellnarco/neuroster-
+   00b49cc..051dd22  main       -> origin/main
+   00b49cc..cc7291c  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at 051dd22 Resizable layout: draggable dividers + click-to-pin tooltips (#36)
+ 
+=== Thu 06/25/2026 15:50:02.20 === 
+From https://github.com/newellnarco/neuroster-
+ + cc7291c...051dd22 claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr  (forced update)
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 051dd22 Resizable layout: draggable dividers + click-to-pin tooltips (#36)
+ 
+=== Thu 06/25/2026 15:55:02.21 === 
+From https://github.com/newellnarco/neuroster-
+   051dd22..0d3cd16  main       -> origin/main
+   051dd22..0d3cd16  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at 0d3cd16 UX: dismiss decrees, pinned zoom controls, resource labels toggle (#37)
+ 
+=== Thu 06/25/2026 16:00:02.22 === 
+From https://github.com/newellnarco/neuroster-
+   0d3cd16..93ac9f4  main       -> origin/main
+   0d3cd16..93ac9f4  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at 93ac9f4 Alert bar: expandable rows + new-item blink; zoom-out fills window (#38)
+ 
+=== Thu 06/25/2026 16:05:01.23 === 
+From https://github.com/newellnarco/neuroster-
+   93ac9f4..394c722  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 93ac9f4 Alert bar: expandable rows + new-item blink; zoom-out fills window (#38)
+ 
+=== Thu 06/25/2026 16:10:01.22 === 
+From https://github.com/newellnarco/neuroster-
+   93ac9f4..b4aced9  main       -> origin/main
+ + 394c722...b4aced9 claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr  (forced update)
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at b4aced9 Header reorg: ☰ Menu, autosave indicator, env labels, favicon (#39)
+ 
+=== Thu 06/25/2026 16:15:01.28 === 
+From https://github.com/newellnarco/neuroster-
+   b4aced9..83e4ce7  main       -> origin/main
+   b4aced9..83e4ce7  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at 83e4ce7 Modular dividers (grip + collapse) and right-drag map panning (#40)
+ 
+=== Thu 06/25/2026 16:20:01.26 === 
+From https://github.com/newellnarco/neuroster-
+   83e4ce7..10fd6dd  claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 83e4ce7 Modular dividers (grip + collapse) and right-drag map panning (#40)
+ 
+=== Thu 06/25/2026 16:25:01.29 === 
+From https://github.com/newellnarco/neuroster-
+   83e4ce7..0a2538e  main       -> origin/main
+ + 10fd6dd...0a2538e claude/new-session-3sb8rr -> origin/claude/new-session-3sb8rr  (forced update)
+Already on 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 16:30:01.28 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 16:35:01.30 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 16:40:01.32 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 16:45:01.27 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 16:50:01.32 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 16:55:01.37 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:00:01.29 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:05:01.31 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:10:01.34 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:15:01.38 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:20:01.33 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:25:01.39 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:30:01.37 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:35:01.40 === 
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:38:16.48 === 
+From https://github.com/newellnarco/neuroster-
+ * [new branch]      claude/new-session-peasl2 -> origin/claude/new-session-peasl2
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
