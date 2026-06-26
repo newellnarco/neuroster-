@@ -11,6 +11,7 @@ import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount,
 import { resolveDecree, choiceAllowed, dismissDecree } from './decrees.js';
 import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
 import { learnDoctrine, doctrineStatus, hasDoctrine, doctrineCount } from './doctrines.js';
+import { enterBall, exitBall, hasBallWorkshop } from './economy.js';
 
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
@@ -173,13 +174,16 @@ export function createUI(state, ctx) {
       }).join('')}</div>` : '';
       // Per-rodent task control (selected unit only): send it exploring or clear
       // its order. Click a fogged tile on the map to send it to a spot directly.
-      const orderLabel = u.order?.kind === 'explore' ? '🧭 exploring…'
+      const orderLabel = u.inBall ? `🫧 rolling · anxiety ${Math.round(u.anxiety || 0)}`
+        : u.order?.kind === 'explore' ? '🧭 exploring…'
         : u.order?.kind === 'goto' ? '🐾 heading out…' : '';
       const taskRow = view.selUnit === u.id ? `<div class="care taskrow">
           <button class="carebtn ${u.order?.kind === 'explore' ? 'on' : ''}" data-task="explore" data-tu="${u.id}"
             title="Explore — roam toward the unknown, revealing the map until it's all found">🧭 Explore</button>
-          <button class="carebtn ${u.order ? '' : 'cd'}" data-task="stop" data-tu="${u.id}"
-            title="Clear this rodent's order — back to auto work">✋ Stop</button>
+          <button class="carebtn ${u.inBall ? 'on' : ''} ${(u.inBall || hasBallWorkshop(state)) ? '' : 'cd'}" data-task="ball" data-tu="${u.id}"
+            title="Hamster ball — roll the world SAFE from predators (fun & curiosity rise, but anxiety builds, so it pops out before long; on a HOT day get it out before it overheats & dies). Needs a Ball Workshop + plastic.">🫧 ${u.inBall ? 'Get out' : 'Ball'}</button>
+          <button class="carebtn ${(u.order || u.inBall) ? '' : 'cd'}" data-task="stop" data-tu="${u.id}"
+            title="Clear this rodent's order / get it out of its ball — back to auto work">✋ Stop</button>
           ${orderLabel ? `<span class="sub">${orderLabel}</span>` : ''}
           <span class="sub" title="Select a rodent, then click a tile (even fogged) to send it there">tip: click the map to send</span>
         </div>` : '';
@@ -219,8 +223,12 @@ export function createUI(state, ctx) {
     bind('[data-task]', (btn) => {
       const u = state.units.find(x => x.id == btn.dataset.tu);
       if (!u) return;
-      if (btn.dataset.task === 'explore') { u.order = { kind: 'explore' }; u._exTarget = null; sfx('click'); flash('🧭 Exploring — mapping the unknown'); }
-      else { u.order = null; u._exTarget = null; flash('✋ Order cleared — back to work'); }
+      const t = btn.dataset.task;
+      if (t === 'explore') { u.order = { kind: 'explore' }; u._exTarget = null; sfx('click'); flash('🧭 Exploring — mapping the unknown'); }
+      else if (t === 'ball') {
+        if (u.inBall) { exitBall(state, u); flash('🫧 Out of the ball'); }
+        else { const r = enterBall(state, u); if (r.ok) { sfx('care'); flash('🫧 Rolling out — safe from predators!'); } else flash(r.reason); }
+      } else { u.order = null; u._exTarget = null; if (u.inBall) exitBall(state, u); flash('✋ Order cleared — back to work'); }
       renderRodents();
     });
     bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });

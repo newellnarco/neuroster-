@@ -27,6 +27,7 @@ flowchart LR
   B_windmill["🌬️ Windmill"]
   B_watermill["🛞 Water Mill"]
   B_fertilizerplant["⚙️ Fertilizer Mill"]
+  B_ballworkshop["🫧 Ball Workshop"]
   B_sawmill["🪚 Sawmill"]
   B_smelter["🔥 Smelter"]
   B_steelworks["🏭 Steelworks"]
@@ -49,13 +50,14 @@ flowchart LR
   R_power(["⚡ Power"])
   R_manure(["💩 Manure"])
   R_fertilizer(["🪴 Fertilizer"])
+  R_plastic(["🟦 Plastic"])
+  R_balls(["🫧 Hamster Balls"])
   R_wood(["🪵 Wood"])
   R_planks(["🟫 Planks"])
   R_ironore(["⛰️ Iron Ore"])
   R_coal(["⚫ Coal"])
   R_iron(["🔩 Iron"])
   R_steel(["⚙️ Steel"])
-  R_plastic(["🟦 Plastic"])
   R_research(["🔬 Research"])
   R_seeds -->|0.25| B_farm
   B_farm -->|0.5| R_food
@@ -76,6 +78,8 @@ flowchart LR
   R_manure -->|0.4| B_fertilizerplant
   R_power -->|0.2| B_fertilizerplant
   B_fertilizerplant -->|0.3| R_fertilizer
+  R_plastic -->|0.12| B_ballworkshop
+  B_ballworkshop -->|0.1| R_balls
   R_wood -->|0.6| B_sawmill
   B_sawmill -->|0.4| R_planks
   R_ironore -->|0.5| B_smelter
@@ -125,6 +129,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | 🔩 Iron | 🔥 Smelter |
 | ⚙️ Steel | 🏭 Steelworks |
 | 🟦 Plastic | 🛢️ Refinery |
+| 🫧 Hamster Balls | 🫧 Ball Workshop |
 | ⚡ Power | 🌬️ Windmill; 🛞 Water Mill; 🎡 Wheel Generator; 🔌 Electric Wheel; 🏭 Coal Plant; 🔆 Solar Panel; 🌀 Water Turbine |
 | 🔬 Research | 🔬 Research Lab |
 
@@ -221,6 +226,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | 🏖️ Sand Bath | 🪵 wood 12, 🪨 stone 18 | — | — | +5 health |
 | 🏡 Sanctuary | 🪵 wood 30, 🟫 planks 15, 🌱 seeds 10 | — | — | +3 health |
 | 🌳 Plant Tree | 🌱 seeds 10, 💧 water 6 | — | — | tree (forest) |
+| 🫧 Ball Workshop | 🪵 wood 30, 🟫 planks 12, 🟦 plastic 10 | 🟦 plastic 0.12 | 🫧 balls 0.1 |  |
 | 🗿 Statue | 🪨 stone 40, 🟫 planks 10 | — | — | morale + compassion |
 | ⚖️ Courthouse | 🟫 planks 30, 🪨 stone 25 | — | — |  |
 | 🎖️ Hall of Heroes | 🪨 stone 50, 🟫 planks 25, 🔩 iron 10 | — | — |  |
@@ -250,6 +256,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | 🔩 Iron | refined |  |
 | ⚙️ Steel | refined |  |
 | 🟦 Plastic | refined |  |
+| 🫧 Hamster Balls | refined |  |
 | ⚡ Power | abstract | not stored (pool) |
 | 🔬 Research | abstract | not stored (pool) |
 
@@ -337,4 +344,4 @@ flowchart LR
 
 ---
 
-_Generated from `src/config.js` — 59 structures, 19 resources, 7 species. Run `node tools/gen_systems.mjs` to refresh._
+_Generated from `src/config.js` — 60 structures, 20 resources, 7 species. Run `node tools/gen_systems.mjs` to refresh._

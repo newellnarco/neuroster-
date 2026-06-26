@@ -763,4 +763,49 @@ console.log('Poop → manure → fertilizer chain:');
   ok('cleaning a burrow/house yields manure for fertilizer');
 }
 
+// 25) Hamster balls: workshop rolls plastic → balls; joy → anxiety → pop / heat death.
+console.log('Hamster balls:');
+{
+  const { BUILDINGS, DAYS_PER_SEASON, DAY_SECONDS } = await import('../src/config.js');
+  const { enterBall } = await import('../src/economy.js');
+  assert(BUILDINGS.ballworkshop?.produces?.balls && BUILDINGS.ballworkshop.consumes?.plastic,
+    'Ball Workshop turns plastic → hamster balls');
+
+  // Workshop rolls plastic into balls.
+  const g = newGame(900, 'prairie', 'syrian', 'Balls', {});
+  g.res = { plastic: 100 }; // plenty of plastic, storage room for balls
+  g.buildings.push({ id: g.nextId++, type: 'ballworkshop', x: g.world.spawn.x + 2, y: g.world.spawn.y, active: true });
+  for (let i = 0; i < 40; i++) stepEconomy(g, 0.2);
+  assert((g.res.balls || 0) > 0, `Ball Workshop produces hamster balls (${(g.res.balls || 0).toFixed(2)})`);
+  ok(`Ball Workshop rolls plastic into balls (${(g.res.balls || 0).toFixed(1)})`);
+
+  // Entering a ball needs the workshop + a ball in stock; it checks one out.
+  const u = g.units[0];
+  g.res.balls = 5; // stock the rack for the enter checks
+  const balls0 = g.res.balls;
+  const r = enterBall(g, u);
+  assert(r.ok && u.inBall && Math.abs(g.res.balls - (balls0 - 1)) < 1e-9, 'entering checks a ball out of stock');
+  ok('a rodent enters a ball (one ball checked out)');
+
+  // Rolling lifts fun & curiosity early, then anxiety builds until it pops out.
+  u.needs.fun = 40; u.anxiety = 0;
+  for (let i = 0; i < 5; i++) stepEconomy(g, 0.2);
+  assert(u.needs.fun > 40 && (u.anxiety || 0) > 0, 'a ball lifts fun/curiosity early and builds anxiety');
+  for (let i = 0; i < 300 && u.inBall; i++) stepEconomy(g, 0.2);
+  assert(!u.inBall, 'high anxiety pops the rodent out of the ball');
+  ok('rolling: fun rises, then anxiety pops it out (ball returned)');
+
+  // Heat death: a rodent left in its ball on a HOT (summer) day overheats & dies.
+  const h = newGame(901, 'prairie', 'syrian', 'Heat', {});
+  h.env.dayTime = DAYS_PER_SEASON * DAY_SECONDS + 50; // summer → hot
+  h.buildings.push({ id: h.nextId++, type: 'ballworkshop', x: h.world.spawn.x + 2, y: h.world.spawn.y, active: true });
+  h.res.balls = 5;
+  const v = h.units[0];
+  enterBall(h, v);
+  assert(h.units.includes(v), 'rodent is in the colony before the hot roll');
+  for (let i = 0; i < 150 && h.units.includes(v); i++) stepEconomy(h, 0.2);
+  assert(!h.units.includes(v), 'a rodent left in a ball on a hot day overheats and dies');
+  ok('hamster-ball heat death on a hot day — get them out!');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

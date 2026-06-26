@@ -9,8 +9,8 @@ import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from '.
 import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
-import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, BEAVER } from './config.js';
+import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
+import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -111,6 +111,7 @@ export function stepEconomy(state, dt) {
   stepFactions(state, dt);
   updateSquirrels(state, dt); // oak → nut economy: squirrels trade or raid
   updateBeavers(state, dt);   // beaver wood store + take-too-much sabotage
+  updateBalls(state, dt);     // hamster balls: joy → anxiety → pop out / heat death
   stepRescues(state, dt);
   stepDecrees(state, dt); // moral dilemmas: spend a virtue on purpose for the group
   // Seasons turn; each new season opens with a festival — a communal lift.
@@ -472,6 +473,54 @@ function updateBeavers(state, dt) {
   } else {
     if ((state._beaverSabotage || 0) > 0) logMsg(state, '🦫 The beavers have settled down — the dams are holding and water flows freely again.');
     state._beaverSabotage = 0;
+  }
+}
+
+// ---- Hamster balls --------------------------------------------------------
+// A rodent in a ball rolls the world SAFE from predators (see events.js), gains
+// fun & curiosity early, but anxiety climbs until it pops out — and on a hot day
+// the ball overheats and can kill it. Made from plastic by a Ball Workshop.
+export function hasBallWorkshop(state) {
+  return state.buildings.some(b => b.type === 'ballworkshop' && !b.underConstruction);
+}
+export function enterBall(state, u) {
+  if (u.inBall) return { ok: true };
+  if (!hasBallWorkshop(state)) return { ok: false, reason: 'Build a Ball Workshop first' };
+  if ((state.res.balls || 0) < 1) return { ok: false, reason: 'No hamster balls in stock yet (make Plastic → Ball Workshop)' };
+  state.res.balls -= 1;           // check a ball out of the rack
+  u.inBall = true; u.anxiety = 0;
+  return { ok: true };
+}
+export function exitBall(state, u) {
+  if (!u.inBall) return;
+  u.inBall = false; u.anxiety = 0;
+  state.res.balls = (state.res.balls || 0) + 1; // ball returned to the rack
+}
+function isHotDay(state) {
+  const w = currentWeather(state);
+  return seasonKey(state) === 'summer' || w === 'drought' || w === 'humid';
+}
+function updateBalls(state, dt) {
+  const anyInBall = state.units.some(u => u.inBall);
+  if (!anyInBall) { state._ballHot = false; return; }
+  const hot = state._ballHot = isHotDay(state);
+  for (const u of state.units.slice()) { // slice: heat death may splice units
+    if (!u.inBall) continue;
+    u.anxiety = (u.anxiety || 0) + BALL.anxietyRise * dt;
+    // Early joy: happiness & curiosity (fun) rise while anxiety is still low.
+    if (u.anxiety < BALL.joyUntil) u.needs.fun = Math.min(100, u.needs.fun + BALL.funGain * dt);
+    // A hot day cooks the ball — health drains; freed in time they're fine.
+    if (hot) u.needs.health = Math.max(0, u.needs.health - BALL.heatDrain * dt);
+    if (u.needs.health <= 0 && state.units.length > 1) {
+      exitBall(state, u); killUnit(state, u);
+      logMsg(state, `🫧🥵 ${u.name} overheated and died inside its ball — get them out of balls on hot days!`);
+      continue;
+    }
+    if (u.anxiety >= BALL.wantOut) { // too anxious — pops out for a break
+      exitBall(state, u);
+      addFx(state, u.x, u.y, '😵‍💫', 1.6);
+      logMsg(state, `🫧 ${u.name} got out of its ball — too much rolling makes a rodent anxious.`);
+    }
   }
 }
 

@@ -32,6 +32,7 @@ export const RESOURCES = {
   iron:     { name: 'Iron',     icon: '🔩', kind: 'refined', color: '#cfd6dd' },
   steel:    { name: 'Steel',    icon: '⚙️', kind: 'refined', color: '#9fb0c4' },
   plastic:  { name: 'Plastic',  icon: '🟦', kind: 'refined', color: '#6fa8dc' },
+  balls:    { name: 'Hamster Balls', icon: '🫧', kind: 'refined', color: '#bfe3ff' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
   research: { name: 'Research', icon: '🔬', kind: 'abstract', color: '#7e9cff' },
 };
@@ -166,6 +167,11 @@ export const BUILDINGS = {
   woodfence: {
     name: 'Wooden Fence', icon: '🚧', desc: 'A cheap timber palisade — light defense vs ground predators & raids. Quick to ring the colony (wood can burn in wildfire).',
     cost: { wood: 10 }, category: 'Defense', defense: 2,
+  },
+  ballworkshop: {
+    name: 'Ball Workshop', icon: '🫧', desc: 'Rolls Plastic into Hamster Balls (needs a Refinery making plastic). Select a rodent → 🫧 to send it rolling around the world SAFE from predators — happiness & curiosity rise. But anxiety builds, so it pops out before long; and on a HOT day it can OVERHEAT and die inside if you don\'t let it out in time.',
+    cost: { wood: 30, planks: 12, plastic: 10 }, category: 'Wellbeing',
+    consumes: { plastic: 0.12 }, produces: { balls: 0.1 },
   },
   statue: {
     name: 'Statue', icon: '🗿', desc: 'A proud monument. A steady, quiet lift to colony morale — and a focus for its better nature (Compassion).',
@@ -587,6 +593,18 @@ export const BEAVER = {
   grumpyAt: 35,        // below this mood, the beavers sabotage the water works
   sabotageWater: 0.4,  // −40% water flow while grumpy
   spillChance: 0.04,   // per-sec chance a grumpy lodge spills some hoarded wood
+};
+
+// Hamster balls — roll a rodent around the world SAFE from predators. A made-
+// from-plastic ball (Ball Workshop) lifts fun & curiosity at first, but anxiety
+// climbs the longer it's inside, so it pops out before long. On a HOT day the
+// ball cooks: health drains and the rodent DIES inside if you don't free it.
+export const BALL = {
+  funGain: 4,          // fun/curiosity gained per sec during the happy early phase
+  joyUntil: 45,        // anxiety below this = the happy phase (fun rises)
+  anxietyRise: 3.5,    // anxiety (0..100) gained per sec inside a ball
+  wantOut: 100,        // anxiety at which the rodent pops itself out for a break
+  heatDrain: 6,        // health/sec lost inside a ball on a hot day (→ death if not freed)
 };
 
 // Burrows get dirty as hamsters live in them. Left uncleaned they leak filth

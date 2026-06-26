@@ -331,9 +331,13 @@ function hurtHealth(state, amt) {
 
 function removeUnits(state, n) {
   let lost = 0;
-  for (let i = 0; i < n && state.units.length > 1; i++) {
-    const idx = Math.floor(rand(state) * state.units.length);
-    state.units.splice(idx, 1); lost++;
+  for (let i = 0; i < n; i++) {
+    // A rodent rolling in a hamster ball is SAFE — predators can't snatch it.
+    const exposed = state.units.filter(u => !u.inBall);
+    if (exposed.length <= 1) break; // keep at least one rodent; the rest are protected
+    const victim = exposed[Math.floor(rand(state) * exposed.length)];
+    const idx = state.units.indexOf(victim);
+    if (idx >= 0) { state.units.splice(idx, 1); lost++; }
   }
   return lost;
 }
