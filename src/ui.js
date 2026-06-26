@@ -169,6 +169,18 @@ export function createUI(state, ctx) {
           title="${c.name}: +${c.amount} ${NEEDS[c.need].name}, +${c.bond} bond${Object.keys(c.cost).length ? ' · ' + costStr(c.cost) : ''}">
           ${c.icon}${ready ? '' : ` ${Math.ceil(cd)}s`}</button>`;
       }).join('')}</div>` : '';
+      // Per-rodent task control (selected unit only): send it exploring or clear
+      // its order. Click a fogged tile on the map to send it to a spot directly.
+      const orderLabel = u.order?.kind === 'explore' ? '🧭 exploring…'
+        : u.order?.kind === 'goto' ? '🐾 heading out…' : '';
+      const taskRow = view.selUnit === u.id ? `<div class="care taskrow">
+          <button class="carebtn ${u.order?.kind === 'explore' ? 'on' : ''}" data-task="explore" data-tu="${u.id}"
+            title="Explore — roam toward the unknown, revealing the map until it's all found">🧭 Explore</button>
+          <button class="carebtn ${u.order ? '' : 'cd'}" data-task="stop" data-tu="${u.id}"
+            title="Clear this rodent's order — back to auto work">✋ Stop</button>
+          ${orderLabel ? `<span class="sub">${orderLabel}</span>` : ''}
+          <span class="sub" title="Select a rodent, then click a tile (even fogged) to send it there">tip: click the map to send</span>
+        </div>` : '';
       return `<div class="unit ${sel}" data-selunit="${u.id}">
         <div class="uhead">${sp.icon} ${name} ${phase}${hybrid}
           <button class="rename" data-rename="${u.id}" title="Rename this rodent">✏️</button>
@@ -176,7 +188,7 @@ export function createUI(state, ctx) {
           <span class="xpbar"><span style="width:${Math.min(100, 100 * u.xp / xpForLevel(u.level))}%"></span></span>
           <span class="sub">❤️${bond} · ${sleepInfo}</span></div>
         ${lineage ? `<div class="kinrow">${lineage}</div>` : ''}
-        <div class="traits">${traits}</div>${care}</div>`;
+        <div class="traits">${traits}</div>${care}${taskRow}</div>`;
     }).join('');
 
     const more = state.units.length > CAP ? `<div class="hint">Showing the top ${CAP} of ${population(state)} by level (select one to pin it to the top).</div>` : '';
@@ -201,6 +213,13 @@ export function createUI(state, ctx) {
       if (!u) return;
       const n = prompt('Name this rodent:', u.name || '');
       if (n != null && n.trim()) { u.name = n.trim().slice(0, 16); if (u.founder && state.founder) state.founder.name = u.name; sfx('care'); renderRodents(); }
+    });
+    bind('[data-task]', (btn) => {
+      const u = state.units.find(x => x.id == btn.dataset.tu);
+      if (!u) return;
+      if (btn.dataset.task === 'explore') { u.order = { kind: 'explore' }; u._exTarget = null; sfx('click'); flash('🧭 Exploring — mapping the unknown'); }
+      else { u.order = null; u._exTarget = null; flash('✋ Order cleared — back to work'); }
+      renderRodents();
     });
     bind('[data-selunit]', (d) => { view.selUnit = +d.dataset.selunit; renderRodents(); });
   }
@@ -705,6 +724,12 @@ export function createUI(state, ctx) {
       if (b && BUILDINGS[b.type].tower) { b.mode = b.mode === 'defend' ? 'watch' : 'defend'; sfx('click'); flash(b.mode === 'defend' ? '🗡️ Tower → DEFEND (stronger, but costs morale)' : '👁️ Tower → WATCH (wide vision, gentle)'); return; }
       if (b && BUILDINGS[b.type].townhall) { const r = upgradeTownhall(state, b); flash(r.ok ? 'Town Hall upgraded' : r.reason || ''); return; }
       if (b && BUILDINGS[b.type].breed && (b.dirt || 0) >= 1) { const r = cleanBurrow(state, b); flash(r.ok ? '🧹 Burrow cleaned' : r.reason || ''); return; }
+      // A selected rodent + a click on open or fogged ground = "go there": it
+      // drops its current task, heads to that tile, and reveals fog en route.
+      if (!b && view.selUnit) {
+        const u = state.units.find(x => x.id === view.selUnit);
+        if (u) { u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null; sfx('click'); flash('🐾 On my way!'); renderRodents(); return; }
+      }
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
     c.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!panMoved) { view.placing = null; renderBuild(); } });

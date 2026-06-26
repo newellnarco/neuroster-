@@ -523,4 +523,39 @@ console.log('Burrow crowding:');
   ok(`burrow filth scales with crowding (sparse ${sparse.toFixed(2)} < crowded ${crowded.toFixed(2)})`);
 }
 
+// 18) Player orders: directable go-to + Explore (reveal the fog of war).
+console.log('Player orders (go-to + explore):');
+{
+  const seenCount = (s) => s.world.seen.reduce((a, b) => a + b, 0);
+
+  // go-to: send a rodent to a far tile; it should travel there and clear the
+  // order (resuming auto-work). Keep it awake so sleep doesn't skew the test.
+  const s = newGame(2468, 'prairie', 'syrian', 'Orders', {});
+  const u = s.units[0];
+  const tx = 36, ty = 24;
+  u.order = { kind: 'goto', x: tx, y: ty };
+  let guard = 0;
+  while (u.order && guard++ < 6000) { u.needs.energy = 100; stepEconomy(s, 0.1); }
+  assert(u.order === null, 'go-to order clears on arrival');
+  assert(Math.hypot(u.x - tx, u.y - ty) < 1.5, `rodent reaches the target tile (at ${u.x.toFixed(1)},${u.y.toFixed(1)})`);
+  ok('go-to: a selected rodent travels to the clicked tile, then resumes work');
+
+  // explore: roaming toward the unknown reveals new fog.
+  const before = seenCount(s);
+  const u2 = s.units[0];
+  u2.order = { kind: 'explore' };
+  for (let i = 0; i < 2000 && u2.order; i++) { u2.needs.energy = 100; stepEconomy(s, 0.1); }
+  assert(seenCount(s) > before, `explore reveals new fog (${before} → ${seenCount(s)} tiles)`);
+  ok(`explore: fog of war shrinks as the scout roams (${before} → ${seenCount(s)} seen)`);
+
+  // explore completes (clears its order) once the whole map is revealed.
+  const s2 = newGame(2469, 'prairie', 'syrian', 'Done', {});
+  s2.world.seen.fill(1); // pretend everything is already found
+  const u3 = s2.units[0];
+  u3.order = { kind: 'explore' }; u3.needs.energy = 100;
+  stepEconomy(s2, 0.1);
+  assert(u3.order === null, 'explore finishes when nothing is left to find');
+  ok('explore: ends automatically once every tile has been mapped');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

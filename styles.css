@@ -264,6 +264,10 @@ body {
   border-radius: 7px; padding: 6px 4px; cursor: pointer; font-size: 14px; }
 .carebtn:hover { border-color: var(--accent); background: #46403733; }
 .carebtn.cd { opacity: .5; font-size: 11px; }
+.carebtn.on { background: var(--accent); color: #2a2107; border-color: var(--accent); font-weight: 600; }
+/* Task row (Explore / Stop + status) for the selected rodent. */
+.taskrow { flex-wrap: wrap; align-items: center; margin-top: 5px; }
+.taskrow .sub { flex-basis: 100%; color: var(--muted); font-size: 11px; }
 .trait { background: #3a352e; border: 1px solid var(--line); color: var(--ink);
   border-radius: 6px; padding: 3px 6px; cursor: pointer; font-size: 12px; }
 .trait:hover { border-color: var(--accent); }

@@ -119,6 +119,21 @@ export function reveal(world, cx, cy, radius) {
 }
 export const isSeen = (world, x, y) => inBounds(x, y) && world.seen[idx(x, y)] === 1;
 
+// Nearest still-fogged tile to (cx, cy) — the target for an exploring rodent.
+// Returns {x, y} or null when the whole map has been revealed. Called only when
+// an explorer needs a fresh target (on arrival / once its target clears), not
+// every frame, so the full-grid scan is cheap.
+export function nearestUnseen(world, cx, cy) {
+  let best = null, bd = Infinity;
+  for (let y = 0; y < GRID_H; y++)
+    for (let x = 0; x < GRID_W; x++) {
+      if (world.seen[idx(x, y)]) continue;
+      const d = (x - cx) ** 2 + (y - cy) ** 2;
+      if (d < bd) { bd = d; best = { x, y }; }
+    }
+  return best;
+}
+
 export function inBounds(x, y) { return x >= 0 && y >= 0 && x < GRID_W && y < GRID_H; }
 export function idx(x, y) { return y * GRID_W + x; }
 export function getTile(t, x, y) { return inBounds(x, y) ? t[idx(x, y)] : -1; }
