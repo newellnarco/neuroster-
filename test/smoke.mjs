@@ -1578,4 +1578,34 @@ console.log('River dams (real upstream/flow geography):');
   ok(`river flow bonus folds into water output (${wDry.toFixed(1)} → ${wRiver.toFixed(1)})`);
 }
 
+// 43) Persist zoom level (per colony): the camera (zoom + pan center) is written
+//     to the save state and restored on load, without breaking the first-run
+//     "start centered on town" default (only restore when a saved value exists).
+console.log('Persist zoom per colony:');
+{
+  const { captureViewPrefs } = await import('../src/save.js');
+  // A fresh colony has no saved view prefs (so a first run starts centered/default).
+  const s = newGame(1700, 'woodland', 'syrian', 'Zoom', {});
+  assert(s.viewPrefs == null, 'a new colony stores no view prefs (first run uses the default view)');
+
+  // The player zooms and pans; capturing folds the live camera into the state.
+  const view = { zoom: 2.75, centerFracX: 0.4, centerFracY: 0.6 };
+  captureViewPrefs(s, view);
+  assert(s.viewPrefs && s.viewPrefs.zoom === 2.75, `zoom is written to the save state (got ${s.viewPrefs?.zoom})`);
+  assert(s.viewPrefs.centerFracX === 0.4 && s.viewPrefs.centerFracY === 0.6, 'pan center is written to the save state');
+  ok('zoom + pan center are written into the colony save state');
+
+  // The camera survives a save/load roundtrip (so a reload restores the last view).
+  const back = importSaveString(exportSave(s));
+  assert(back.ok && back.state.viewPrefs?.zoom === 2.75, `zoom is restored from the save state (got ${back.state.viewPrefs?.zoom})`);
+  assert(back.state.viewPrefs.centerFracX === 0.4 && back.state.viewPrefs.centerFracY === 0.6, 'pan center is restored from the save state');
+  ok('zoom + pan center persist through save/load and are restored');
+
+  // Capture is a graceful no-op without a view, and never invents a zoom.
+  const s2 = newGame(1701, 'prairie', 'syrian', 'NoView', {});
+  captureViewPrefs(s2, null);
+  assert(s2.viewPrefs == null, 'capturing with no view leaves the colony at the first-run default (no zoom invented)');
+  ok('capture is a safe no-op when there is no live view to read');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

@@ -724,7 +724,10 @@ export function createUI(state, ctx) {
     // zoom and scroll-center on the colony spawn. The player can still zoom out
     // to 1 (whole map). 1 = whole map fits; >1 = zoomed in, #viewport pans.
     const START_ZOOM = 2;
+    // A saved colony restores its last zoom (game.js seeds view.zoom from
+    // state.viewPrefs); a first run with no saved value starts at START_ZOOM.
     if (view.zoom == null) view.zoom = START_ZOOM;
+    const hasSavedCenter = typeof view.centerFracX === 'number' && typeof view.centerFracY === 'number';
     const applyZoom = () => {
       const cs = getComputedStyle(board);
       const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
@@ -748,13 +751,24 @@ export function createUI(state, ctx) {
     const centerOnTown = () => {
       if (centered) return;
       if (!(board.clientWidth > 0 && c.offsetWidth > 0)) { requestAnimationFrame(centerOnTown); return; }
+      // Restore the saved pan center (a 0..1 fraction of the map) when this colony
+      // has one; otherwise focus on the town spawn (first-run behaviour).
       const sp = state.world?.spawn || { x: GRID_W / 2, y: GRID_H / 2 };
-      const fracX = (sp.x + 0.5) / GRID_W, fracY = (sp.y + 0.5) / GRID_H;
+      const fracX = hasSavedCenter ? view.centerFracX : (sp.x + 0.5) / GRID_W;
+      const fracY = hasSavedCenter ? view.centerFracY : (sp.y + 0.5) / GRID_H;
       board.scrollLeft = Math.max(0, fracX * c.offsetWidth - board.clientWidth / 2);
       board.scrollTop = Math.max(0, fracY * c.offsetHeight - board.clientHeight / 2);
       centered = true;
     };
     requestAnimationFrame(centerOnTown);
+    // Keep view.centerFracX/Y tracking the live pan center (fraction of the map),
+    // so saves capture where the player is looking. Updated on scroll.
+    const trackCenter = () => {
+      if (!(c.offsetWidth > 0 && c.offsetHeight > 0)) return;
+      view.centerFracX = (board.scrollLeft + board.clientWidth / 2) / c.offsetWidth;
+      view.centerFracY = (board.scrollTop + board.clientHeight / 2) / c.offsetHeight;
+    };
+    board.addEventListener('scroll', trackCenter, { passive: true });
     // Re-fit whenever the board area changes — window resize, or the sidebar/log
     // dividers being dragged (which resize the board around the map).
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => applyZoom()).observe(board);
