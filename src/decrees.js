@@ -89,6 +89,7 @@ function applyEffect(state, choice, dec) {
   if (e.morale) state.morale = Math.max(0, Math.min(100, (state.morale ?? 100) + e.morale));
   if (e.compassion) addCompassion(state, e.compassion);
   if (e.justice) addJustice(state, e.justice);
+  if (e.valor) addValor(state, e.valor);
   if (e.res) for (const [k, v] of Object.entries(e.res)) addRes(state, k, v);
   if (e.standing && dec?.faction && state.factions?.[dec.faction]) {
     const f = state.factions[dec.faction];

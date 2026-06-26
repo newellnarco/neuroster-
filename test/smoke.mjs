@@ -1100,4 +1100,51 @@ console.log('AI colonies compete for nodes:');
   ok('node contests persist through a save roundtrip');
 }
 
+// 31) More NPC animal events: wandering merchant + predator (beast) parley.
+console.log('NPC animal events (merchant & beast parley):');
+{
+  const { resolveDecree } = await import('../src/decrees.js');
+  const { DECREES } = await import('../src/config.js');
+
+  // The new events are registered in the decree pool, well-formed.
+  for (const id of ['merchant', 'beastParley']) {
+    const d = DECREES[id];
+    assert(d && d.id === id && d.title && d.prompt && typeof d.eligible === 'function', `${id} is a registered, well-formed event`);
+    assert(Array.isArray(d.choices) && d.choices.length >= 2, `${id} has choices`);
+    assert(d.choices.some(c => c.default), `${id} has a default choice for auto-resolve`);
+  }
+  ok('wandering merchant & beast-parley NPC events are registered & well-formed');
+
+  // Wandering merchant: trading food for goods applies its resolution effect.
+  const m = newGame(1400, 'woodland', 'syrian', 'Market', {});
+  m.res.food = 80; m.compassion = 50;
+  m.res.planks = 0; m.res.iron = 0; m.res.research = 0;
+  m.storageCap = 9999;
+  m.decree = { id: 'merchant', life: 75, born: 0 };
+  const f0 = m.res.food, c0 = m.compassion;
+  const applied = resolveDecree(m, 0); // trade food → planks/iron/research
+  assert(applied && m.decree === null, 'merchant decree resolves on a choice');
+  assert(m.res.food < f0, `the trade spends food (${f0} → ${m.res.food})`);
+  assert((m.res.planks || 0) > 0 && (m.res.iron || 0) > 0 && (m.res.research || 0) > 0, 'the trade yields planks, iron & research');
+  assert(m.compassion > c0, 'a fair trade raises Compassion');
+  ok(`wandering merchant: food → goods (food ${f0}→${m.res.food}, +planks/iron/research)`);
+
+  // Beast parley: an offering buys a truce (predators & raids hold off a while).
+  const b = newGame(1401, 'woodland', 'syrian', 'Bear', {});
+  b.res.food = 60; b.env.lived = 1000; b.truceUntil = 0;
+  b.decree = { id: 'beastParley', life: 75, born: 0 };
+  const bf0 = b.res.food;
+  resolveDecree(b, 0); // set out an offering → truce
+  assert((b.truceUntil || 0) > b.env.lived, 'the offering brokers a truce that stays predators & raids');
+  assert(b.res.food < bf0, 'the offering costs food');
+  ok('beast parley: an offering stalls the attack (food cost → truce)');
+
+  // Standing firm instead raises Valor (and risks the beast yet striking).
+  const b2 = newGame(1402, 'woodland', 'syrian', 'Stand', {});
+  b2.valor = 20; b2.decree = { id: 'beastParley', life: 75, born: 0 };
+  resolveDecree(b2, 1); // stand to arms
+  assert(b2.valor > 20, `standing to arms steels the colony (Valor ${20} → ${b2.valor})`);
+  ok('beast parley: standing firm raises Valor instead of spending food');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
