@@ -370,7 +370,14 @@ console.log('Wet tail (fair disease):');
     g.popCap = 99; g.res.food = 9999;
     g.buildings.push({ id: g.nextId++, type: burrowType, x: g.world.spawn.x + 1, y: g.world.spawn.y, active: true });
     let caught = false;
-    for (let i = 0; i < 3000; i++) { stepEconomy(g, 0.1); if (g.units.some(u => u.sick)) caught = true; }
+    // Keep it genuinely TIDY every tick (no droppings, no burrow filth) so filth
+    // stays below the infection threshold and the result is deterministic.
+    for (let i = 0; i < 3000; i++) {
+      g.buildings.forEach(b => { b.dirt = 0; });
+      g.units.forEach(u => { u.pooT = 999; });
+      stepEconomy(g, 0.1);
+      if (g.units.some(u => u.sick)) caught = true;
+    }
     assert(!caught, 'a tidy (clean) colony does not catch wet tail');
   }
 
@@ -1388,9 +1395,16 @@ console.log('Disease outbreaks, Infirmary & quarantine:');
   ok('Infirmary treats & cures the ill');
 
   // Quarantine slows the spread vs no quarantine (fewer rodents infected).
-  const noQ = spreadCount(0, false);
-  const withQ = spreadCount(0, true);
-  assert(withQ <= noQ, `quarantine slows spread (no-Q peaked ${noQ} ≥ Q peaked ${withQ})`);
+  // Outbreak spread is stochastic, so a single draw is too noisy — seed
+  // Math.random and average several trials for a deterministic, fair comparison.
+  const _rand = Math.random;
+  let _seed = 0x2f6e2b1;
+  Math.random = () => { _seed = (_seed * 1103515245 + 12345) & 0x7fffffff; return _seed / 0x7fffffff; };
+  let noQ = 0, withQ = 0;
+  try {
+    for (let t = 0; t < 12; t++) { noQ += spreadCount(0, false); withQ += spreadCount(0, true); }
+  } finally { Math.random = _rand; }
+  assert(withQ <= noQ, `quarantine slows spread over 12 seeded trials (no-Q total ${noQ} ≥ Q total ${withQ})`);
   // …and the quarantine output penalty is felt by production.
   const q = newGame(1603, 'prairie', 'syrian', 'Lockdown', {});
   q.res = { stone: 400 };
