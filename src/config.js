@@ -924,6 +924,18 @@ export const EVOLUTIONS = {
                 desc: 'Faster learning (XP) and research output.', bonus: { xp: 0.3, research: 0.3 } },
   apexRodent: { name: 'Apex Rodent',   icon: '👑', species: 'all', req: 'keenMind', reqLevel: 10, cost: { research: 160, iron: 80 },
                 desc: 'The pinnacle of rodent evolution: everything improves.', bonus: { mine: 0.25, speed: 0.2, carry: 0.2, needRetain: 0.2, defense: 0.2 } },
+
+  // ---- Species-specific branches (gated on that species being unlocked) ----
+  // Beavers lead the water-works line: hardier dams & stronger colony flood
+  // defense. Rats lead the swarm line: faster breeding & fiercer ground swarm.
+  beaverEngineer: { name: 'Master Engineers', icon: '🦫', species: 'beaver', requiresSpecies: 'beaver', cost: { research: 70, planks: 60, stone: 40 },
+                desc: 'Beavers build faster and their dams hold harder — a colony-wide lift to FLOOD defense.', bonus: { build: 0.3, flood: 6 } },
+  beaverHydro:     { name: 'Grand Waterworks', icon: '🌊', species: 'beaver', requiresSpecies: 'beaver', req: 'beaverEngineer', reqLevel: 6, cost: { research: 120, stone: 80, iron: 40 },
+                desc: 'Sweeping levee-dams: much stronger flood defense and steadier water.', bonus: { flood: 12, build: 0.2 } },
+  ratSwarm:        { name: 'Swarm Tactics',  icon: '🐀', species: 'rat', requiresSpecies: 'rat', cost: { research: 65, food: 70 },
+                desc: 'Rats breed faster and swarm ground predators in numbers (+colony breeding, +WOLF defense).', bonus: { breed: 0.3, wolf: 4 } },
+  ratBrood:        { name: 'Teeming Brood',  icon: '🐁', species: 'rat', requiresSpecies: 'rat', req: 'ratSwarm', reqLevel: 6, cost: { research: 110, food: 120 },
+                desc: 'A relentless brood — fast breeding and an even fiercer ground swarm.', bonus: { breed: 0.4, wolf: 6 } },
 };
 
 export const STARTING = {

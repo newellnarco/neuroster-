@@ -7,7 +7,7 @@ import { doctrineBonuses } from './doctrines.js';
 import { JUSTICE } from './config.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
 import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
-import { stepEvents, stepFactions } from './events.js';
+import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
 import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE } from './config.js';
@@ -829,7 +829,7 @@ function updateBreeding(state, dt) {
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0)) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
+  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
     state.res.food -= 5;

@@ -306,6 +306,7 @@ export function researchTech(state, id) {
 export function evolve(state, id) {
   const e = EVOLUTIONS[id];
   if (!e || state.evolutions[id]) return { ok: false, reason: 'Unavailable' };
+  if (e.requiresSpecies && !state.unlockedSpecies?.[e.requiresSpecies]) return { ok: false, reason: `Unlock ${SPECIES[e.requiresSpecies].name}s first` };
   if (e.req && !state.evolutions[e.req]) return { ok: false, reason: `Requires ${EVOLUTIONS[e.req].name}` };
   if (e.reqLevel && mainLevel(state) < e.reqLevel) return { ok: false, reason: `Needs main hamster Lv.${e.reqLevel}` };
   if (!canAfford(state, e.cost)) return { ok: false, reason: 'Not enough resources' };

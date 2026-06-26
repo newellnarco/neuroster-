@@ -115,12 +115,14 @@ export function createUI(state, ctx) {
       const done = state.evolutions[id];
       const reqOk = !e.req || state.evolutions[e.req];
       const lvlOk = !e.reqLevel || mainLevel(state) >= e.reqLevel;
-      const ok = done || (canAffordCost(e.cost) && reqOk && lvlOk);
+      const spOk = !e.requiresSpecies || state.unlockedSpecies?.[e.requiresSpecies];
+      const ok = done || (canAffordCost(e.cost) && reqOk && lvlOk && spOk);
       const tag = e.species === 'all' ? 'All rodents' : `${SPECIES[e.species].icon} ${SPECIES[e.species].name}`;
+      const spTag = e.requiresSpecies ? ` · needs ${SPECIES[e.requiresSpecies].name}s` : '';
       return `<button class="card evo ${done ? 'done' : ''} ${ok ? '' : 'poor'}" data-evo="${id}" ${done ? 'disabled' : ''}>
         <div class="ico">${e.icon}</div><div class="nm">${e.name}</div>
         <div class="cost">${done ? '✓ Evolved' : costStr(e.cost)}</div>
-        <div class="ds">${e.desc}<br><span class="helpers">${tag}${e.req ? ` · needs ${EVOLUTIONS[e.req].name}` : ''}${e.reqLevel ? ` · Lv.${e.reqLevel}` : ''}</span></div>
+        <div class="ds">${e.desc}<br><span class="helpers">${tag}${spTag}${e.req ? ` · needs ${EVOLUTIONS[e.req].name}` : ''}${e.reqLevel ? ` · Lv.${e.reqLevel}` : ''}</span></div>
       </button>`;
     }).join('')}</div>`;
     bind('[data-evo]', (btn) => { msg(evolve(state, btn.dataset.evo)); renderEvo(); });

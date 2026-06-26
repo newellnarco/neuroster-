@@ -1267,4 +1267,63 @@ console.log('Disease outbreaks, Infirmary & quarantine:');
   ok(`quarantine reduces spread & costs output (${noQ}→${withQ} ill; output ${noLock.toFixed(1)}→${locked.toFixed(1)})`);
 }
 
+// 34) Species-specific evolution branches: gated on species, apply their effect.
+console.log('Species-specific evolution branches:');
+{
+  const { EVOLUTIONS } = await import('../src/config.js');
+  const { evolve } = await import('../src/buildings.js');
+  const { protectionAgainst } = await import('../src/events.js');
+
+  // The new branches exist and are species-gated.
+  const branches = ['beaverEngineer', 'beaverHydro', 'ratSwarm', 'ratBrood'];
+  for (const id of branches) {
+    const e = EVOLUTIONS[id];
+    assert(e && e.requiresSpecies, `${id} is a species-specific branch`);
+    assert(e.bonus && Object.keys(e.bonus).length, `${id} grants a bonus`);
+  }
+  assert(EVOLUTIONS.beaverEngineer.requiresSpecies === 'beaver' && EVOLUTIONS.ratSwarm.requiresSpecies === 'rat',
+    'beaver & rat branches require their species');
+  ok('beaver & rat evolution branches exist and are species-gated');
+
+  // Gating: a hamster-only colony can't take the beaver branch; unlocking beavers does.
+  const g = newGame(1700, 'rivers', 'syrian', 'EvoGate', {});
+  g.res = { research: 999, planks: 999, stone: 999, iron: 999, food: 999 };
+  assert(!evolve(g, 'beaverEngineer').ok, 'beaver branch locked without beavers unlocked');
+  g.unlockedSpecies.beaver = true;
+  assert(evolve(g, 'beaverEngineer').ok, 'unlocking beavers opens the beaver branch');
+  assert(g.evolutions.beaverEngineer, 'the beaver evolution is recorded once taken');
+  // Prereq + level gating on the deeper node.
+  assert(!evolve(g, 'beaverHydro').ok, 'the deeper beaver node needs its prereq/level');
+  ok('species-gated branches unlock with the species (and chain via prereqs)');
+
+  // Effect applies: beaver flood defense lifts flood protection while a beaver is present.
+  const fl = newGame(1701, 'rivers', 'syrian', 'Flood', {});
+  fl.unlockedSpecies.beaver = true;
+  fl.units[0].species = 'beaver'; // a beaver in the colony
+  const before = protectionAgainst(fl, 'flood');
+  fl.res = { research: 999, planks: 999, stone: 999, iron: 999 };
+  assert(evolve(fl, 'beaverEngineer').ok, 'take the beaver engineer branch');
+  const after = protectionAgainst(fl, 'flood');
+  assert(after > before, `the beaver branch raises flood defense (${before.toFixed(1)} → ${after.toFixed(1)})`);
+  ok(`beaver branch applies: +flood defense (${before.toFixed(1)} → ${after.toFixed(1)})`);
+
+  // Rat swarm: raises breeding speed (more children over the same time).
+  function childrenOver(withEvo) {
+    const s = newGame(1702, 'prairie', 'syrian', 'Brood', {});
+    s.unlockedSpecies.rat = true;
+    s.units.forEach(u => { u.species = 'rat'; u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
+    s.res.food = 9999;
+    // plenty of housing so population cap never blocks breeding
+    for (let k = 0; k < 12; k++) s.buildings.push({ id: s.nextId++, type: 'burrow', x: s.world.spawn.x + 1 + k, y: s.world.spawn.y, active: true });
+    if (withEvo) { s.res.research = 999; s.evolutions.ratSwarm = true; }
+    const n0 = s.units.length;
+    for (let i = 0; i < 90; i++) { s.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; }); stepEconomy(s, 0.2); }
+    return s.units.length - n0;
+  }
+  const plain = childrenOver(false), swarm = childrenOver(true);
+  assert(swarm > plain, `rat swarm breeds faster than without it (plain ${plain} < swarm ${swarm})`);
+  assert(swarm > 0, 'rat colony breeds with the swarm branch');
+  ok(`rat swarm branch applies: faster breeding (plain ${plain} → swarm ${swarm} born)`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

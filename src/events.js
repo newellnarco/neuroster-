@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS } from './config.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST } from './factions.js';
@@ -90,6 +90,20 @@ export function protectionAgainst(state, key) {
     if (u.guard) p += (GUARD_GEAR[u.gear || 0]?.def || 0); // trained/equipped guards
   }
   p += state._mega?.protectAll || 0; // the Citadel shields against every threat
+  p += evoProtect(state, key);       // species-specific evolution branches (beaver flood, rat swarm)
+  return p;
+}
+
+// Species-specific evolution branches can grant colony-wide protection against a
+// hazard (e.g. beaver waterworks → flood; rat swarm → wolf). Counted only while
+// that species is actually in the colony, so the branch's payoff is earned.
+export function evoProtect(state, key) {
+  let p = 0;
+  for (const [id, e] of Object.entries(EVOLUTIONS)) {
+    if (!state.evolutions?.[id] || !e.bonus || e.bonus[key] == null) continue;
+    if (e.requiresSpecies && !state.units.some(u => u.species === e.requiresSpecies)) continue;
+    p += e.bonus[key];
+  }
   return p;
 }
 
