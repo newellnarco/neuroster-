@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T22:43:14Z",
+  "updated": "2026-06-26T22:54:42Z",
   "items": [
     {
       "key": "econ:1",
@@ -932,13 +932,19 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Deferred",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Deferred: the auto-sim has no unit commands to apply to a selection. Revisit if directable units (scout waypoint) land.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T22:53:19+00:00",
+          "status": "Done",
+          "note": "Animals/Buildings/Demolish tools + left-drag marquee multi-select + group orders (gather/eat/drink/move) + bulk demolish/clean; 184 checks"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T22:53:19+00:00"
     },
     {
       "key": "ux:texture-glyphs",
@@ -2093,13 +2099,19 @@
       "type": "Fix",
       "area": "UI/UX",
       "priority": "P1",
-      "status": "Done",
-      "pr": 0,
-      "release": null,
+      "status": "Shipped",
+      "pr": "59",
+      "release": "1d804ff",
       "detail": "",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T22:43:31+00:00",
+          "status": "Shipped",
+          "note": "PR #59 merged (release 1d804ff)"
+        }
+      ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T22:43:31+00:00"
     }
   ]
 }

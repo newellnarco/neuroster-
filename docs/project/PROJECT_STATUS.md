@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T22:43:14Z · 90 items_
+_board_state.json updated: 2026-06-26T22:54:42Z · 90 items_
 
 ## Summary
 
@@ -14,12 +14,12 @@ _board_state.json updated: 2026-06-26T22:43:14Z · 90 items_
 | Planned | 0 |
 | Backlog | 3 |
 | Done | 1 |
-| Shipped | 82 |
-| Deferred | 4 |
+| Shipped | 83 |
+| Deferred | 3 |
 | Closed-No-Op | 0 |
 | **TOTAL** | **90** |
 
-**83 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**84 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -33,20 +33,20 @@ _board_state.json updated: 2026-06-26T22:43:14Z · 90 items_
 
 | Arch | Item | Issue | PR | Why |
 |---|---|---|---|---|
-| None | Left-drag marquee multi-select | — | — | Deferred: the auto-sim has no unit commands to apply to a selection |
 | None | Selectable map size (world-dims refactor) | — | — | GRID_W×GRID_H are module constants; a per-world dimensions refactor is risky — deferred |
 | None | Multiplayer / server-side state | — | — | No multiplayer; saves are per-browser localStorage (export/import to move machines) |
 | None | Legacy Synology Docker can't import compose | — | — | Deploy is a hand-made container (see README |
 
 ## Shipped / Done — by arch
 
-### (misc) (32)
+### (misc) (33)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
 | None | Hamster balls — free-roam transport (heat + anxiety) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Directable exploration: scout waypoint | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | More NPC animal events (merchant, predator parley, aid requests) | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
+| None | Left-drag marquee multi-select | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
 | None | Texture the remaining one-off building glyphs | [#45](https://github.com/newellnarco/neuroster-/pull/45) | `656ab96` |
 | None | Persist zoom level per colony | [#50](https://github.com/newellnarco/neuroster-/pull/50) | `b4293ba` |
 | None | Validate EVENT_PACE/GRACE feel across biomes & difficulties | [#48](https://github.com/newellnarco/neuroster-/pull/48) | `a27154b` |
@@ -75,7 +75,7 @@ _board_state.json updated: 2026-06-26T22:43:14Z · 90 items_
 | None | Persistent on-map labels via the 🏷️ toggle (not hover-only) | [#55](https://github.com/newellnarco/neuroster-/pull/55) | `e5945f1` |
 | None | Art-asset specification (docs/ART_SPEC.md) for sprite-sheet replacement art | [#56](https://github.com/newellnarco/neuroster-/pull/56) | `3101150` |
 | None | Data-driven systems-map PNG diagram + generator (tools/gen_diagram.mjs) | [#56](https://github.com/newellnarco/neuroster-/pull/56) | `3101150` |
-| None | Top-bar tool modes (👆 Select / 🎩 Demolish); building-click priority; direct-to-needs | — | `—` |
+| None | Top-bar tool modes (👆 Select / 🎩 Demolish); building-click priority; direct-to-needs | [#59](https://github.com/newellnarco/neuroster-/pull/59) | `1d804ff` |
 
 ### CREATURES (5)
 
