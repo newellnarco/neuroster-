@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T16:34:03Z",
+  "updated": "2026-06-26T16:40:58Z",
   "items": [
     {
       "key": "econ:1",
@@ -994,19 +994,24 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P2",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "48",
+      "release": "a27154b",
       "detail": "EVENT_PACE=1.7 + GRACE_SECONDS=420 — confirm during user testing; expose as a difficulty knob if needed.",
       "timeline": [
         {
           "at": "2026-06-26T16:32:49+00:00",
           "status": "Done",
           "note": "Built in Balance section"
+        },
+        {
+          "at": "2026-06-26T16:34:10+00:00",
+          "status": "Shipped",
+          "note": "PR #48 merged (release a27154b)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:32:49+00:00"
+      "updated": "2026-06-26T16:34:10+00:00"
     },
     {
       "key": "balance:feeder-throughput",
@@ -1017,19 +1022,24 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "48",
+      "release": "a27154b",
       "detail": "Burrow filth already scales with crowding; consider the same for feeder/waterer throughput.",
       "timeline": [
         {
           "at": "2026-06-26T16:32:49+00:00",
           "status": "Done",
           "note": "Built in Balance section"
+        },
+        {
+          "at": "2026-06-26T16:34:10+00:00",
+          "status": "Shipped",
+          "note": "PR #48 merged (release a27154b)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:32:49+00:00"
+      "updated": "2026-06-26T16:34:10+00:00"
     },
     {
       "key": "balance:starting-economy",
@@ -1040,19 +1050,24 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "48",
+      "release": "a27154b",
       "detail": "140 wood / 75 stone / 120 food / 60 seeds / 100 water / 12 planks, cap 700.",
       "timeline": [
         {
           "at": "2026-06-26T16:32:49+00:00",
           "status": "Done",
           "note": "Built in Balance section"
+        },
+        {
+          "at": "2026-06-26T16:34:10+00:00",
+          "status": "Shipped",
+          "note": "PR #48 merged (release a27154b)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:32:49+00:00"
+      "updated": "2026-06-26T16:34:10+00:00"
     },
     {
       "key": "fix:belt-networks",
@@ -1101,19 +1116,24 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "48",
+      "release": "a27154b",
       "detail": "Difficulty now scales disasters; extend it to yields & breeding too.",
       "timeline": [
         {
           "at": "2026-06-26T16:32:50+00:00",
           "status": "Done",
           "note": "Built in Balance section"
+        },
+        {
+          "at": "2026-06-26T16:34:10+00:00",
+          "status": "Shipped",
+          "note": "PR #48 merged (release a27154b)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:32:50+00:00"
+      "updated": "2026-06-26T16:34:10+00:00"
     },
     {
       "key": "fix:worker-pathing",
@@ -1124,13 +1144,19 @@
       "type": "Bug",
       "area": "Engine",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Acceptable for now; revisit if it reads odd. Tied to true-pathfinding.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:39:41+00:00",
+          "status": "Done",
+          "note": "Built in Engine section (lightweight, not the deferred A* refactor)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:39:41+00:00"
     },
     {
       "key": "fix:balance-pass",
@@ -1141,19 +1167,24 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "Done",
-      "pr": "0",
-      "release": null,
+      "status": "Shipped",
+      "pr": "48",
+      "release": "a27154b",
       "detail": "Tune drains/yields after the next automation/buildings wave.",
       "timeline": [
         {
           "at": "2026-06-26T16:32:50+00:00",
           "status": "Done",
           "note": "Built in Balance section"
+        },
+        {
+          "at": "2026-06-26T16:34:10+00:00",
+          "status": "Shipped",
+          "note": "PR #48 merged (release a27154b)"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T16:32:50+00:00"
+      "updated": "2026-06-26T16:34:10+00:00"
     },
     {
       "key": "add:true-iso-camera",
@@ -1316,13 +1347,19 @@
       "type": "New Feature",
       "area": "Engine",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Model real upstream/downstream so a dam visibly dries above & irrigates below (currently a global penalty).",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T16:39:41+00:00",
+          "status": "Done",
+          "note": "Built in Engine section (lightweight, not the deferred A* refactor)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T16:39:41+00:00"
     },
     {
       "key": "add:disease-events",

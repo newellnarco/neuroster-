@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T16:34:03Z · 76 items_
+_board_state.json updated: 2026-06-26T16:40:58Z · 76 items_
 
 ## Summary
 
@@ -12,14 +12,14 @@ _board_state.json updated: 2026-06-26T16:34:03Z · 76 items_
 | in CI | 0 |
 | Todo | 1 |
 | Planned | 0 |
-| Backlog | 7 |
-| Done | 5 |
-| Shipped | 59 |
+| Backlog | 5 |
+| Done | 2 |
+| Shipped | 64 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
 | **TOTAL** | **76** |
 
-**64 landed on `main`** · **8 open** (in-CI / todo / planned / backlog).
+**66 landed on `main`** · **6 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -28,11 +28,9 @@ _board_state.json updated: 2026-06-26T16:34:03Z · 76 items_
 | Todo | P3 | None | Job assignment UI (assign rodents to resources/buildings) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
 | Backlog | P2 | None | True movement/pathfinding (gate tunnels, gopher travel, dams) | — | — |
 | Backlog | P3 | None | Persist zoom level per colony | — | — |
-| Backlog | P3 | None | Workers path in straight lines (no obstacle/water avoidance) | — | — |
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
 | Backlog | P3 | None | Tunnels / underground levels (vertical expansion) | — | — |
-| Backlog | P3 | None | River geography for dams (real upstream tiles) | — | — |
 
 ## Deferred (intentional)
 
@@ -45,7 +43,7 @@ _board_state.json updated: 2026-06-26T16:34:03Z · 76 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (17)
+### (misc) (19)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -53,13 +51,15 @@ _board_state.json updated: 2026-06-26T16:34:03Z · 76 items_
 | None | Directable exploration: scout waypoint | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | More NPC animal events (merchant, predator parley, aid requests) | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
 | None | Texture the remaining one-off building glyphs | [#45](https://github.com/newellnarco/neuroster-/pull/45) | `656ab96` |
-| None | Validate EVENT_PACE/GRACE feel across biomes & difficulties | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
-| None | Scale feeder/waterer throughput with crowding | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
-| None | Re-check starting economy after first-10-min playtests | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
-| None | Extend BREEDS.difficulty to resource yields & breeding | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
-| None | Balance pass once conveyors & more buildings land | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Validate EVENT_PACE/GRACE feel across biomes & difficulties | [#48](https://github.com/newellnarco/neuroster-/pull/48) | `a27154b` |
+| None | Scale feeder/waterer throughput with crowding | [#48](https://github.com/newellnarco/neuroster-/pull/48) | `a27154b` |
+| None | Re-check starting economy after first-10-min playtests | [#48](https://github.com/newellnarco/neuroster-/pull/48) | `a27154b` |
+| None | Extend BREEDS.difficulty to resource yields & breeding | [#48](https://github.com/newellnarco/neuroster-/pull/48) | `a27154b` |
+| None | Workers path in straight lines (no obstacle/water avoidance) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Balance pass once conveyors & more buildings land | [#48](https://github.com/newellnarco/neuroster-/pull/48) | `a27154b` |
 | None | Plastics & advanced refining (coal/oil → plastic) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
+| None | River geography for dams (real upstream tiles) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
 | None | Disease/health events + quarantine; Infirmary | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | More milestones/achievements (first hybrid, day 30, apex evolution…) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Promote Threats panel → Defense & Military screen | [#44](https://github.com/newellnarco/neuroster-/pull/44) | `7f9ff2e` |
