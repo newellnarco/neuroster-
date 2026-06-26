@@ -65,8 +65,8 @@ export const NODE_TYPES = {
 // effect categories are interpreted by economy.js / state.js.
 export const BUILDINGS = {
   burrow: {
-    name: 'Burrow', icon: '🕳️', desc: '+3 population cap. Breeds hamsters (uses food).',
-    cost: { wood: 20 }, category: 'Housing', popCap: 3, breed: true,
+    name: 'Burrow', icon: '🕳️', desc: '+6 population cap. Breeds hamsters (needs a mature ♂+♀ pair & food).',
+    cost: { wood: 20 }, category: 'Housing', popCap: 6, breed: true,
   },
   townhall: {
     name: 'Meeting Burrow', icon: '🏛️', desc: 'The leader rules by teaching, helping & raising hamsters — a colony-wide boost. But a hall too grand for everyone else\'s comforts breeds resentment. Click to upgrade.',

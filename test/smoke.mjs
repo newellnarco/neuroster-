@@ -250,6 +250,17 @@ console.log('Family & inheritance:');
   ok(`child "${child.name} ${child.family}" inherits coat & traits from ${a.name} & ${b.name}`);
 }
 
+// 10a) Starting housing fits the starting colony.
+console.log('Starting housing fit:');
+{
+  const { STARTING, BUILDINGS } = await import('../src/config.js');
+  const burrowCap = BUILDINGS[Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed)].popCap;
+  assert(STARTING.hamsters <= burrowCap, `a fresh colony (${STARTING.hamsters}) fits the first burrow (cap ${burrowCap})`);
+  const s = newGame(505, 'woodland', 'syrian', 'Fit', {});
+  assert(s.units.length <= burrowCap, `starting population ${s.units.length} ≤ first burrow popCap ${burrowCap}`);
+  ok(`starting colony (${s.units.length}) fits one burrow (cap ${burrowCap}) — no forced second burrow`);
+}
+
 // 10b) Sex + maturity age model.
 console.log('Sex & maturity:');
 {

@@ -12,6 +12,7 @@ import { resolveDecree, choiceAllowed, dismissDecree } from './decrees.js';
 import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
 import { learnDoctrine, doctrineStatus, hasDoctrine, doctrineCount } from './doctrines.js';
 import { enterBall, exitBall, hasBallWorkshop } from './economy.js';
+import { isMature } from './entities.js';
 
 export function createUI(state, ctx) {
   const el = (id) => document.getElementById(id);
@@ -166,7 +167,12 @@ export function createUI(state, ctx) {
       }).join('');
       const gname = escHtml(u.name || `#${u.id}`);
       const fam = u.family ? ` <span class="fam">${escHtml(u.family)}</span>` : '';
-      const name = `${u.founder ? '♛ ' : ''}${gname}${fam}`;
+      const sexIcon = u.sex === 'm' ? '♂' : u.sex === 'f' ? '♀' : '';
+      const young = !isMature(u);
+      const sexAge = sexIcon || young
+        ? ` <span class="sexage" title="${u.sex === 'm' ? 'Male' : u.sex === 'f' ? 'Female' : ''}${young ? ' · juvenile (not yet old enough to breed)' : ' · adult'}">${sexIcon}${young ? ' 🍼' : ''}</span>`
+        : '';
+      const name = `${u.founder ? '♛ ' : ''}${gname}${fam}${sexAge}`;
       const lineage = u.parentNames ? `<span class="kin" title="Parents">👪 ${escHtml(u.parentNames[0])} &amp; ${escHtml(u.parentNames[1])}</span>` : '';
       const bond = Math.round(u.bond ?? 45);
       const now = state.env?.lived || 0;
