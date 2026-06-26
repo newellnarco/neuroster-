@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{ echo '📋 PROJECT WALL — session-start sweep is a STANDING RULE: reconcile stale board items BEFORE feature work. Verify In-Progress items against open/merged PRs, drop fragments via tools/board_lifecycle.py, run python tools/compact_board_fragments.py, then commit. Current audit:'; python3 tools/board_lifecycle.py audit 2>/dev/null; } | jq -Rs '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:.}}'",
+            "statusMessage": "Auditing project wall…",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sid=$(jq -r '.session_id // \"x\"'); f=\"/tmp/.wall-sweep-stop-$sid\"; if [ -f \"$f\" ]; then exit 0; fi; touch \"$f\"; echo '{\"decision\":\"block\",\"reason\":\"END-OF-SESSION WALL SWEEP (standing rule): before ending, reconcile the project wall — run `python tools/board_lifecycle.py audit`, drop fragments for any status changes since session start (merged PRs -> Shipped, partial work -> In Progress, etc.), run `python tools/compact_board_fragments.py`, and commit the result. If the wall is already accurate and committed, you may stop.\"}'",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
