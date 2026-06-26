@@ -63,6 +63,12 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     }
     state.units.push(u);
   }
+  // Guarantee the founding colony can actually breed: with fully-random sexes a
+  // small colony could spawn single-sex and never reproduce. If they all came up
+  // the same, flip the second one so there's at least one mature male + female.
+  if (state.units.length >= 2 && state.units.every(u => u.sex === state.units[0].sex)) {
+    state.units[1].sex = state.units[0].sex === 'm' ? 'f' : 'm';
+  }
   logMsg(state, `${name} the ${breed.name} hamster founds a ${world.biome} colony! Explore, gather, and keep your rodents fed, watered, rested & curious.`);
   return state;
 }

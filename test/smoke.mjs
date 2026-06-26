@@ -269,6 +269,14 @@ console.log('Sex & maturity:');
   const s = newGame(606, 'woodland', 'syrian', 'Age', {});
   // Founders/starting hamsters spawn as ADULTS.
   assert(s.units.every(u => isMature(u)), 'starting hamsters are mature adults');
+  // A fresh colony is GUARANTEED both sexes so it can always breed (random sexes
+  // could otherwise spawn single-sex). Check across many seeds.
+  let mixed = 0, COLS = 200;
+  for (let i = 0; i < COLS; i++) {
+    const g = newGame(700 + i, 'woodland', 'syrian', 'Mix', {});
+    if (g.units.some(u => u.sex === 'm') && g.units.some(u => u.sex === 'f')) mixed++;
+  }
+  assert(mixed === COLS, `every fresh colony has both sexes (got ${mixed}/${COLS})`);
   // A newborn (from breeding) starts immature and below maturity.
   const child = breedChild(s, s.units[0], s.units[1]);
   assert(child.age === 0 && !isMature(child), 'a newborn is below maturity at birth');
@@ -1620,6 +1628,7 @@ console.log('Difficulty scales yields & breeding:');
     const g = newGame(2501, 'woodland', 'syrian', 'Breed', { difficulty: d });
     g.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
     g.res.food = 9999; g.popCap = 99;
+    g.units[0].sex = 'm'; g.units[1].sex = 'f'; // guarantee a mature M+F pair so the rate is deterministic
     for (let k = 0; k < 6; k++) g.buildings.push({ id: g.nextId++, type: 'burrow', x: g.world.spawn.x + 1 + k, y: g.world.spawn.y, active: true });
     g._breed = 0;
     g.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
