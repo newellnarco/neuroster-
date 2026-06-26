@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T07:14:04Z",
+  "updated": "2026-06-26T07:15:49Z",
   "items": [
     {
       "key": "econ:1",
@@ -1001,7 +1001,7 @@
       "type": "Enhancement",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "In Progress",
+      "status": "Done",
       "pr": "44",
       "release": null,
       "detail": "Belts ship wood→plastic→metal already; add chaining node→belt→belt→storage with direction.",
@@ -1015,10 +1015,15 @@
           "at": "2026-06-26T07:14:04+00:00",
           "status": "In Progress",
           "note": "Implemented network chaining + reach; opened PR #44 (88 smoke checks green)"
+        },
+        {
+          "at": "2026-06-26T07:15:49+00:00",
+          "status": "Done",
+          "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T07:14:04+00:00"
+      "updated": "2026-06-26T07:15:49+00:00"
     },
     {
       "key": "fix:difficulty-scale",
@@ -1272,7 +1277,7 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "In Progress",
+      "status": "Done",
       "pr": "44",
       "release": null,
       "detail": "Include offense raids vs AI colonies.",
@@ -1296,10 +1301,21 @@
           "at": "2026-06-26T07:14:04+00:00",
           "status": "In Progress",
           "note": "Built the Defense & Military screen; opened PR #44 (verified live in Chromium)"
+        },
+        {
+          "at": "2026-06-26T07:15:49+00:00",
+          "status": "Done",
+          "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
         }
       ],
-      "screenshots": [],
-      "updated": "2026-06-26T07:14:04+00:00"
+      "screenshots": [
+        {
+          "at": "2026-06-26T07:15:48+00:00",
+          "path": "docs/screenshots/defense-screen.png",
+          "caption": "Defense & Military screen: Garrison + Defensive works + Threat readiness"
+        }
+      ],
+      "updated": "2026-06-26T07:15:49+00:00"
     },
     {
       "key": "change:evolution-branches",
@@ -1451,13 +1467,19 @@
       "type": "Process",
       "area": "Infra",
       "priority": "P2",
-      "status": "In Progress",
-      "pr": "#44",
+      "status": "Done",
+      "pr": "44",
       "release": null,
       "detail": "playwright-core dev dep + test/browser-smoke.mjs + SessionStart auto-install; npm run verify:browser.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T07:15:49+00:00",
+          "status": "Done",
+          "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
+        }
+      ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T07:15:49+00:00"
     },
     {
       "key": "change:storage-1500",
@@ -1468,13 +1490,19 @@
       "type": "Enhancement",
       "area": "Balance",
       "priority": "P3",
-      "status": "In Progress",
-      "pr": "#44",
+      "status": "Done",
+      "pr": "44",
       "release": null,
       "detail": "Player-requested: each Storage Depot now holds 1500 (was 200).",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T07:15:49+00:00",
+          "status": "Done",
+          "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
+        }
+      ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T07:15:49+00:00"
     },
     {
       "key": "change:tab-restyle",
@@ -1485,13 +1513,25 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "In Progress",
-      "pr": "#44",
+      "status": "Done",
+      "pr": "44",
       "release": null,
       "detail": "Single flex row clipped 8 tab labels in the 340px pane; now a 4×2 grid of section tabs, all visible.",
-      "timeline": [],
-      "screenshots": [],
-      "updated": null
+      "timeline": [
+        {
+          "at": "2026-06-26T07:15:49+00:00",
+          "status": "Done",
+          "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-26T07:15:48+00:00",
+          "path": "docs/screenshots/tabs-section-grid.png",
+          "caption": "Double-stacked 4×2 folder-style section tabs (all 8 fit)"
+        }
+      ],
+      "updated": "2026-06-26T07:15:49+00:00"
     }
   ]
 }
