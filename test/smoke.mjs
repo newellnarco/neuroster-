@@ -1386,6 +1386,36 @@ console.log('Difficulty pacing & grace knob:');
   assert(DIFFICULTIES.relaxed.graceMul > 1 && DIFFICULTIES.harsh.graceMul < 1, 'graceMul reads >1 for relaxed, <1 for harsh');
   assert(DIFFICULTIES.relaxed.paceMul > 1 && DIFFICULTIES.harsh.paceMul < 1, 'paceMul reads >1 for relaxed, <1 for harsh');
   ok(`event pace/grace scale by difficulty (grace ${graceSeconds(relaxed)}/${graceSeconds(normal)}/${graceSeconds(harsh)}, pace ${eventPace(relaxed).toFixed(1)}/${eventPace(normal).toFixed(1)}/${eventPace(harsh).toFixed(1)})`);
+
+  // Calm-by-default knobs: a global sim time-scale <1 keeps the 1× tier relaxed in
+  // real time, and the normal cadence/grace are roomy (events shouldn't pile up).
+  const { SIM_SCALE } = await import('../src/config.js');
+  assert(SIM_SCALE > 0 && SIM_SCALE < 1, `SIM_SCALE is a sub-real-time base scale (got ${SIM_SCALE})`);
+  assert(SIM_SCALE <= 0.7, `SIM_SCALE keeps the default noticeably calmer than real time (got ${SIM_SCALE})`);
+  assert(graceSeconds(normal) >= 540, `normal grace is roomy enough for a peaceful start (got ${graceSeconds(normal)})`);
+  assert(eventPace(normal) >= 2.0, `normal event pace spaces disasters out (got ${eventPace(normal)})`);
+  ok(`calm default locked: SIM_SCALE ${SIM_SCALE}, normal grace ${graceSeconds(normal)}s, pace ${eventPace(normal)}`);
+}
+
+// 36b) Skill points & traits work for ANY rodent, not just the founder/leader.
+console.log('Non-founder rodents spend earned skill points:');
+{
+  const { gainXp } = await import('../src/entities.js');
+  const { upgradeTrait } = await import('../src/buildings.js');
+  const s = newGame(3300, 'woodland', 'syrian', 'Skills', { difficulty: 'normal' });
+  // A non-founder unit earns XP from work → levels → gains a skill point.
+  const u = s.units.find(x => !x.founder);
+  assert(u, 'a non-founder rodent exists at colony start');
+  assert(!u.founder, 'the test subject is genuinely not the leader');
+  const before = u.skillPoints || 0;
+  gainXp(s, u, 100000); // force a few level-ups
+  assert(u.level > 1 && (u.skillPoints || 0) > before, `non-founder leveled & earned skill points (lvl ${u.level}, sp ${u.skillPoints})`);
+  const sp0 = u.skillPoints, lvl0 = u.traits.strength || 0;
+  const r = upgradeTrait(s, u, 'strength');
+  assert(r.ok && r.paidWith === 'skillPoint', 'a leveled non-founder spends a skill point on a trait');
+  assert((u.traits.strength || 0) === lvl0 + 1, 'the non-founder trait level went up');
+  assert((u.skillPoints || 0) === sp0 - 1, 'one skill point was consumed (no resource cost)');
+  ok(`a leveled non-founder spends a skill point on a trait (strength → ${u.traits.strength})`);
 }
 
 // 37) Feeder/waterer throughput degrades with crowding (build more as you grow).

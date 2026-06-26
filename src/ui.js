@@ -87,9 +87,11 @@ export function createUI(state, ctx) {
       <div class="grid">${items.map(([id, def]) => {
         const afford = canAffordCost(def.cost);
         const lvlLocked = def.reqLevel && mainLevel(state) < def.reqLevel;
-        return `<button class="card ${view.placing === id ? 'sel' : ''} ${afford && !lvlLocked ? '' : 'poor'} ${lvlLocked ? 'locked' : ''}" data-build="${id}" ${lvlLocked ? 'disabled' : ''}>
-          <div class="ico">${def.icon}</div><div class="nm">${def.name}${lvlLocked ? ' 🔒' : ''}</div>
-          <div class="cost">${costStr(def.cost)}${def.reqLevel ? ` · Lv.${def.reqLevel}` : ''}</div><div class="ds">${def.desc}</div>
+        const active = view.placing === id;
+        return `<button class="card ${active ? 'sel' : ''} ${afford && !lvlLocked ? '' : 'poor'} ${lvlLocked ? 'locked' : ''}" data-build="${id}" ${lvlLocked ? 'disabled' : ''}
+          title="${active ? 'Placing — click the map to build, or click here again / right-click / Esc to cancel' : def.name}">
+          <div class="ico">${def.icon}</div><div class="nm">${active ? '✕ ' : ''}${def.name}${lvlLocked ? ' 🔒' : ''}</div>
+          <div class="cost">${active ? 'Placing… (click to cancel)' : costStr(def.cost) + (def.reqLevel ? ` · Lv.${def.reqLevel}` : '')}</div><div class="ds">${def.desc}</div>
         </button>`;
       }).join('')}</div>`).join('');
     bind('[data-build]', (btn) => { view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build; renderBuild(); });
@@ -229,7 +231,14 @@ export function createUI(state, ctx) {
     bind('[data-recruit]', (btn) => { msg(recruit(state, btn.dataset.recruit)); renderRodents(); });
     bind('[data-trait]', (btn) => {
       const u = state.units.find(x => x.id == btn.dataset.unit);
-      if (u) msg(upgradeTrait(state, u, btn.dataset.trait));
+      if (!u) return;
+      // Spending a trait point works for ANY rodent (founder or not) that earned
+      // skill points by leveling. Also pin the unit as selected so its controls
+      // surface — clicking a non-leader's trait shouldn't feel inert.
+      view.selUnit = u.id;
+      const r = upgradeTrait(state, u, btn.dataset.trait);
+      if (r?.ok && r.paidWith === 'skillPoint') { sfx('level'); flash(`⭐ ${escHtml(u.name || 'Rodent')} → ${TRAITS[btn.dataset.trait]?.name || 'trait'} up!`); }
+      else msg(r);
       renderRodents();
     });
     bind('[data-care]', (btn) => {
@@ -831,7 +840,14 @@ export function createUI(state, ctx) {
       const t = toTile(e);
       if (view.placing) {
         const r = placeBuilding(state, view.placing, t.x, t.y);
-        if (!r.ok) flash(r.reason); else { sfx('place'); renderBuild(); renderResbar(); }
+        if (!r.ok) flash(r.reason);
+        else {
+          sfx('place');
+          // Revert to the select (hand) cursor after a successful place so build
+          // mode isn't sticky — unless Shift is held for rapid repeat-placement.
+          if (!e.shiftKey) { view.placing = null; view.canPlace = false; flash('↩︎ Back to select'); }
+          renderBuild(); renderResbar();
+        }
         return;
       }
       // select a rodent under the cursor
@@ -855,11 +871,26 @@ export function createUI(state, ctx) {
       if (b && BUILDINGS[b.type].tower) { b.mode = b.mode === 'defend' ? 'watch' : 'defend'; sfx('click'); flash(b.mode === 'defend' ? '🗡️ Tower → DEFEND (stronger, but costs morale)' : '👁️ Tower → WATCH (wide vision, gentle)'); return; }
       if (b && BUILDINGS[b.type].townhall) { const r = upgradeTownhall(state, b); flash(r.ok ? 'Town Hall upgraded' : r.reason || ''); return; }
       if (b && BUILDINGS[b.type].breed && (b.dirt || 0) >= 1) { const r = cleanBurrow(state, b); flash(r.ok ? '🧹 Burrow cleaned' : r.reason || ''); return; }
-      // A selected rodent + a click on open or fogged ground = "go there": it
-      // drops its current task, heads to that tile, and reveals fog en route.
+      // A selected rodent + a click on the world. If the tile holds a RESOURCE
+      // NODE, send the rodent to GATHER there: pin its job preference to the node's
+      // kind (so it keeps working that resource) and march it over. Otherwise it's
+      // a plain "go there" order that reveals fog en route.
       if (!b && view.selUnit) {
         const u = state.units.find(x => x.id === view.selUnit);
-        if (u) { u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null; sfx('click'); flash('🐾 On my way!'); renderRodents(); return; }
+        if (u) {
+          const node = state.world.nodes.find(n => n.x === t.x && n.y === t.y && n.amount > 0);
+          if (node && JOB_KINDS[node.kind]) {
+            u.jobPref = node.kind;
+            u.targetNode = null;           // re-pick under the new preference
+            u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null;
+            sfx('click');
+            const resName = RESOURCES[NODE_TYPES[node.kind].resource]?.name || node.kind;
+            flash(`🎯 → mining ${resName}`);
+            renderRodents();
+            return;
+          }
+          u.order = { kind: 'goto', x: t.x, y: t.y }; u._exTarget = null; sfx('click'); flash('🐾 On my way!'); renderRodents(); return;
+        }
       }
       if (b && confirm(`Demolish ${BUILDINGS[b.type].name}? (50% refund)`)) { demolish(state, b); }
     });
