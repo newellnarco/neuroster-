@@ -4,3 +4,7 @@ update-log.txt      # written by the Windows auto-update task
 node_modules/
 .DS_Store
 *.log
+
+# Python bytecode from the board tools (tools/*.py)
+__pycache__/
+*.pyc

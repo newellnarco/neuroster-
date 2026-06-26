@@ -1,0 +1,15 @@
+{
+  "_doc": [
+    "wall.config.json — parameterization for the portable wall-kit.",
+    "",
+    "The stdlib tools (render_board.py / compact_board_fragments.py /",
+    "board_lifecycle.py) read this file at runtime from BOARD_DIR/../.. so a",
+    "find/replace miss still degrades gracefully. The find/replace pass over the",
+    "{{PLACEHOLDER}} tokens is still the canonical step (it also fixes wall.html +",
+    "the markdown copy, which don't read this config)."
+  ],
+  "PROJECT_NAME": "Neuroster",
+  "GITHUB_OWNER": "newellnarco",
+  "GITHUB_REPO": "neuroster-",
+  "BOARD_DIR": "docs/project"
+}
