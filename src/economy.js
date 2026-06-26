@@ -1,6 +1,6 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, FEEDER_SERVES, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, FEEDER_SERVES, MINE_REPAIR, BURROW, BREEDING, GRID_W, GRID_H, RESCUE } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice, traitMul } from './state.js';
 import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
@@ -45,7 +45,10 @@ export function stepEconomy(state, dt) {
   // advance the pathing clock once before movers run, so path recomputes are
   // throttled colony-wide (see entities.js moveAlongPath).
   resetPathBudget(state);
-  for (const u of state.units) stepRodent(state, u, dt);
+  for (const u of state.units) {
+    u.age = (u.age ?? BREEDING.maturityAge) + dt; // age advances with sim time (juveniles → adults)
+    stepRodent(state, u, dt);
+  }
 
   // 2) Construction labour (sets _laborFactor), burrow upkeep, derived stats.
   updateConstruction(state, dt);

@@ -774,6 +774,19 @@ export const BURROW = {
   degradeAt: 70,    // above this, the burrow degrades (no housing/breeding)
 };
 
+// ---- Breeding --------------------------------------------------------------
+// Reproduction is sexed and paced: a rodent must mature before it can breed,
+// and a colony needs a healthy breeding burrow with a mature MALE + FEMALE pair
+// for a newborn to arrive. The base rate is deliberately gentle — a calm growth
+// curve, not a population boom — and still flexes with leadership, doctrines,
+// megaprojects, season and difficulty (applied in economy.updateBreeding).
+export const BREEDING = {
+  maturityAge: 90,  // in-game seconds a rodent must reach before it can reproduce
+  baseRate: 0.012,  // base breed accumulator per second per breeding burrow (was 0.04)
+  foodCost: 5,      // food spent per newborn
+  foodFloor: 5,     // colony needs at least this much food to breed
+};
+
 // ---- Morale ----------------------------------------------------------------
 // The colony has a conscience. Unburied dead and untreated injuries crush
 // morale; so does violent killing of other animals by lethal defenses. Low

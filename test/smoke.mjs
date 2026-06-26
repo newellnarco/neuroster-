@@ -250,6 +250,28 @@ console.log('Family & inheritance:');
   ok(`child "${child.name} ${child.family}" inherits coat & traits from ${a.name} & ${b.name}`);
 }
 
+// 10b) Sex + maturity age model.
+console.log('Sex & maturity:');
+{
+  const { makeRodent, breedChild, isMature } = await import('../src/entities.js');
+  const { BREEDING } = await import('../src/config.js');
+  const s = newGame(606, 'woodland', 'syrian', 'Age', {});
+  // Founders/starting hamsters spawn as ADULTS.
+  assert(s.units.every(u => isMature(u)), 'starting hamsters are mature adults');
+  // A newborn (from breeding) starts immature and below maturity.
+  const child = breedChild(s, s.units[0], s.units[1]);
+  assert(child.age === 0 && !isMature(child), 'a newborn is below maturity at birth');
+  // It becomes mature once enough sim time advances it past the threshold.
+  child.age += BREEDING.maturityAge;
+  assert(isMature(child), 'a juvenile matures after reaching the maturity age');
+  // Sex is assigned ~50/50 over many makeRodent calls.
+  let males = 0, N = 4000;
+  for (let i = 0; i < N; i++) { const u = makeRodent(s, 'hamster', 5, 5); if (u.sex === 'm') males++; }
+  const frac = males / N;
+  assert(frac > 0.42 && frac < 0.58, `sex is roughly 50/50 (got ${(frac * 100).toFixed(1)}% male)`);
+  ok(`adults spawn mature, newborns mature with age, sex ~50/50 (${(frac * 100).toFixed(1)}% male)`);
+}
+
 // 11) Compassion & rescue (kindness as a mechanic).
 console.log('Compassion & rescue:');
 {
