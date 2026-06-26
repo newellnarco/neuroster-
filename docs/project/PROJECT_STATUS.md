@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T22:59:17Z · 91 items_
+_board_state.json updated: 2026-06-26T22:59:24Z · 91 items_
 
 ## Summary
 
@@ -13,8 +13,8 @@ _board_state.json updated: 2026-06-26T22:59:17Z · 91 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 1 |
-| Shipped | 84 |
+| Done | 0 |
+| Shipped | 85 |
 | Deferred | 3 |
 | Closed-No-Op | 0 |
 | **TOTAL** | **91** |
@@ -76,7 +76,7 @@ _board_state.json updated: 2026-06-26T22:59:17Z · 91 items_
 | None | Art-asset specification (docs/ART_SPEC.md) for sprite-sheet replacement art | [#56](https://github.com/newellnarco/neuroster-/pull/56) | `3101150` |
 | None | Data-driven systems-map PNG diagram + generator (tools/gen_diagram.mjs) | [#56](https://github.com/newellnarco/neuroster-/pull/56) | `3101150` |
 | None | Top-bar tool modes (👆 Select / 🎩 Demolish); building-click priority; direct-to-needs | [#59](https://github.com/newellnarco/neuroster-/pull/59) | `1d804ff` |
-| None | Embed the systems-map PNG as a 🗺️ tab in the in-game Help guide | — | `—` |
+| None | Embed the systems-map PNG as a 🗺️ tab in the in-game Help guide | [#61](https://github.com/newellnarco/neuroster-/pull/61) | `ebde584` |
 
 ### CREATURES (5)
 
