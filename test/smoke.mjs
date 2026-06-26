@@ -699,4 +699,38 @@ console.log('Wood economy (trees, mills, power, storage):');
   ok(`friendly squirrels lend paws on wood builds (${plain.toFixed(0)} → ${helped.toFixed(0)} progress)`);
 }
 
+// 23) Beaver wood store + take-too-much sabotage.
+console.log('Beaver wood store & sabotage:');
+{
+  const mk = (seed) => { const s = newGame(seed, 'rivers', 'syrian', 'Beav', {}); s.units[0].species = 'beaver'; return s; };
+
+  // Beavers stockpile wood in their own store.
+  const s = mk(700);
+  for (let i = 0; i < 20; i++) stepEconomy(s, 0.2);
+  assert((s.beaverWood || 0) > 0, 'beavers stockpile wood in their own store');
+  ok(`beavers keep a wood store (${(s.beaverWood || 0).toFixed(1)})`);
+
+  // Hamsters tap the store when colony wood runs low (store is drawn down).
+  const d = mk(701);
+  for (let i = 0; i < 40; i++) stepEconomy(d, 0.2); // build up the store
+  d.res.wood = 1; // colony short on wood
+  const store0 = d.beaverWood;
+  stepEconomy(d, 0.2);
+  assert(d.beaverWood < store0, `the beaver store is tapped in a wood shortage (${store0.toFixed(1)} → ${d.beaverWood.toFixed(1)})`);
+  ok('hamsters draw from the beaver store when wood is low');
+
+  // Constant over-taking sours the beavers → they sabotage the water works.
+  const r = mk(702);
+  for (let i = 0; i < 90; i++) { r.res.wood = 0; stepEconomy(r, 0.2); }
+  assert((r.beaverMood ?? 70) < 35, `over-taxing the store makes beavers grumpy (mood ${(r.beaverMood ?? 70).toFixed(1)})`);
+  assert((r._beaverSabotage || 0) > 0, 'grumpy beavers sabotage the water works');
+  ok(`over-taken beavers turn grumpy & sabotage water (mood ${(r.beaverMood ?? 70).toFixed(0)})`);
+
+  // Fair use keeps them content — no sabotage.
+  const f = mk(703);
+  for (let i = 0; i < 40; i++) { f.res.wood = 500; stepEconomy(f, 0.2); }
+  assert((f.beaverMood ?? 70) >= 35 && !((f._beaverSabotage || 0) > 0), 'fairly-treated beavers stay content');
+  ok('fairly-treated beavers stay content (no sabotage)');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

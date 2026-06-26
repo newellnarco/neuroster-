@@ -10,7 +10,7 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './e
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, BEAVER } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -42,9 +42,11 @@ export function stepEconomy(state, dt) {
   const dams = state.buildings.filter(b => BUILDINGS[b.type]?.upstreamPenalty).length;
   const upstreamMul = Math.max(0.3, 1 - 0.3 * dams);
   // Weather can rain extra water into stores; wooden Cisterns collect more of it.
+  // Grumpy beavers (over-taxed wood store) slacken the dams — water flow suffers.
+  const beaverFlow = 1 - (state._beaverSabotage || 0);
   if (env.waterGain) {
     const cisterns = state.buildings.filter(b => BUILDINGS[b.type]?.cistern && !b.underConstruction).length;
-    addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4) * (1 + cisterns * 0.5));
+    addRes(state, 'water', env.waterGain * dt * Math.max(1, population(state) * 0.4) * (1 + cisterns * 0.5) * beaverFlow);
   }
   const sun = solarFactor(state); // 0..1 daylight×weather, for solar panels
   let pollSrc = 0;                 // pollution emitted by running industry this tick
@@ -79,7 +81,7 @@ export function stepEconomy(state, dt) {
     }
     if (def.produces) for (const [k, v] of Object.entries(def.produces)) {
       // Non-dam water sources lose flow when dams hold the river upstream.
-      const r = (k === 'water' && !def.upstreamPenalty) ? rate * upstreamMul : rate;
+      const r = (k === 'water' && !def.upstreamPenalty) ? rate * upstreamMul * beaverFlow : rate;
       addRes(state, k, v * r);
     }
     if (def.pollutes && rate > 0) pollSrc += def.pollutes; // running industry emits smog
@@ -108,6 +110,7 @@ export function stepEconomy(state, dt) {
   stepEvents(state, dt);
   stepFactions(state, dt);
   updateSquirrels(state, dt); // oak → nut economy: squirrels trade or raid
+  updateBeavers(state, dt);   // beaver wood store + take-too-much sabotage
   stepRescues(state, dt);
   stepDecrees(state, dt); // moral dilemmas: spend a virtue on purpose for the group
   // Seasons turn; each new season opens with a festival — a communal lift.
@@ -431,6 +434,44 @@ function updateSquirrels(state, dt) {
     state.morale = Math.max(0, (state.morale ?? 100) - 4);
     addFx(state, sp.x, sp.y, '🐿️💢', 2.2);
     logMsg(state, `🐿️ Squirrels raided your nut hoard and stole ${steal} nuts! Guard it (defense) or share it (Compassion) to keep the peace.`);
+  }
+}
+
+// Beavers harvest wood for the colony's water works and keep their own wood
+// store (state.beaverWood). Hamsters tap it when colony wood runs low — but
+// over-take it and the beavers sour (state.beaverMood falls): a grumpy lodge
+// slackens the dams (state._beaverSabotage cuts water flow) and spills wood in
+// protest. Share fairly and their mood recovers. Self-contained social system.
+function updateBeavers(state, dt) {
+  const beavers = state.units.filter(u => u.species === 'beaver').length;
+  if (beavers === 0) { state.beaverWood = 0; state._beaverSabotage = 0; return; }
+  const cap = BEAVER.storeCap * beavers;
+  // Beavers are tireless wood-cutters — they top up their own cache.
+  state.beaverWood = Math.min(cap, (state.beaverWood || 0) + beavers * BEAVER.harvest * dt);
+  // Hamsters draw from the beaver store when the colony's own wood is low.
+  let took = 0;
+  if ((state.res.wood || 0) < BEAVER.shareWhenBelow && (state.beaverWood || 0) > 0) {
+    took = Math.min(state.beaverWood, beavers * BEAVER.giveRate * dt);
+    state.beaverWood -= took;
+    addRes(state, 'wood', took);
+  }
+  // Any sustained tapping wears on them; left alone (colony wood stocked, so the
+  // store rebuilds) their mood recovers. Chronically leaning on them sours them.
+  const wasGrumpy = (state.beaverMood ?? 70) < BEAVER.grumpyAt; // state BEFORE this tick
+  let mood = state.beaverMood ?? 70;
+  if (took > 0) mood -= took * BEAVER.upsetPerTake;
+  else mood += BEAVER.calm * dt;
+  state.beaverMood = Math.max(0, Math.min(100, mood));
+  // Grumpy lodge → sabotage the water works, and occasionally spill wood.
+  if (state.beaverMood < BEAVER.grumpyAt) {
+    state._beaverSabotage = BEAVER.sabotageWater;
+    if (!wasGrumpy) logMsg(state, '🦫 The beavers are unhappy — you\'ve been raiding their wood store. They\'re slackening the dams; water flow will suffer until they calm down.');
+    if (Math.random() < BEAVER.spillChance * dt && (state.beaverWood || 0) > 0) {
+      state.beaverWood = Math.max(0, state.beaverWood - 5);
+    }
+  } else {
+    if ((state._beaverSabotage || 0) > 0) logMsg(state, '🦫 The beavers have settled down — the dams are holding and water flows freely again.');
+    state._beaverSabotage = 0;
   }
 }
 

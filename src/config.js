@@ -572,6 +572,22 @@ export const SQUIRREL = {
   kindAt: 55,          // Compassion at/above this keeps squirrels friendly
 };
 
+// Beavers harvest wood for the colony's water works (aquifers, dams, irrigation)
+// and keep their OWN wood store. Hamsters may draw from it when colony wood runs
+// low — but TAKE TOO MUCH and the beavers sour: a grumpy lodge slackens the dams
+// (water flow drops) and spills wood in protest. Share fairly to keep them happy.
+export const BEAVER = {
+  storeCap: 60,        // wood each beaver will stockpile in its own cache
+  harvest: 0.5,        // wood/sec a beaver adds to the beaver store
+  giveRate: 1.2,       // wood/sec hamsters may draw when colony wood is low
+  shareWhenBelow: 30,  // colony wood below this → hamsters tap the beaver store
+  upsetPerTake: 5,     // mood lost per unit of wood hamsters take from the store
+  calm: 1.2,           // mood/sec recovered when the store is left to rebuild
+  grumpyAt: 35,        // below this mood, the beavers sabotage the water works
+  sabotageWater: 0.4,  // −40% water flow while grumpy
+  spillChance: 0.04,   // per-sec chance a grumpy lodge spills some hoarded wood
+};
+
 // Burrows get dirty as hamsters live in them. Left uncleaned they leak filth
 // (wet-tail risk) and eventually DEGRADE — losing their housing & breeding value
 // until cleaned. Caretakers clean automatically; click a burrow to clean it.
