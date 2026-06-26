@@ -6,7 +6,7 @@ import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
 import { JUSTICE } from './config.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
-import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathBudget } from './entities.js';
+import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathBudget, isMature } from './entities.js';
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
@@ -874,25 +874,29 @@ function updateMorale(state, dt) {
 }
 
 function updateBreeding(state, dt) {
-  const burrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed && !b.underConstruction && !b.degraded).length;
-  if (burrows === 0 || population(state) >= state.popCap) return;
+  // A child needs a HEALTHY breeding burrow with capacity headroom to be born in.
+  const breedBurrows = state.buildings.filter(b => BUILDINGS[b.type]?.breed && !b.underConstruction && !b.degraded);
+  if (breedBurrows.length === 0 || population(state) >= state.popCap) return;
+  // …and a MATURE MALE + MATURE FEMALE in the colony. No mixed mature pair → none.
+  const matureMales = state.units.filter(u => u.sex === 'm' && isMature(u));
+  const matureFemales = state.units.filter(u => u.sex === 'f' && isMature(u));
+  if (matureMales.length === 0 || matureFemales.length === 0) return;
   const wb = wellbeingMul(state);
-  if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * diffBreedMul(state) * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
+  if (wb < 0.7 || (state.res.food || 0) < BREEDING.foodFloor) return;
+  // Gentle base rate (BREEDING.baseRate, far below the old 0.04) flexed by the
+  // same leadership / mega / doctrine / season / difficulty modifiers as before.
+  state._breed = (state._breed || 0) + dt * breedBurrows.length * wb * BREEDING.baseRate * diffBreedMul(state) * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
-    state.res.food -= 5;
-    const sp = state.world.spawn;
-    let child;
-    if (state.units.length >= 2) {
-      // Two specific parents — the child inherits their family, coat & traits.
-      const a = state.units[Math.floor(Math.random() * state.units.length)];
-      let b = a, guard = 0;
-      while (b === a && guard++ < 6) b = state.units[Math.floor(Math.random() * state.units.length)];
-      child = breedChild(state, a, b);
-    } else {
-      child = makeRodent(state, 'hamster', sp.x, sp.y);
-    }
+    state.res.food -= BREEDING.foodCost;
+    // Parents: a mature male + a mature female. Newborn spawns AT a breeding
+    // burrow with capacity (not the world spawn point).
+    const a = matureMales[Math.floor(Math.random() * matureMales.length)];
+    const b = matureFemales[Math.floor(Math.random() * matureFemales.length)];
+    const child = breedChild(state, a, b);
+    const burrow = breedBurrows[Math.floor(Math.random() * breedBurrows.length)];
+    child.x = burrow.x + (Math.random() - 0.5);
+    child.y = burrow.y + (Math.random() - 0.5);
     state.units.push(child);
     addFx(state, child.x, child.y, '🐣', 2);
     const fam = child.family ? ` ${child.family}` : '';
