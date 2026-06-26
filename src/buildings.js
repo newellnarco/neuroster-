@@ -95,6 +95,10 @@ export function canPlace(state, type, x, y) {
     return { ok: false, reason: 'Place near trees/rocks — or next to another conveyor to extend the network' };
   if (def.requiresSpecies && !state.units.some(u => u.species === def.requiresSpecies))
     return { ok: false, reason: `Needs a ${SPECIES[def.requiresSpecies].name} in the colony to build` };
+  // Advanced structures unlock as your Main Hamster levels up — leadership earns
+  // access to the heavier production & defense tiers.
+  if (def.reqLevel && mainLevel(state) < def.reqLevel)
+    return { ok: false, reason: `Unlocks at Main Hamster Lv.${def.reqLevel}` };
   if (!canAfford(state, def.cost))
     return { ok: false, reason: 'Not enough resources' };
   return { ok: true };
@@ -251,6 +255,17 @@ export function toggleGuard(state, u) {
   logMsg(state, u.guard ? `🛡️ ${u.name} took up the guard's post.` : `${u.name} stood down from guard duty.`);
   return { ok: true, on: u.guard };
 }
+// Quarantine: a colony-wide public-health measure. While on, contagion spreads
+// far slower (the warren confines itself) — but the lockdown costs output. A
+// toggle the player flips during a disease outbreak.
+export function toggleQuarantine(state) {
+  state.quarantine = !state.quarantine;
+  logMsg(state, state.quarantine
+    ? '🚧 Quarantine declared — the colony confines itself to slow the contagion (output suffers while it holds).'
+    : '🟢 Quarantine lifted — the colony returns to full work.');
+  return { ok: true, on: !!state.quarantine };
+}
+
 // Upgrade a guard's equipment one tier (spends materials → more protection & damage).
 export function equipGuard(state, u) {
   if (!u.guard) return { ok: false, reason: 'Train it as a guard first (🛡️)' };
@@ -295,6 +310,7 @@ export function researchTech(state, id) {
 export function evolve(state, id) {
   const e = EVOLUTIONS[id];
   if (!e || state.evolutions[id]) return { ok: false, reason: 'Unavailable' };
+  if (e.requiresSpecies && !state.unlockedSpecies?.[e.requiresSpecies]) return { ok: false, reason: `Unlock ${SPECIES[e.requiresSpecies].name}s first` };
   if (e.req && !state.evolutions[e.req]) return { ok: false, reason: `Requires ${EVOLUTIONS[e.req].name}` };
   if (e.reqLevel && mainLevel(state) < e.reqLevel) return { ok: false, reason: `Needs main hamster Lv.${e.reqLevel}` };
   if (!canAfford(state, e.cost)) return { ok: false, reason: 'Not enough resources' };

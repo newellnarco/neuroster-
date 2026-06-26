@@ -7,10 +7,10 @@ import { doctrineBonuses } from './doctrines.js';
 import { JUSTICE } from './config.js';
 import { MORALE, TOWNHALL_TIERS, TUNNEL_TIERS, CONSTRUCTION, fortTiers } from './config.js';
 import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './entities.js';
-import { stepEvents, stepFactions } from './events.js';
+import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -59,7 +59,7 @@ export function stepEconomy(state, dt) {
     if (def.mine) { runMine(state, b, def, dt, wb); continue; }
     if (def.belt) { continue; } // belts run as connected networks — see runBeltNetworks below
 
-    let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)); // leader inspires; builders divert labour; play-enrichment distracts a little
+    let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)) * (state.quarantine ? (1 - DISEASE.quarantineOutput) : 1); // leader inspires; builders divert labour; play distracts; a quarantine confines the colony
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
       let bonus = state.mods.foodMul + env.foodMul + (mega.foodMul || 0) + (doc.foodMul || 0);
@@ -104,6 +104,7 @@ export function stepEconomy(state, dt) {
   // 5b) Sanitation: droppings, composting, fertilizer & wet-tail disease.
   updateWaste(state, dt);
   updateDisease(state, dt);
+  updateOutbreak(state, dt);
 
   // 6) Morale (grief/ethics), Breeding, Loyalty, Disasters.
   updateMorale(state, dt);
@@ -678,6 +679,67 @@ function updateDisease(state, dt) {
   }
 }
 
+// ---- Disease outbreaks -----------------------------------------------------
+// A contagious outbreak (fired as an event) spreads rodent-to-rodent, worse the
+// more CROWDED the warren is. The sick lose health; Infirmaries heal them and
+// (as clinics) slow contagion; a QUARANTINE toggle clamps spread hard at the
+// cost of colony output. Distinct from filth-driven wet-tail in updateDisease.
+function updateOutbreak(state, dt) {
+  const D = DISEASE;
+  const lived = state.env?.lived || 0;
+  const ob = state.outbreak;
+  // Quarantine output penalty applies whenever the player has it on (it's a
+  // standing public-health measure — useful to keep on through an outbreak).
+  state._quarantineMul = state.quarantine ? (1 - D.quarantineOutput) : 1;
+
+  const infirmaries = state.buildings.reduce((s, b) => s + (BUILDINGS[b.type]?.infirmary || 0), 0);
+
+  // Treat the ill regardless of outbreak status: infirmaries clear illness and
+  // restore health; the sick slowly self-recover without care.
+  for (const u of state.units) {
+    if (!u.sick) continue;
+    if (infirmaries > 0) {
+      u.sickT = (u.sickT || 0) - D.cureRate * infirmaries * dt;
+      u.needs.health = Math.min(100, u.needs.health + D.recover * 0.4 * infirmaries * dt);
+      if (u.sickT <= 0 && u.outbreak) { u.sick = false; u.outbreak = false; u.sickT = 0; addFx(state, u.x, u.y, '❤️', 1.4); }
+    } else if (u.outbreak) {
+      u.sickT = (u.sickT || 0) - D.selfCure * dt;
+      if (u.sickT <= -8) { u.sick = false; u.outbreak = false; u.sickT = 0; }
+    }
+  }
+
+  if (!ob) return;
+  // Active outbreak: the sick lose health and infect the healthy.
+  const sick = state.units.filter(u => u.sick);
+  for (const u of sick) u.needs.health = Math.max(0, u.needs.health - D.healthDrain * dt);
+
+  // Crowding amplifies spread (population over housing capacity).
+  const crowd = Math.min(2, (population(state) / Math.max(1, state.popCap || 1)) / D.crowdRef);
+  // Containment: infirmaries (clinics) and quarantine cut the spread rate.
+  let spreadMul = Math.pow(D.infirmarySpreadCut, infirmaries);
+  if (state.quarantine) spreadMul *= D.quarantineSpreadCut;
+  const pressure = sick.length * D.spreadPerSick * crowd * spreadMul * dt;
+  const healthy = state.units.filter(u => !u.sick);
+  if (healthy.length && pressure > 0) {
+    let chance = pressure;
+    while (chance > 0 && healthy.length) {
+      if (Math.random() < Math.min(1, chance)) {
+        const idx = Math.floor(Math.random() * healthy.length);
+        const u = healthy.splice(idx, 1)[0];
+        u.sick = true; u.sickT = 0; u.outbreak = true;
+        addFx(state, u.x, u.y, '🦠', 1.6);
+      }
+      chance -= 1;
+    }
+  }
+
+  // The outbreak ends once its window passes AND nobody is still ill from it.
+  if (lived >= ob.until && !state.units.some(u => u.outbreak)) {
+    state.outbreak = null;
+    logMsg(state, '🦠 The outbreak has run its course — the colony recovers.');
+  }
+}
+
 // Morale: the colony's conscience. Unburied dead & untreated injuries erode it;
 // graveyards bury the fallen to heal grief. Low morale saps fun & breeds deserters.
 // The leader rules by example: teaching (XP), helping & raising hamsters (a
@@ -767,7 +829,7 @@ function updateBreeding(state, dt) {
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0)) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
+  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
     state.res.food -= 5;

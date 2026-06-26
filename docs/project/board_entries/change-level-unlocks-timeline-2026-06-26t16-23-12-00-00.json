@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "change:level-unlocks",
+  "status": "Done",
+  "timeline": [
+    {
+      "at": "2026-06-26T16:23:12+00:00",
+      "status": "Done",
+      "note": "Built in Gameplay batch B"
+    }
+  ],
+  "updated": "2026-06-26T16:23:12+00:00",
+  "pr": "0"
+}

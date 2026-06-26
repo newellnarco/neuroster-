@@ -1147,4 +1147,227 @@ console.log('NPC animal events (merchant & beast parley):');
   ok('beast parley: standing firm raises Valor instead of spending food');
 }
 
+// 32) Plastics & advanced refining: coal/oil → plastic; plastic feeds consumers.
+console.log('Plastics & advanced refining:');
+{
+  const { BUILDINGS, RESOURCES, NODE_TYPES } = await import('../src/config.js');
+  const built = (s, type, x, y) => { s.buildings.push({ id: s.nextId++, type, x, y, active: true }); };
+
+  // The refining tier exists: oil resource + oil seep node + two refineries.
+  assert(RESOURCES.oil && RESOURCES.oil.kind === 'raw', 'Oil is a real raw resource');
+  assert(NODE_TYPES.oilseep && NODE_TYPES.oilseep.resource === 'oil' && NODE_TYPES.oilseep.surface === false,
+    'Oil seep is an underground node yielding oil');
+  assert(BUILDINGS.refinery?.consumes?.coal && BUILDINGS.refinery?.produces?.plastic, 'Refinery: coal → plastic');
+  assert(BUILDINGS.oilrefinery?.consumes?.oil && BUILDINGS.oilrefinery?.produces?.plastic, 'Oil Refinery: oil → plastic');
+  // The advanced tier is more plastic-efficient per input than the coal refinery.
+  const coalEff = BUILDINGS.refinery.produces.plastic / BUILDINGS.refinery.consumes.coal;
+  const oilEff = BUILDINGS.oilrefinery.produces.plastic / BUILDINGS.oilrefinery.consumes.oil;
+  assert(oilEff > coalEff && BUILDINGS.oilrefinery.pollutes < BUILDINGS.refinery.pollutes,
+    'Oil refining is more efficient & cleaner than coal refining');
+  ok('refining tier present: coal/oil → plastic, oil being the cleaner, richer route');
+
+  // Coal Refinery converts coal → plastic in the production tick.
+  const c = newGame(1500, 'mountains', 'syrian', 'CoalPlas', {});
+  c.res = { coal: 200 };
+  built(c, 'refinery', c.world.spawn.x + 2, c.world.spawn.y);
+  const p0 = c.res.plastic || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(c, 0.2);
+  assert((c.res.plastic || 0) > p0, `Refinery turns coal → plastic (${p0} → ${(c.res.plastic || 0).toFixed(1)})`);
+  assert((c.res.coal || 0) < 200, 'Refinery consumes coal');
+  ok(`coal Refinery refines plastic (${(c.res.plastic || 0).toFixed(1)})`);
+
+  // Oil Refinery converts oil → plastic, faster than the coal route.
+  const o = newGame(1501, 'mountains', 'syrian', 'OilPlas', {});
+  o.res = { oil: 200 };
+  built(o, 'oilrefinery', o.world.spawn.x + 2, o.world.spawn.y);
+  const op0 = o.res.plastic || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(o, 0.2);
+  assert((o.res.plastic || 0) > op0, `Oil Refinery turns oil → plastic (${op0} → ${(o.res.plastic || 0).toFixed(1)})`);
+  assert((o.res.oil || 0) < 200, 'Oil Refinery consumes oil');
+  assert((o.res.plastic || 0) > (c.res.plastic || 0), 'oil refining out-produces coal refining over the same time');
+  ok(`oil Refinery refines plastic faster (${(o.res.plastic || 0).toFixed(1)})`);
+
+  // Plastic is a usable resource for its consumers: the Ball Workshop eats it.
+  const w = newGame(1502, 'prairie', 'syrian', 'Consume', {});
+  w.res = { plastic: 100 };
+  built(w, 'ballworkshop', w.world.spawn.x + 2, w.world.spawn.y);
+  const plas0 = w.res.plastic;
+  for (let i = 0; i < 30; i++) stepEconomy(w, 0.2);
+  assert((w.res.plastic || 0) < plas0, `a plastic consumer (Ball Workshop) draws down plastic (${plas0} → ${(w.res.plastic || 0).toFixed(1)})`);
+  assert((w.res.balls || 0) > 0, 'plastic feeds the Ball Workshop into hamster balls');
+  // Plastic is also a build material for plastic conveyors & solar panels.
+  assert((BUILDINGS.conveyorPlastic.cost.plastic || 0) > 0 && (BUILDINGS.solar.cost.plastic || 0) > 0,
+    'plastic is a build cost for plastic conveyors & solar panels');
+  ok('plastic is a usable resource: consumed by the Ball Workshop & spent on plastic conveyors/solar');
+}
+
+// 33) Disease outbreaks: spread lowers health; Infirmary heals & curbs spread; quarantine slows it.
+console.log('Disease outbreaks, Infirmary & quarantine:');
+{
+  const { BUILDINGS, DISASTERS, DISEASE } = await import('../src/config.js');
+  const { toggleQuarantine } = await import('../src/buildings.js');
+  const built = (s, type, x, y, n = 1) => { for (let i = 0; i < n; i++) s.buildings.push({ id: s.nextId++, type, x: x + i, y, active: true }); };
+
+  // The outbreak disaster, Infirmary clinic flag, and DISEASE tuning all exist.
+  assert(DISASTERS.outbreak?.effect === 'outbreak', 'a contagious Outbreak disaster exists');
+  assert(BUILDINGS.infirmary?.infirmary > 0 && BUILDINGS.infirmary?.health > 0, 'the Infirmary is a clinic that heals');
+  assert(DISEASE && DISEASE.spreadPerSick > 0 && DISEASE.quarantineSpreadCut < 1, 'disease tuning present');
+  ok('outbreak disaster, Infirmary clinic & disease tuning are present');
+
+  // An active outbreak lowers the sick rodents' health over time.
+  const s = newGame(1600, 'woodland', 'syrian', 'Sick', {});
+  s.outbreak = { until: 1e9 };
+  s.units.forEach(u => { u.needs.health = 90; });
+  s.units[0].sick = true; s.units[0].outbreak = true;
+  const h0 = s.units[0].needs.health;
+  for (let i = 0; i < 20; i++) stepEconomy(s, 0.2);
+  assert(s.units[0].needs.health < h0, `an outbreak drains a sick rodent's health (${h0} → ${s.units[0].needs.health.toFixed(1)})`);
+  ok(`outbreak lowers the sick rodent's health (${h0} → ${s.units[0].needs.health.toFixed(1)})`);
+
+  // The outbreak spreads to healthy rodents in a crowded warren.
+  function spreadCount(infirmaries, quarantine) {
+    const g = newGame(1601, 'woodland', 'syrian', 'Spread', {});
+    g.popCap = 1; // crowded: pop over housing → full spread pressure
+    g.outbreak = { until: 1e9 };
+    g.units.forEach(u => { u.needs.health = 100; });
+    g.units[0].sick = true; g.units[0].outbreak = true;
+    if (infirmaries) built(g, 'infirmary', g.world.spawn.x + 3, g.world.spawn.y, infirmaries);
+    if (quarantine) g.quarantine = true;
+    let maxSick = 1;
+    for (let i = 0; i < 200; i++) { stepEconomy(g, 0.2); maxSick = Math.max(maxSick, g.units.filter(u => u.outbreak).length); }
+    return maxSick;
+  }
+  const bare = spreadCount(0, false);
+  assert(bare > 1, `an outbreak spreads through a crowded warren (peaked at ${bare} ill)`);
+  ok(`an outbreak spreads rodent-to-rodent when crowded (peak ${bare} ill)`);
+
+  // An Infirmary heals the ill (an isolated case recovers under care).
+  const heal = newGame(1602, 'woodland', 'syrian', 'Heal', {});
+  heal.units.forEach(u => { u.needs.health = 50; });
+  heal.units[0].sick = true; heal.units[0].outbreak = true; heal.units[0].sickT = 3;
+  built(heal, 'infirmary', heal.world.spawn.x + 3, heal.world.spawn.y, 2);
+  for (let i = 0; i < 60; i++) stepEconomy(heal, 0.2);
+  assert(!heal.units[0].sick, 'an Infirmary cures an outbreak case under care');
+  ok('Infirmary treats & cures the ill');
+
+  // Quarantine slows the spread vs no quarantine (fewer rodents infected).
+  const noQ = spreadCount(0, false);
+  const withQ = spreadCount(0, true);
+  assert(withQ <= noQ, `quarantine slows spread (no-Q peaked ${noQ} ≥ Q peaked ${withQ})`);
+  // …and the quarantine output penalty is felt by production.
+  const q = newGame(1603, 'prairie', 'syrian', 'Lockdown', {});
+  q.res = { stone: 400 };
+  built(q, 'mason', q.world.spawn.x + 2, q.world.spawn.y);
+  const noLock = (() => { const g = newGame(1603, 'prairie', 'syrian', 'Lockdown', {}); g.res = { stone: 400 }; g.buildings.push({ id: 1, type: 'mason', x: g.world.spawn.x + 2, y: g.world.spawn.y, active: true }); const b0 = g.res.brick || 0; for (let i = 0; i < 30; i++) stepEconomy(g, 0.2); return (g.res.brick || 0) - b0; })();
+  toggleQuarantine(q);
+  const b0 = q.res.brick || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(q, 0.2);
+  const locked = (q.res.brick || 0) - b0;
+  assert(locked < noLock, `a quarantine reduces output (free ${noLock.toFixed(2)} > locked ${locked.toFixed(2)})`);
+  ok(`quarantine reduces spread & costs output (${noQ}→${withQ} ill; output ${noLock.toFixed(1)}→${locked.toFixed(1)})`);
+}
+
+// 34) Species-specific evolution branches: gated on species, apply their effect.
+console.log('Species-specific evolution branches:');
+{
+  const { EVOLUTIONS } = await import('../src/config.js');
+  const { evolve } = await import('../src/buildings.js');
+  const { protectionAgainst } = await import('../src/events.js');
+
+  // The new branches exist and are species-gated.
+  const branches = ['beaverEngineer', 'beaverHydro', 'ratSwarm', 'ratBrood'];
+  for (const id of branches) {
+    const e = EVOLUTIONS[id];
+    assert(e && e.requiresSpecies, `${id} is a species-specific branch`);
+    assert(e.bonus && Object.keys(e.bonus).length, `${id} grants a bonus`);
+  }
+  assert(EVOLUTIONS.beaverEngineer.requiresSpecies === 'beaver' && EVOLUTIONS.ratSwarm.requiresSpecies === 'rat',
+    'beaver & rat branches require their species');
+  ok('beaver & rat evolution branches exist and are species-gated');
+
+  // Gating: a hamster-only colony can't take the beaver branch; unlocking beavers does.
+  const g = newGame(1700, 'rivers', 'syrian', 'EvoGate', {});
+  g.res = { research: 999, planks: 999, stone: 999, iron: 999, food: 999 };
+  assert(!evolve(g, 'beaverEngineer').ok, 'beaver branch locked without beavers unlocked');
+  g.unlockedSpecies.beaver = true;
+  assert(evolve(g, 'beaverEngineer').ok, 'unlocking beavers opens the beaver branch');
+  assert(g.evolutions.beaverEngineer, 'the beaver evolution is recorded once taken');
+  // Prereq + level gating on the deeper node.
+  assert(!evolve(g, 'beaverHydro').ok, 'the deeper beaver node needs its prereq/level');
+  ok('species-gated branches unlock with the species (and chain via prereqs)');
+
+  // Effect applies: beaver flood defense lifts flood protection while a beaver is present.
+  const fl = newGame(1701, 'rivers', 'syrian', 'Flood', {});
+  fl.unlockedSpecies.beaver = true;
+  fl.units[0].species = 'beaver'; // a beaver in the colony
+  const before = protectionAgainst(fl, 'flood');
+  fl.res = { research: 999, planks: 999, stone: 999, iron: 999 };
+  assert(evolve(fl, 'beaverEngineer').ok, 'take the beaver engineer branch');
+  const after = protectionAgainst(fl, 'flood');
+  assert(after > before, `the beaver branch raises flood defense (${before.toFixed(1)} → ${after.toFixed(1)})`);
+  ok(`beaver branch applies: +flood defense (${before.toFixed(1)} → ${after.toFixed(1)})`);
+
+  // Rat swarm: raises breeding speed (more children over the same time).
+  function childrenOver(withEvo) {
+    const s = newGame(1702, 'prairie', 'syrian', 'Brood', {});
+    s.unlockedSpecies.rat = true;
+    s.units.forEach(u => { u.species = 'rat'; u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
+    s.res.food = 9999;
+    // plenty of housing so population cap never blocks breeding
+    for (let k = 0; k < 12; k++) s.buildings.push({ id: s.nextId++, type: 'burrow', x: s.world.spawn.x + 1 + k, y: s.world.spawn.y, active: true });
+    if (withEvo) { s.res.research = 999; s.evolutions.ratSwarm = true; }
+    const n0 = s.units.length;
+    for (let i = 0; i < 90; i++) { s.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; }); stepEconomy(s, 0.2); }
+    return s.units.length - n0;
+  }
+  const plain = childrenOver(false), swarm = childrenOver(true);
+  assert(swarm > plain, `rat swarm breeds faster than without it (plain ${plain} < swarm ${swarm})`);
+  assert(swarm > 0, 'rat colony breeds with the swarm branch');
+  ok(`rat swarm branch applies: faster breeding (plain ${plain} → swarm ${swarm} born)`);
+}
+
+// 35) Main Hamster level unlocks: buildings/species/tech gated by level threshold.
+console.log('Main Hamster level unlocks:');
+{
+  const { BUILDINGS, TECH } = await import('../src/config.js');
+  const { canPlace, placeBuilding, researchTech, mainLevel } = await import('../src/buildings.js');
+
+  // Several advanced buildings now carry a level gate.
+  const gated = ['forge', 'steelworks', 'coalplant', 'barracks', 'mausoleum', 'solar', 'oilrefinery'];
+  for (const t of gated) assert((BUILDINGS[t]?.reqLevel || 0) > 0, `${t} is gated by Main Hamster level`);
+  ok(`advanced buildings are level-gated (${gated.join(', ')})`);
+
+  // A building is refused below its level threshold and allowed at/above it.
+  const s = newGame(1800, 'mountains', 'syrian', 'Levels', {});
+  for (const k of ['brick', 'iron', 'planks', 'stone', 'steel', 'plastic', 'coal']) s.res[k] = 999;
+  const sp = s.world.spawn;
+  assert(mainLevel(s) === 1, 'a fresh colony is Main level 1');
+  const need = BUILDINGS.forge.reqLevel;
+  const blocked = canPlace(s, 'forge', sp.x + 2, sp.y);
+  assert(!blocked.ok && /Lv\.|level/i.test(blocked.reason), `the Forge is locked below Lv.${need} (${blocked.reason})`);
+  // Level up the main hamster past the threshold.
+  s.units[0].level = need;
+  assert(canPlace(s, 'forge', sp.x + 2, sp.y).ok, `the Forge unlocks at Main Hamster Lv.${need}`);
+  assert(placeBuilding(s, 'forge', sp.x + 2, sp.y).ok, 'and it can actually be placed at the threshold');
+  ok(`a level-gated building unlocks at its threshold (Forge @ Lv.${need})`);
+
+  // A species unlock (tech) is also level-gated.
+  const t = newGame(1801, 'rivers', 'syrian', 'Recruit', {});
+  for (const k of ['research', 'planks', 'stone']) t.res[k] = 999;
+  const blockedTech = researchTech(t, 'unlockBeaver');
+  assert(!blockedTech.ok && /Lv\./.test(blockedTech.reason), 'unlocking Beavers needs a level first');
+  t.units[0].level = TECH.unlockBeaver.reqLevel;
+  assert(researchTech(t, 'unlockBeaver').ok && t.unlockedSpecies.beaver, 'reaching the level unlocks the Beaver recruitment tech');
+  ok(`a level-gated species unlock opens at its threshold (Beavers @ Lv.${TECH.unlockBeaver.reqLevel})`);
+
+  // An advanced ability/tech (Refining II) is gated on level too.
+  const r = newGame(1802, 'prairie', 'syrian', 'Ability', {});
+  r.res = { research: 999, plastic: 999 };
+  assert(!researchTech(r, 'refining2').ok, 'Refining II is locked below its level');
+  r.units[0].level = TECH.refining2.reqLevel;
+  assert(researchTech(r, 'refining2').ok && r.tech.refining2, 'Refining II unlocks at its level threshold and applies');
+  assert(r.mods.prodMul > 0, 'the unlocked ability folds its bonus into the colony');
+  ok(`a level-gated ability unlocks & applies at threshold (Refining II @ Lv.${TECH.refining2.reqLevel})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

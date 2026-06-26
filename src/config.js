@@ -33,6 +33,7 @@ export const RESOURCES = {
   steel:    { name: 'Steel',    icon: '⚙️', kind: 'refined', color: '#9fb0c4' },
   brick:    { name: 'Brick',    icon: '🧱', kind: 'refined', color: '#b5562f' },
   armour:   { name: 'Armour',   icon: '🛡️', kind: 'refined', color: '#8c97a6' },
+  oil:      { name: 'Oil',      icon: '🛢️', kind: 'raw',     color: '#2b2b33' },
   plastic:  { name: 'Plastic',  icon: '🟦', kind: 'refined', color: '#6fa8dc' },
   balls:    { name: 'Hamster Balls', icon: '🫧', kind: 'refined', color: '#bfe3ff' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
@@ -52,6 +53,7 @@ export const NODE_TYPES = {
   bush:     { resource: 'seeds',   icon: '🌿', amount: 200, color: '#558b2f', surface: true },
   orevein:  { resource: 'ironore', icon: '⛰️', amount: 300, color: '#8d6e63', surface: false },
   coalseam: { resource: 'coal',    icon: '⚫', amount: 300, color: '#37474f', surface: false },
+  oilseep:  { resource: 'oil',     icon: '🛢️', amount: 260, color: '#23232a', surface: false },
 };
 
 // ---- Buildings -------------------------------------------------------------
@@ -103,7 +105,7 @@ export const BUILDINGS = {
   },
   mausoleum: {
     name: 'Grand Mausoleum', icon: '🏛️', desc: 'An honoured tomb for the fallen. Deep respect — large morale recovery per burial.',
-    cost: { stone: 80, iron: 30, planks: 30 }, category: 'Wellbeing', graveyard: 1, buryRestore: 22, buryInterval: 5,
+    cost: { stone: 80, iron: 30, planks: 30 }, category: 'Wellbeing', graveyard: 1, buryRestore: 22, buryInterval: 5, reqLevel: 8,
   },
   well: {
     name: 'Well', icon: '⛲', desc: 'Draws Water for the colony (place near a pond).',
@@ -126,8 +128,8 @@ export const BUILDINGS = {
     cost: { wood: 30, planks: 16, seeds: 12 }, category: 'Wellbeing', curiosity: 14, distract: 0.07,
   },
   infirmary: {
-    name: 'Infirmary', icon: '🏥', desc: 'Tends sick & injured rodents. Raises Health.',
-    cost: { planks: 20, iron: 5 }, category: 'Wellbeing', health: 6,
+    name: 'Infirmary', icon: '🏥', desc: 'Tends sick & injured rodents. Raises Health, heals those caught in a disease OUTBREAK faster, and (as a clinic) slows contagion spreading through the warren.',
+    cost: { planks: 20, iron: 5 }, category: 'Wellbeing', health: 6, infirmary: 1,
   },
   sandbath: {
     name: 'Sand Bath', icon: '🏖️', desc: 'Hamsters roll in sand to clean themselves — boosts Health and cuts wet-tail risk.',
@@ -218,7 +220,7 @@ export const BUILDINGS = {
   },
   steelworks: {
     name: 'Steelworks', icon: '🏭', desc: 'Forges Iron + Coal into Steel for the toughest structures. Burning coal pollutes.',
-    cost: { stone: 50, iron: 20 }, category: 'Production', pollutes: 1.0,
+    cost: { stone: 50, iron: 20 }, category: 'Production', pollutes: 1.0, reqLevel: 4,
     produces: { steel: 0.25 }, consumes: { iron: 0.4, coal: 0.3 },
   },
   mason: {
@@ -232,8 +234,8 @@ export const BUILDINGS = {
     produces: { iron: 0.35 }, consumes: { ironore: 0.45, coal: 0.25 }, pollutes: 0.6,
   },
   forge: {
-    name: 'Forge', icon: '⚒️', desc: 'Hammers Iron & Planks into Armour. Stored Armour outfits the colony — every set raises colony defense and arms the guard.',
-    cost: { brick: 16, iron: 15 }, category: 'Production',
+    name: 'Forge', icon: '⚒️', desc: 'Hammers Iron & Planks into Armour. Stored Armour outfits the colony — every set raises colony defense and arms the guard. (Unlocks at Main Hamster Lv.4.)',
+    cost: { brick: 16, iron: 15 }, category: 'Production', reqLevel: 4,
     produces: { armour: 0.12 }, consumes: { iron: 0.3, planks: 0.2 },
   },
   mine: {
@@ -252,12 +254,12 @@ export const BUILDINGS = {
   },
   coalplant: {
     name: 'Coal Plant', icon: '🏭', desc: 'Burns Coal for abundant Power — but belches Pollution that poisons farms & sickens rodents. Plant trees or go green (solar/hydro/wheels) to offset it.',
-    cost: { stone: 50, iron: 20 }, category: 'Automation',
+    cost: { stone: 50, iron: 20 }, category: 'Automation', reqLevel: 5,
     produces: { power: 1.7 }, consumes: { coal: 0.5 }, pollutes: 2.2,
   },
   solar: {
     name: 'Solar Panel', icon: '🔆', desc: 'Clean Power from sunlight — strong at midday, NOTHING at night, and weak in fog, snow & storms. Reliable only when the sun cooperates.',
-    cost: { planks: 20, iron: 15, plastic: 8 }, category: 'Automation',
+    cost: { planks: 20, iron: 15, plastic: 8 }, category: 'Automation', reqLevel: 5,
     produces: { power: 1.3 }, solar: true,
   },
   hydro: {
@@ -278,8 +280,12 @@ export const BUILDINGS = {
     cost: { planks: 20, iron: 20 }, category: 'Automation', belt: { rate: 2.4, tier: 3 }, radius: 3, needsNode: true,
   },
   refinery: {
-    name: 'Refinery', icon: '🛢️', desc: 'Refines Coal into Plastic for advanced belts & parts.',
+    name: 'Refinery', icon: '🛢️', desc: 'Refines Coal into Plastic for advanced belts & parts (plastic conveyors, hamster balls, solar panels).',
     cost: { stone: 40, iron: 20 }, category: 'Production', produces: { plastic: 0.3 }, consumes: { coal: 0.4 }, pollutes: 0.9,
+  },
+  oilrefinery: {
+    name: 'Oil Refinery', icon: '⚗️', desc: 'The advanced refining tier: cracks Oil (from an oil seep, mined) into far more Plastic per unit than coal — and burns cleaner. Plastic feeds plastic conveyors, the Ball Workshop & Solar Panels. (Unlocks at Main Hamster Lv.6.)',
+    cost: { brick: 18, iron: 25, steel: 8 }, category: 'Production', produces: { plastic: 0.6 }, consumes: { oil: 0.5 }, pollutes: 0.4, reqLevel: 6,
   },
   lab: {
     name: 'Research Lab', icon: '🔬', desc: 'Generates Research points.',
@@ -321,8 +327,8 @@ export const BUILDINGS = {
     protect: { flood: 9 }, requiresSpecies: 'beaver', upstreamPenalty: true,
   },
   barracks: {
-    name: 'Barracks', icon: '⚔️', desc: 'Trains defenders. Offensive + defensive power.',
-    cost: { planks: 40, iron: 20 }, category: 'Defense', defense: 12, offense: 8,
+    name: 'Barracks', icon: '⚔️', desc: 'Trains defenders. Offensive + defensive power. (Unlocks at Main Hamster Lv.6.)',
+    cost: { planks: 40, iron: 20 }, category: 'Defense', defense: 12, offense: 8, reqLevel: 6,
     protect: { wolf: 4, hawk: 3, raid: 6 },
   },
   levee: {
@@ -364,6 +370,7 @@ export const BUILDING_TEX = {
   steelworks:      { tex: 'brick', base: '#b86a4e' },
   coalplant:       { tex: 'brick', base: '#9a4f3a' },
   refinery:        { tex: 'brick', base: '#a85a42' },
+  oilrefinery:     { tex: 'stone', base: '#4a4a55' },
   fertilizerplant: { tex: 'brick', base: '#b08a5a' },
   pelletpress:     { tex: 'brick', base: '#b9853f' },
   mason:           { tex: 'brick', base: '#b5562f' },
@@ -468,6 +475,8 @@ export const TECH = {
                 effect: { carryMul: 0.5 } },
   refining1:  { name: 'Refining I',   icon: '🏭', cost: { research: 40 }, desc: '+30% production speed.',
                 effect: { prodMul: 0.3 } },
+  refining2:  { name: 'Refining II',  icon: '⚗️', cost: { research: 120, plastic: 40 }, reqLevel: 7, desc: '+40% production speed (advanced refining).',
+                effect: { prodMul: 0.4 } },
   agri1:      { name: 'Agriculture I',icon: '🌻', cost: { research: 30 }, desc: '+40% food production.',
                 effect: { foodMul: 0.4 } },
   // Species unlocks
@@ -477,9 +486,9 @@ export const TECH = {
                   desc: 'Unlock Gerbils (fast haulers).', effect: { unlock: 'gerbil' } },
   unlockMouse:  { name: 'Recruit Mice', icon: '🐁', cost: { research: 60, food: 120 },
                   desc: 'Unlock Mice (boost research).', effect: { unlock: 'mouse' } },
-  unlockBeaver: { name: 'Recruit Beavers', icon: '🦫', cost: { research: 90, planks: 80 },
+  unlockBeaver: { name: 'Recruit Beavers', icon: '🦫', cost: { research: 90, planks: 80 }, reqLevel: 4,
                   desc: 'Unlock Beavers (heavy builders; build Dams).', effect: { unlock: 'beaver' } },
-  unlockGopher: { name: 'Recruit Gophers', icon: '🦡', cost: { research: 80, stone: 80 },
+  unlockGopher: { name: 'Recruit Gophers', icon: '🦡', cost: { research: 80, stone: 80 }, reqLevel: 5,
                   desc: 'Unlock Gophers (fast underground repairs & digging).', effect: { unlock: 'gopher' } },
 };
 
@@ -509,6 +518,10 @@ export const DISASTERS = {
   quake: {
     name: 'Earthquake', icon: '🌋', kind: 'disaster', baseSeverity: 16, interval: 200,
     desc: 'The ground shakes; structures collapse.', effect: 'destroy',
+  },
+  outbreak: {
+    name: 'Disease Outbreak', icon: '🦠', kind: 'disaster', baseSeverity: 12, interval: 220,
+    desc: 'A contagious sickness breaks out and spreads through the crowded warren, sapping health. Build Infirmaries and call a Quarantine to contain it.', effect: 'outbreak',
   },
   // ---- Biome-specific disasters (only fire in their listed biomes) ----
   tsunami: {
@@ -629,6 +642,27 @@ export const WETTAIL = {
 };
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
+
+// ---- Disease / outbreaks ---------------------------------------------------
+// Beyond wet-tail (filth-driven, per-rodent), a colony can suffer a contagious
+// OUTBREAK: a sickness that spreads rodent-to-rodent, worse the more CROWDED the
+// warren is (population over housing). The sick lose health; healthy rodents
+// catch it from the sick. An INFIRMARY treats the ill (faster recovery) and, as
+// a clinic, slows the spread. A QUARANTINE response (toggle) clamps the spread
+// hard — but confining the colony costs productivity while it's in force.
+export const DISEASE = {
+  outbreakInterval: 220, // seconds-ish between possible outbreaks (scheduled like other events)
+  baseInfect: 2,         // initial rodents infected when an outbreak begins
+  spreadPerSick: 0.06,   // per-sick infection pressure per second
+  crowdRef: 1.0,         // crowding (pop/popCap) at/above which spread is full strength
+  healthDrain: 3.0,      // health/sec a sick rodent loses during an outbreak
+  recover: 5.0,          // health threshold + recovery rate from an infirmary
+  cureRate: 1.4,         // illness cleared per second per infirmary
+  selfCure: 0.25,        // slow self-recovery per second without care
+  infirmarySpreadCut: 0.45, // each infirmary multiplies remaining spread by this (diminishing)
+  quarantineSpreadCut: 0.2, // quarantine multiplies spread by this (strong clamp)
+  quarantineOutput: 0.25,   // …but cuts colony output by this fraction while active
+};
 
 // ---- Pollution -------------------------------------------------------------
 // Coal-burning industry (coal plant, smelter, steelworks, refinery, electric
@@ -892,6 +926,18 @@ export const EVOLUTIONS = {
                 desc: 'Faster learning (XP) and research output.', bonus: { xp: 0.3, research: 0.3 } },
   apexRodent: { name: 'Apex Rodent',   icon: '👑', species: 'all', req: 'keenMind', reqLevel: 10, cost: { research: 160, iron: 80 },
                 desc: 'The pinnacle of rodent evolution: everything improves.', bonus: { mine: 0.25, speed: 0.2, carry: 0.2, needRetain: 0.2, defense: 0.2 } },
+
+  // ---- Species-specific branches (gated on that species being unlocked) ----
+  // Beavers lead the water-works line: hardier dams & stronger colony flood
+  // defense. Rats lead the swarm line: faster breeding & fiercer ground swarm.
+  beaverEngineer: { name: 'Master Engineers', icon: '🦫', species: 'beaver', requiresSpecies: 'beaver', cost: { research: 70, planks: 60, stone: 40 },
+                desc: 'Beavers build faster and their dams hold harder — a colony-wide lift to FLOOD defense.', bonus: { build: 0.3, flood: 6 } },
+  beaverHydro:     { name: 'Grand Waterworks', icon: '🌊', species: 'beaver', requiresSpecies: 'beaver', req: 'beaverEngineer', reqLevel: 6, cost: { research: 120, stone: 80, iron: 40 },
+                desc: 'Sweeping levee-dams: much stronger flood defense and steadier water.', bonus: { flood: 12, build: 0.2 } },
+  ratSwarm:        { name: 'Swarm Tactics',  icon: '🐀', species: 'rat', requiresSpecies: 'rat', cost: { research: 65, food: 70 },
+                desc: 'Rats breed faster and swarm ground predators in numbers (+colony breeding, +WOLF defense).', bonus: { breed: 0.3, wolf: 4 } },
+  ratBrood:        { name: 'Teeming Brood',  icon: '🐁', species: 'rat', requiresSpecies: 'rat', req: 'ratSwarm', reqLevel: 6, cost: { research: 110, food: 120 },
+                desc: 'A relentless brood — fast breeding and an even fiercer ground swarm.', bonus: { breed: 0.4, wolf: 6 } },
 };
 
 export const STARTING = {

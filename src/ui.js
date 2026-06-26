@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
 import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -86,9 +86,10 @@ export function createUI(state, ctx) {
       <div class="cat">${cat}</div>
       <div class="grid">${items.map(([id, def]) => {
         const afford = canAffordCost(def.cost);
-        return `<button class="card ${view.placing === id ? 'sel' : ''} ${afford ? '' : 'poor'}" data-build="${id}">
-          <div class="ico">${def.icon}</div><div class="nm">${def.name}</div>
-          <div class="cost">${costStr(def.cost)}</div><div class="ds">${def.desc}</div>
+        const lvlLocked = def.reqLevel && mainLevel(state) < def.reqLevel;
+        return `<button class="card ${view.placing === id ? 'sel' : ''} ${afford && !lvlLocked ? '' : 'poor'} ${lvlLocked ? 'locked' : ''}" data-build="${id}" ${lvlLocked ? 'disabled' : ''}>
+          <div class="ico">${def.icon}</div><div class="nm">${def.name}${lvlLocked ? ' 🔒' : ''}</div>
+          <div class="cost">${costStr(def.cost)}${def.reqLevel ? ` · Lv.${def.reqLevel}` : ''}</div><div class="ds">${def.desc}</div>
         </button>`;
       }).join('')}</div>`).join('');
     bind('[data-build]', (btn) => { view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build; renderBuild(); });
@@ -115,12 +116,14 @@ export function createUI(state, ctx) {
       const done = state.evolutions[id];
       const reqOk = !e.req || state.evolutions[e.req];
       const lvlOk = !e.reqLevel || mainLevel(state) >= e.reqLevel;
-      const ok = done || (canAffordCost(e.cost) && reqOk && lvlOk);
+      const spOk = !e.requiresSpecies || state.unlockedSpecies?.[e.requiresSpecies];
+      const ok = done || (canAffordCost(e.cost) && reqOk && lvlOk && spOk);
       const tag = e.species === 'all' ? 'All rodents' : `${SPECIES[e.species].icon} ${SPECIES[e.species].name}`;
+      const spTag = e.requiresSpecies ? ` · needs ${SPECIES[e.requiresSpecies].name}s` : '';
       return `<button class="card evo ${done ? 'done' : ''} ${ok ? '' : 'poor'}" data-evo="${id}" ${done ? 'disabled' : ''}>
         <div class="ico">${e.icon}</div><div class="nm">${e.name}</div>
         <div class="cost">${done ? '✓ Evolved' : costStr(e.cost)}</div>
-        <div class="ds">${e.desc}<br><span class="helpers">${tag}${e.req ? ` · needs ${EVOLUTIONS[e.req].name}` : ''}${e.reqLevel ? ` · Lv.${e.reqLevel}` : ''}</span></div>
+        <div class="ds">${e.desc}<br><span class="helpers">${tag}${spTag}${e.req ? ` · needs ${EVOLUTIONS[e.req].name}` : ''}${e.reqLevel ? ` · Lv.${e.reqLevel}` : ''}</span></div>
       </button>`;
     }).join('')}</div>`;
     bind('[data-evo]', (btn) => { msg(evolve(state, btn.dataset.evo)); renderEvo(); });
@@ -307,6 +310,16 @@ export function createUI(state, ctx) {
       </div>`;
     }).join('');
 
+    // 3b) Public health: infirmaries, outbreak status, and the quarantine toggle.
+    const infirmaries = state.buildings.filter(x => BUILDINGS[x.type]?.infirmary && !x.underConstruction).length;
+    const sickCount = state.units.filter(u => u.sick).length;
+    const outbreakOn = !!state.outbreak;
+    const healthHtml =
+      `<div class="ds">🏥 Infirmaries ×${infirmaries} · ${outbreakOn ? `<b class="bd">🦠 OUTBREAK — ${sickCount} ill</b>` : (sickCount ? `${sickCount} ill` : 'no active outbreak')}</div>
+       <div class="care taskrow"><button class="carebtn ${state.quarantine ? 'sel' : ''}" data-quarantine="1"
+         title="Slow contagion spread hard, at the cost of colony output while it holds">${state.quarantine ? '🟢 Lift Quarantine' : '🚧 Declare Quarantine'}</button>
+         <span class="sub">${state.quarantine ? 'in force — spread slowed, output reduced' : 'slows an outbreak; reduces output while active'}</span></div>`;
+
     el('tab-threats').innerHTML =
       `<div class="hint">Your colony's standing <b>defense &amp; garrison</b>. Predators snatch rodents; disasters wreck buildings &amp; stores. Muster &amp; equip guards, raise defensive works, and lean on protective species — biome, weather &amp; night all shift the danger.</div>
        <div class="cat">Standing — 🛡️ ${state.defense} defense · ⚔️ ${totalOffense(state)} offense</div>
@@ -314,8 +327,12 @@ export function createUI(state, ctx) {
        ${roster}${muster}
        <div class="cat">🧱 Defensive works</div>
        ${worksHtml}
+       <div class="cat">🏥 Public health</div>
+       ${healthHtml}
        <div class="cat">⚠️ Threat readiness</div>
        ${threats}`;
+
+    bind('#tab-threats [data-quarantine]', () => { toggleQuarantine(state); sfx('click'); renderThreats(); });
 
     bind('#tab-threats [data-guard]', (btn) => {
       const u = state.units.find(x => x.id == btn.dataset.gu);
