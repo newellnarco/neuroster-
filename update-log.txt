@@ -260,3 +260,10 @@ From https://github.com/newellnarco/neuroster-
 Already on 'main'
 Your branch is up to date with 'origin/main'.
 HEAD is now at 0a2538e Pacing tuning + full documentation pass (v0.3.9) (#41)
+ 
+=== Thu 06/25/2026 17:40:01.40 === 
+error: unable to unlink old 'update-log.txt': Invalid argument
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+error: unable to unlink old 'update-log.txt': Invalid argument
+fatal: Could not reset index file to revision 'origin/main'.
