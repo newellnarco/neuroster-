@@ -1,6 +1,6 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS, buildingTex } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather, seasonKey } from './environment.js';
 import { buildTextures } from './textures.js';
@@ -354,9 +354,13 @@ export function createRenderer(canvas, state, getView) {
       if (b.type === 'wall') { drawWall(cx, cy, b); continue; }
       if (BUILDINGS[b.type].tunnel) { drawTunnel(cx, cy, b); continue; }
       if (BUILDINGS[b.type].townhall) { drawTownhall(cx, cy, b); continue; }
+      // Per-building material treatment: a tinted base + the matching procedural
+      // texture (stone/brick/dirt/…), so each generic building reads as what it's
+      // made of instead of all sharing one timber base. Visual only.
+      const mat = buildingTex(b.type);
       ctx.fillStyle = 'rgba(70,55,40,0.7)'; roundRect(b.x * TILE + 4, b.y * TILE + 10, TILE - 8, TILE - 11, 6); ctx.fill();
-      ctx.fillStyle = '#bcab8b'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
-      texClip('wood', b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 0.4, 'soft-light'); // timber structure base
+      ctx.fillStyle = mat.base; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 6); ctx.fill();
+      texClip(mat.tex, b.x * TILE + 4, b.y * TILE + 6, TILE - 8, TILE - 11, 0.42, 'soft-light'); // material base
       ctx.fillStyle = 'rgba(255,255,255,0.20)'; roundRect(b.x * TILE + 4, b.y * TILE + 6, TILE - 8, 3, 3); ctx.fill();
       glyph(BUILDINGS[b.type].icon, cx, cy - 3, TILE * 0.78);
       if (BUILDINGS[b.type].tower) glyph(b.mode === 'defend' ? '🗡️' : '👁️', cx + 9, cy - 9, 11); // stance badge

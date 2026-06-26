@@ -920,4 +920,40 @@ console.log('Belt networks (multi-segment conveyors):');
   ok('a longer chain extends reach to nodes no single belt could touch');
 }
 
+// 28) Building glyph textures: every building gets a procedural material base.
+console.log('Building textures (glyph treatment):');
+{
+  const { BUILDINGS, BUILDING_TEX, DEFAULT_BUILDING_TEX, buildingTex } = await import('../src/config.js');
+  // The materials textures.js can synthesise (must mirror its MATERIALS keys).
+  const MATERIALS = ['fur', 'feather', 'grass', 'dirt', 'sand', 'stone', 'brick', 'wood', 'bark', 'leaf', 'water', 'marsh'];
+
+  // The default is itself a valid material (timber), as before.
+  assert(MATERIALS.includes(DEFAULT_BUILDING_TEX.tex), 'default building texture is a real material');
+  assert(/^#[0-9a-fA-F]{6}$/.test(DEFAULT_BUILDING_TEX.base), 'default building base is a hex colour');
+
+  // EVERY building type resolves to a valid, drawable material treatment — the
+  // previously-untextured glyphs now carry the same {tex, base} the textured
+  // bespoke buildings imply. (buildingTex never returns undefined.)
+  for (const type of Object.keys(BUILDINGS)) {
+    const m = buildingTex(type);
+    assert(m && MATERIALS.includes(m.tex), `building ${type} maps to a real texture material (got ${m && m.tex})`);
+    assert(/^#[0-9a-fA-F]{6}$/.test(m.base), `building ${type} has a hex base colour (got ${m && m.base})`);
+  }
+  ok(`every building (${Object.keys(BUILDINGS).length}) resolves to a drawable material treatment`);
+
+  // The explicit map only references real materials & real building types, and
+  // it actually textures the formerly plain-timber one-offs (not all 'wood').
+  for (const [type, m] of Object.entries(BUILDING_TEX)) {
+    assert(BUILDINGS[type], `BUILDING_TEX key ${type} is a real building`);
+    assert(MATERIALS.includes(m.tex), `BUILDING_TEX[${type}].tex is a real material`);
+  }
+  const nonWood = Object.values(BUILDING_TEX).filter(m => m.tex !== 'wood').length;
+  assert(nonWood >= 10, `the texture pass gives many buildings a non-timber material (got ${nonWood})`);
+  // Spot-check a few that should clearly differ from the old plain-wood base.
+  assert(buildingTex('smelter').tex === 'brick', 'a smelter reads as brick');
+  assert(buildingTex('mausoleum').tex === 'stone', 'a mausoleum reads as stone');
+  assert(buildingTex('composter').tex === 'dirt', 'a composter reads as earth');
+  ok(`textured one-offs now vary by material (${nonWood} non-timber treatments)`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

@@ -10,13 +10,13 @@ An automated loop that, **once PR #44 is merged**, grabs open board items and sh
 
 ## Trigger & gating
 
-- **Gate:** nothing runs until **PR #44 is merged** to `main`. While #44 is open, each cron
-  firing just checks and exits.
-- **Pause between sections (default):** after a section's PR is opened with green CI, the loop
-  **stops and waits** for you to review/merge before starting the next section. While an
-  auto-build PR is open and unmerged, firings no-op.
-- **On a section PR merge:** the loop drops `Shipped` fragments for that section's items
-  (`board_lifecycle.py`), compacts, then proceeds to the next section.
+- **Gate:** PR #44 is **merged** (release `7f9ff2e`) — the loop is live.
+- **Fully autonomous (no pausing).** Per the owner's standing rules ([`CLAUDE.md`](../../CLAUDE.md)):
+  never wait for approval, always use CI, work until the backlog is empty. The loop opens a
+  section PR, waits for **CI to go green**, **self-merges** (squash), drops `Shipped` fragments,
+  and rolls straight into the next section — no human review step.
+- **CI gates every merge.** Local `npm test` is a pre-check; the GitHub Actions `test` job must
+  be green before a section PR merges. No green, no merge.
 
 ## Section order (highest priority first)
 
@@ -39,8 +39,9 @@ Within a section, items build in **P1 → P3** order. Current plan:
 2. **Priority order.** Always grab the highest-priority item available in the active section.
 3. **Tests gate every ship.** Each item must pass `npm test` (88+ headless checks) — and
    `npm run verify:browser` for UI-affecting items — **before** its commit. No green, no ship.
-4. **One PR per section.** Each section lands as one reviewable draft PR on its own
-   `claude/auto-<section>-<n>` branch, with a board fragment per item (`Done` + PR number).
+4. **One PR per section, CI-gated self-merge.** Each section lands as one PR on its own
+   `claude/auto-<section>-<n>` branch, with a board fragment per item. The loop self-merges it
+   once GitHub Actions is green, then sweeps the items to `Shipped`.
 5. **Honest board.** Every item gets a `timeline` entry; UI items get a screenshot. The
    start/end **wall sweep** (see README) reconciles state each session.
 

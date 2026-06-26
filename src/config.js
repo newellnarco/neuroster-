@@ -318,6 +318,60 @@ export const BUILDINGS = {
   },
 };
 
+// ---- Building material textures --------------------------------------------
+// Generic buildings (the ones without a bespoke draw routine) used to all render
+// as a plain emoji on the SAME timber base, regardless of what they're made of.
+// This map gives each building type a procedural material treatment (a base
+// tint + which texture clothes it) so a stone smelter reads as stone, a brick
+// steelworks as brick, and so on — matching the look of the already-textured
+// bespoke buildings (mine/wall/bridge/tunnel/townhall). Visual only; no balance
+// change. `tex` is a textures.js material; `base` is the base-fill colour.
+// Anything not listed falls back to DEFAULT_BUILDING_TEX (timber, as before).
+export const DEFAULT_BUILDING_TEX = { tex: 'wood', base: '#bcab8b' };
+export const BUILDING_TEX = {
+  // Stone / masonry structures
+  mill:            { tex: 'stone', base: '#b2b7be' },
+  well:            { tex: 'stone', base: '#b2b7be' },
+  graveyard:       { tex: 'stone', base: '#b0b6bd' },
+  cryptyard:       { tex: 'stone', base: '#a7adb5' },
+  mausoleum:       { tex: 'stone', base: '#c0c6cd' },
+  hallofheroes:    { tex: 'stone', base: '#bcc2c9' },
+  statue:          { tex: 'stone', base: '#c2c8cf' },
+  courthouse:      { tex: 'stone', base: '#c0c6cd' },
+  sandbath:        { tex: 'sand',  base: '#e3cf9e' },
+  levee:           { tex: 'stone', base: '#aab0b8' },
+  shelter:         { tex: 'stone', base: '#9aa0a8' },
+  irrigation:      { tex: 'stone', base: '#aeb4bc' },
+  // Brick / industrial kilns & furnaces
+  smelter:         { tex: 'brick', base: '#c07a5c' },
+  steelworks:      { tex: 'brick', base: '#b86a4e' },
+  coalplant:       { tex: 'brick', base: '#9a4f3a' },
+  refinery:        { tex: 'brick', base: '#a85a42' },
+  fertilizerplant: { tex: 'brick', base: '#b08a5a' },
+  pelletpress:     { tex: 'brick', base: '#b9853f' },
+  // Metal / machinery (cool stone/steel cast)
+  electricwheel:   { tex: 'stone', base: '#aab2bb' },
+  solar:           { tex: 'stone', base: '#9aa6b6' },
+  hydro:           { tex: 'stone', base: '#9fb0c4' },
+  lab:             { tex: 'stone', base: '#b4bcc8' },
+  vet:             { tex: 'stone', base: '#cdd3da' },
+  infirmary:       { tex: 'stone', base: '#cdd3da' },
+  ballworkshop:    { tex: 'stone', base: '#bfd0dc' },
+  cistern:         { tex: 'wood',  base: '#b0a07a' },
+  // Earthy / botanical bases
+  composter:       { tex: 'dirt',  base: '#9a7848' },
+  farm:            { tex: 'dirt',  base: '#b39a6a' },
+  wheatfield:      { tex: 'dirt',  base: '#c2a86a' },
+  sunflower:       { tex: 'dirt',  base: '#b8a25e' },
+  almshouse:       { tex: 'wood',  base: '#c4b48c' },
+  sanctuary:       { tex: 'leaf',  base: '#9fb87e' },
+  // Soft / enrichment (grassy or leafy)
+  playground:      { tex: 'grass', base: '#a9c47e' },
+  maze:            { tex: 'leaf',  base: '#7fae6a' },
+};
+// Lookup helper: the material treatment for a building type (or the default).
+export function buildingTex(type) { return BUILDING_TEX[type] || DEFAULT_BUILDING_TEX; }
+
 // ---- Tunnel tiers ----------------------------------------------------------
 // Tunnels protect rodent travel and bar other animals from crossing. Each tier
 // is tougher (more HP & protection); upgrade a section by spending materials —
