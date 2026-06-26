@@ -1,9 +1,0 @@
-{
-  "key": "feat:wood-economy",
-  "title": "Wood economy: denser trees, sunflower seeds, wooden power & mills, cistern, fence",
-  "arch": "ECON", "phase": "2b",
-  "type": "New Feature", "area": "Gameplay", "priority": "P2", "status": "In Progress", "pr": "#43",
-  "detail": "~2.6x starting trees; Sunflower Field (seeds); wooden Windmill + Water Mill (clean power); Processing Mill (seeds+power -> fertilizer -> farm yield); Water Cistern (storage + rain collection); Wooden Fence; friendly squirrels speed timber construction. Next (big): beaver wood-store + sabotage, squirrels as faster gatherer/builder units, wooden lifts/pulley mines/conveyances.",
-  "_after": "econ:2",
-  "timeline": [ { "at": "2026-06-26T02:30:00Z", "status": "In Progress", "note": "Shipped data-first in PR #43; 7 new smoke checks (68 total)." } ]
-}

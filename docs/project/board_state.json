@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-25T23:56:59Z",
+  "updated": "2026-06-26T06:21:31Z",
   "items": [
     {
       "key": "econ:1",
@@ -74,13 +74,42 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Todo",
-      "pr": null,
+      "status": "In Progress",
+      "pr": "43",
       "release": null,
       "detail": "Wheel→Power done; animated wood+metal conveyors ship & auto-haul from nodes. Plastic tier shipped; multi-segment belt networks still pending.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T03:32:34+00:00",
+          "status": "In Progress",
+          "note": "Wood economy: +2.6x trees, sunflower seed field, wooden windmill/water mill power, processing mill (seeds->fertilizer), cistern, wood fence; friendly squirrels speed timber builds (PR #43)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T03:32:34+00:00"
+    },
+    {
+      "key": "feat:wood-economy",
+      "issue": null,
+      "title": "Wood economy: denser trees, sunflower seeds, wooden power & mills, cistern, fence",
+      "arch": "ECON",
+      "phase": "2b",
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "In Progress",
+      "pr": "#43",
+      "release": null,
+      "detail": "~2.6x starting trees; Sunflower Field (seeds); wooden Windmill + Water Mill (clean power); Processing Mill (seeds+power -> fertilizer -> farm yield); Water Cistern (storage + rain collection); Wooden Fence; friendly squirrels speed timber construction. Next (big): beaver wood-store + sabotage, squirrels as faster gatherer/builder units, wooden lifts/pulley mines/conveyances.",
+      "timeline": [
+        {
+          "at": "2026-06-26T02:30:00Z",
+          "status": "In Progress",
+          "note": "Shipped data-first in PR #43; 7 new smoke checks (68 total)."
+        }
+      ],
+      "screenshots": [],
+      "updated": null
     },
     {
       "key": "econ:2c",
@@ -149,6 +178,29 @@
       "timeline": [],
       "screenshots": [],
       "updated": "2026-06-25T00:00:00Z"
+    },
+    {
+      "key": "ux:zoom-map-fixes",
+      "issue": null,
+      "title": "Map zoom + landscape scaling, center-on-town, event-log snap-to-top",
+      "arch": "RENDER",
+      "phase": "18a",
+      "type": "Bug",
+      "area": "UI/UX",
+      "priority": "P1",
+      "status": "In Progress",
+      "pr": "#43",
+      "release": null,
+      "detail": "Wheel + +/-/reset zoom were dead (canvas became a flex item floored at its min-content backing width); fixed with flex-shrink:0. Map now contain-fits the landscape board (W+H) and re-fits on resize; view starts zoomed/centered on the colony. Event log snaps to top on a new item. UI ticket — owes a screenshot.",
+      "timeline": [
+        {
+          "at": "2026-06-26T01:00:00Z",
+          "status": "In Progress",
+          "note": "Shipped in PR #43; verified in headless Chromium + 56 smoke checks."
+        }
+      ],
+      "screenshots": [],
+      "updated": null
     },
     {
       "key": "creatures:3",
@@ -686,19 +738,24 @@
       "type": "Process",
       "area": "Infra",
       "priority": "P2",
-      "status": "Todo",
-      "pr": null,
-      "release": null,
+      "status": "Shipped",
+      "pr": "42",
+      "release": "3e058b1",
       "detail": "Installed the portable wall-kit: docs/project/board_state.json is the source of truth, rendered to PROJECT_STATUS.md (terminal) + wall.html (browser, zero GitHub API). PRs never edit board_state.json — they add fragments under docs/project/board_entries/; the on-main compact-board workflow folds them in. Launch: npm start -> http://localhost:8080/docs/project/wall.html",
       "timeline": [
         {
           "at": "2026-06-25T00:00:00Z",
           "status": "Todo",
           "note": "Seeded 69 items from ROADMAP/TODO; installed tools + CI workflow + board agents."
+        },
+        {
+          "at": "2026-06-26T01:07:08+00:00",
+          "status": "Shipped",
+          "note": "wall-kit installed; PR #42 merged to main"
         }
       ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T01:07:08+00:00"
     },
     {
       "key": "gameplay:oak-squirrel",
@@ -709,13 +766,19 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P1",
-      "status": "Planned",
-      "pr": null,
+      "status": "In Progress",
+      "pr": "43",
       "release": null,
       "detail": "Planting oaks raises squirrel pressure; the nut balance tips toward trade / cooperation / raids. Highest-value next feature — builds on trees + factions + pollution.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T02:11:44+00:00",
+          "status": "In Progress",
+          "note": "Oak building + Nuts resource + squirrel pressure & trade/raid events shipped data-first (PR #43); 4 smoke checks"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T02:11:44+00:00"
     },
     {
       "key": "gameplay:hamster-balls",
@@ -726,13 +789,19 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Backlog",
-      "pr": null,
+      "status": "In Progress",
+      "pr": "43",
       "release": null,
       "detail": "Speeds a rodent but builds heat + anxiety the longer it's inside — pull them out in time.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T06:05:01+00:00",
+          "status": "In Progress",
+          "note": "Ball Workshop (plastic→balls); roll safe from predators, fun/curiosity up, anxiety builds → pops out, heat death on hot days (PR #43)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T06:05:01+00:00"
     },
     {
       "key": "gameplay:production-chain",
@@ -760,13 +829,19 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Backlog",
-      "pr": null,
+      "status": "In Progress",
+      "pr": "43",
       "release": null,
       "detail": "Click a fogged tile → bias some rodents toward it (reveal fog), marker shows, clears when reached. A bias, not a move order (auto-sim).",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T01:07:08+00:00",
+          "status": "In Progress",
+          "note": "Click-to-go + Explore task implemented; reveals fog until the map is fully mapped (PR #43)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T01:07:08+00:00"
     },
     {
       "key": "gameplay:npc-events-more",
@@ -1049,13 +1124,19 @@
       "type": "New Feature",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "In Progress",
+      "pr": "43",
       "release": null,
       "detail": "Currently auto by prefKind; let players pin specific rodents.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T01:07:08+00:00",
+          "status": "In Progress",
+          "note": "Partial: selected rodents now take go-to/Explore orders (PR #43); full per-resource assignment still open"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T01:07:08+00:00"
     },
     {
       "key": "add:true-pathfinding",
@@ -1117,13 +1198,19 @@
       "type": "Enhancement",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "In Progress",
+      "pr": "43",
       "release": null,
       "detail": "Extend the milestone set for retention.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T01:55:11+00:00",
+          "status": "In Progress",
+          "note": "Added 6 goals (pop50, Cartographer/explore, plastic, doctrine, valor90, justice90); 25 total (PR #43)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T01:55:11+00:00"
     },
     {
       "key": "change:defense-screen",
@@ -1134,13 +1221,19 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "In Progress",
+      "pr": "43",
       "release": null,
       "detail": "Include offense raids vs AI colonies.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T06:18:39+00:00",
+          "status": "In Progress",
+          "note": "Guard/soldier per-unit skill + tiered equipment (Spear→Sword→Steel+Bow) adding colony def/offense; reluctant-to-kill (capture path pending) (PR #43)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T06:18:39+00:00"
     },
     {
       "key": "change:evolution-branches",
@@ -1168,13 +1261,19 @@
       "type": "Enhancement",
       "area": "Engine",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "In Progress",
+      "pr": "43",
       "release": null,
       "detail": "Partially via evolutions; make per-unit Vigor matter.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T01:55:11+00:00",
+          "status": "In Progress",
+          "note": "Vigor trait now slows per-unit food/water/energy drain (PR #43)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T01:55:11+00:00"
     },
     {
       "key": "change:level-unlocks",
@@ -1243,6 +1342,29 @@
       "timeline": [],
       "screenshots": [],
       "updated": "2026-06-25T00:00:00Z"
+    },
+    {
+      "key": "feat:beaver-wood-store",
+      "issue": null,
+      "title": "Beaver wood store + take-too-much sabotage",
+      "arch": "SOCIAL",
+      "phase": "19g",
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "In Progress",
+      "pr": "#43",
+      "release": null,
+      "detail": "Beavers harvest wood into their OWN store; hamsters tap it when colony wood is low. Sustained over-tapping sours them (beaverMood falls) -> they sabotage the dams (water flow drops) and spill wood. Keep colony wood stocked to keep them content. 🦫 env chip + 4 smoke checks.",
+      "timeline": [
+        {
+          "at": "2026-06-26T02:50:00Z",
+          "status": "In Progress",
+          "note": "Shipped in PR #43; 72 smoke checks."
+        }
+      ],
+      "screenshots": [],
+      "updated": null
     }
   ]
 }

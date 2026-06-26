@@ -2,38 +2,44 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-25T23:56:59Z · 70 items_
+_board_state.json updated: 2026-06-26T06:21:31Z · 73 items_
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| In Progress | 0 |
+| In Progress | 11 |
 | in CI | 0 |
-| Todo | 5 |
-| Planned | 1 |
-| Backlog | 25 |
+| Todo | 3 |
+| Planned | 0 |
+| Backlog | 19 |
 | Done | 0 |
-| Shipped | 35 |
+| Shipped | 36 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **70** |
+| **TOTAL** | **73** |
 
-**35 landed on `main`** · **31 open** (in-CI / todo / planned / backlog).
+**36 landed on `main`** · **33 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
-| Todo | P2 | ECON | Buildings & power automation (conveyors, plastic tier, belt networks) | — | — |
+| In Progress | P1 | RENDER | Map zoom + landscape scaling, center-on-town, event-log snap-to-top | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P1 | ECON-OAK | Oak → squirrel / nut economy | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P2 | ECON | Buildings & power automation (conveyors, plastic tier, belt networks) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P2 | ECON | Wood economy: denser trees, sunflower seeds, wooden power & mills, cistern, fence | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P2 | None | Hamster balls — free-roam transport (heat + anxiety) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P2 | None | Directable exploration: scout waypoint | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P2 | SOCIAL | Beaver wood store + take-too-much sabotage | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P3 | None | Job assignment UI (assign rodents to resources/buildings) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P3 | None | More milestones/achievements (first hybrid, day 30, apex evolution…) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P3 | None | Promote Threats panel → Defense & Military screen | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
+| In Progress | P3 | None | Per-unit need decay modified by traits (Vigor) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
 | Todo | P2 | RENDER | Animation & realism polish + seasonal atmosphere + audio | — | — |
-| Todo | P2 | INFRA | Project board / wall (zero-API git-native tracker) | — | — |
 | Todo | P2 | ECON | Multi-segment conveyor belt networks | — | — |
 | Todo | P2 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | — | — |
-| Planned | P1 | ECON-OAK | Oak → squirrel / nut economy | — | — |
-| Backlog | P2 | None | Hamster balls — free-roam transport (heat + anxiety) | — | — |
 | Backlog | P2 | PROD | Production chain: Furnace / Forge / Mason + brick + armour | — | — |
-| Backlog | P2 | None | Directable exploration: scout waypoint | — | — |
 | Backlog | P2 | None | Validate EVENT_PACE/GRACE feel across biomes & difficulties | — | — |
 | Backlog | P2 | None | True movement/pathfinding (gate tunnels, gopher travel, dams) | — | — |
 | Backlog | P3 | None | More NPC animal events (merchant, predator parley, aid requests) | — | — |
@@ -48,13 +54,9 @@ _board_state.json updated: 2026-06-25T23:56:59Z · 70 items_
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
 | Backlog | P3 | None | Plastics & advanced refining (coal/oil → plastic) | — | — |
 | Backlog | P3 | None | Tunnels / underground levels (vertical expansion) | — | — |
-| Backlog | P3 | None | Job assignment UI (assign rodents to resources/buildings) | — | — |
 | Backlog | P3 | None | River geography for dams (real upstream tiles) | — | — |
 | Backlog | P3 | None | Disease/health events + quarantine; Infirmary | — | — |
-| Backlog | P3 | None | More milestones/achievements (first hybrid, day 30, apex evolution…) | — | — |
-| Backlog | P3 | None | Promote Threats panel → Defense & Military screen | — | — |
 | Backlog | P3 | None | Species-specific evolution branches (beaver dams, rat swarms…) | — | — |
-| Backlog | P3 | None | Per-unit need decay modified by traits (Vigor) | — | — |
 | Backlog | P3 | None | Tie Main Hamster level to more unlocks (buildings/species) | — | — |
 
 ## Deferred (intentional)
@@ -100,11 +102,12 @@ _board_state.json updated: 2026-06-25T23:56:59Z · 70 items_
 | 17c | Milestones / achievements | — | `—` |
 | 17d | Sand Bath + burrow upkeep | — | `—` |
 
-### INFRA (1)
+### INFRA (2)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
 | 17e | Deployment (zero-dep server, Docker, /healthz) | — | `—` |
+| wall | Project board / wall (zero-API git-native tracker) | [#42](https://github.com/newellnarco/neuroster-/pull/42) | `3e058b1` |
 
 ### POWER (1)
 
