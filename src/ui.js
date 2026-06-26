@@ -318,7 +318,23 @@ export function createUI(state, ctx) {
     });
   }
 
-  function renderLog() { el('log').innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join(''); }
+  // The newest event is unshifted to state.log[0], so it renders at the TOP.
+  // Track the current top entry: only rebuild when it actually changes, and when
+  // a NEW item is reported snap the scroll to the top so the latest line is in
+  // view. When nothing changed we leave the scroll alone, so you can read back
+  // through the story without it yanking to the top every refresh.
+  let lastLogTop = null;
+  function renderLog() {
+    const box = el('log');
+    if (!box) return;
+    const top = state.log[0];
+    const sig = top ? `${top.t}|${top.msg}` : '';
+    const isNew = sig !== lastLogTop;
+    if (!isNew && box.childElementCount) return; // unchanged — preserve scroll
+    box.innerHTML = state.log.slice(0, 12).map(l => `<div>${l.msg}</div>`).join('');
+    lastLogTop = sig;
+    if (isNew) box.scrollTop = 0; // snap the newest item into view at the top
+  }
 
   // ---- Getting-started guide — a few first steps that auto-tick as you play ----
   const GUIDE_STEPS = [
@@ -582,14 +598,52 @@ export function createUI(state, ctx) {
   // ---- Canvas interaction ----
   function setupCanvas() {
     const c = ctx.canvas;
-    // Zoom: scale the canvas' CSS width; #board scrolls to pan when zoomed in.
-    const board = c.parentElement;
-    if (view.zoom == null) view.zoom = 1;
-    const applyZoom = () => { c.style.width = Math.round(view.zoom * 100) + '%'; };
-    // Min zoom 1 = the map always at least fills the window width (no empty
-    // margins when zooming out); zoom in up to 3.5×.
+    // Zoom model: at zoom 1 the WHOLE map is sized to CONTAIN within the board —
+    // it fills the landscape area in both width AND height (preserving the map's
+    // aspect ratio), centered. Zoom multiplies that base size and #viewport
+    // scrolls to pan. We size the canvas in pixels (not width:100%) so it scales
+    // to the available area on every layout/window change, not just the width.
+    const board = c.parentElement; // #viewport (overflow:auto scroller)
+    const MAP_ASPECT = GRID_W / GRID_H; // map native width:height (40:28)
+    // Start focused ON THE TOWN, not zoomed all the way out: default to a closer
+    // zoom and scroll-center on the colony spawn. The player can still zoom out
+    // to 1 (whole map). 1 = whole map fits; >1 = zoomed in, #viewport pans.
+    const START_ZOOM = 2;
+    if (view.zoom == null) view.zoom = START_ZOOM;
+    const applyZoom = () => {
+      const cs = getComputedStyle(board);
+      const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const availW = board.clientWidth - padX;
+      const availH = board.clientHeight - padY;
+      if (!(availW > 0 && availH > 0)) return; // not laid out yet
+      // Largest size that shows the whole map inside the board (contain fit).
+      const baseW = Math.min(availW, availH * MAP_ASPECT);
+      const w = Math.max(1, Math.round(baseW * view.zoom));
+      c.style.width = w + 'px';
+      c.style.height = Math.round(w / MAP_ASPECT) + 'px';
+    };
+    // Min zoom 1 = the whole map always fits the board (never clipped when zoomed
+    // out); zoom in up to 3.5×.
     const setZoom = (z) => { view.zoom = Math.max(1, Math.min(3.5, z)); applyZoom(); };
     applyZoom();
+    // Center the viewport on the colony once the board has real dimensions
+    // (retry across frames until laid out). Runs once, at game-view start.
+    let centered = false;
+    const centerOnTown = () => {
+      if (centered) return;
+      if (!(board.clientWidth > 0 && c.offsetWidth > 0)) { requestAnimationFrame(centerOnTown); return; }
+      const sp = state.world?.spawn || { x: GRID_W / 2, y: GRID_H / 2 };
+      const fracX = (sp.x + 0.5) / GRID_W, fracY = (sp.y + 0.5) / GRID_H;
+      board.scrollLeft = Math.max(0, fracX * c.offsetWidth - board.clientWidth / 2);
+      board.scrollTop = Math.max(0, fracY * c.offsetHeight - board.clientHeight / 2);
+      centered = true;
+    };
+    requestAnimationFrame(centerOnTown);
+    // Re-fit whenever the board area changes — window resize, or the sidebar/log
+    // dividers being dragged (which resize the board around the map).
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => applyZoom()).observe(board);
+    window.addEventListener('resize', applyZoom);
     el('zoom-in') && (el('zoom-in').onclick = () => setZoom(view.zoom + 0.25));
     el('zoom-out') && (el('zoom-out').onclick = () => setZoom(view.zoom - 0.25));
     el('zoom-reset') && (el('zoom-reset').onclick = () => setZoom(1));

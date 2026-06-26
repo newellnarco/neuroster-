@@ -177,8 +177,13 @@ body {
 #resbar .res, #envbar .env, #needsbar .need { cursor: pointer; }
 .res .rnm { color: var(--muted); font-size: 11px; margin: 0 1px; }
 #btn-labels.on { background: var(--accent); color: #2a2107; border-radius: 6px; }
+/* The canvas is a flex item inside #viewport. A flex item's automatic minimum
+   size is its min-content (here the HiDPI backing width, VW*DPR), which would
+   FLOOR the rendered width and make the zoom (canvas.style.width = z*100%) a
+   no-op. flex-shrink:0 + min-width:0 makes the inline width% authoritative, so
+   zooming scales the canvas and #viewport scrolls to pan when it overflows. */
 #game { background: #6f9e4b; border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.5);
-  width: 100%; height: auto; image-rendering: auto; cursor: pointer; display: block; }
+  width: 100%; height: auto; flex-shrink: 0; min-width: 0; image-rendering: auto; cursor: pointer; display: block; }
 /* Zoom controls (bottom-right of the board) */
 #zoomctl { position: absolute; right: 14px; bottom: 14px; z-index: 5; display: flex; gap: 4px;
   background: rgba(28,26,23,.92); border: 1px solid var(--line); border-radius: 10px; padding: 4px;
