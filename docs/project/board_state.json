@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T18:06:06Z",
+  "updated": "2026-06-26T18:22:24Z",
   "items": [
     {
       "key": "econ:1",
@@ -1273,13 +1273,19 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Dig burrow networks; spatial novelty + a reason to keep expanding.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T18:20:31+00:00",
+          "status": "Done",
+          "note": "Deep-mining slice delivered; full multi-level world view remains as add:tunnels-multilevel (Backlog)"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T18:20:31+00:00"
     },
     {
       "key": "add:ai-colonies-compete",
@@ -1994,13 +2000,19 @@
       "type": "New Feature",
       "area": "Docs",
       "priority": "P3",
-      "status": "Done",
-      "pr": 0,
-      "release": null,
+      "status": "Shipped",
+      "pr": "56",
+      "release": "3101150",
       "detail": "",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T18:06:17+00:00",
+          "status": "Shipped",
+          "note": "PR #56 merged (release 3101150)"
+        }
+      ],
       "screenshots": [],
-      "updated": null
+      "updated": "2026-06-26T18:06:17+00:00"
     },
     {
       "key": "feat:systems-diagram",
@@ -2011,13 +2023,55 @@
       "type": "New Feature",
       "area": "Docs",
       "priority": "P2",
+      "status": "Shipped",
+      "pr": "56",
+      "release": "3101150",
+      "detail": "",
+      "timeline": [
+        {
+          "at": "2026-06-26T18:06:17+00:00",
+          "status": "Shipped",
+          "note": "PR #56 merged (release 3101150)"
+        }
+      ],
+      "screenshots": [],
+      "updated": "2026-06-26T18:06:17+00:00"
+    },
+    {
+      "key": "add:tunnels-deepmine",
+      "issue": null,
+      "title": "Mine Shaft → deep underground resources (vertical expansion slice)",
+      "arch": "ECON",
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
       "status": "Done",
       "pr": 0,
       "release": null,
       "detail": "",
       "timeline": [],
       "screenshots": [],
-      "updated": null
+      "updated": null,
+      "parent": "add:tunnels-underground"
+    },
+    {
+      "key": "add:tunnels-multilevel",
+      "issue": null,
+      "title": "Full multi-level underground world view (descend/ascend, separate grid + render)",
+      "arch": "RENDER",
+      "phase": null,
+      "type": "New Feature",
+      "area": "Engine",
+      "priority": "P3",
+      "status": "Backlog",
+      "pr": null,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null,
+      "parent": "add:tunnels-underground"
     }
   ]
 }

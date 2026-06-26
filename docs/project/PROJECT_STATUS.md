@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
+_board_state.json updated: 2026-06-26T18:22:24Z · 89 items_
 
 ## Summary
 
@@ -14,12 +14,12 @@ _board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
 | Planned | 0 |
 | Backlog | 3 |
 | Done | 2 |
-| Shipped | 78 |
+| Shipped | 80 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **87** |
+| **TOTAL** | **89** |
 
-**80 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**82 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -27,7 +27,7 @@ _board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
 |---|---|---|---|---|---|
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
-| Backlog | P3 | None | Tunnels / underground levels (vertical expansion) | — | — |
+| Backlog | P3 | RENDER | Full multi-level underground world view (descend/ascend, separate grid + render) | — | — |
 
 ## Deferred (intentional)
 
@@ -40,7 +40,7 @@ _board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (30)
+### (misc) (31)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -56,6 +56,7 @@ _board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
 | None | Workers path in straight lines (no obstacle/water avoidance) | [#49](https://github.com/newellnarco/neuroster-/pull/49) | `2c8095b` |
 | None | Balance pass once conveyors & more buildings land | [#48](https://github.com/newellnarco/neuroster-/pull/48) | `a27154b` |
 | None | Plastics & advanced refining (coal/oil → plastic) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
+| None | Tunnels / underground levels (vertical expansion) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
 | None | Job assignment UI (assign rodents to resources/buildings) | [#50](https://github.com/newellnarco/neuroster-/pull/50) | `b4293ba` |
 | None | True movement/pathfinding (gate tunnels, gopher travel, dams) | [#52](https://github.com/newellnarco/neuroster-/pull/52) | `72a1348` |
@@ -72,8 +73,8 @@ _board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
 | None | Any selected hamster can spend skill points (not just leader) | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
 | None | Themed Settings window (matches start/hamster screens); drop import/export | [#55](https://github.com/newellnarco/neuroster-/pull/55) | `e5945f1` |
 | None | Persistent on-map labels via the 🏷️ toggle (not hover-only) | [#55](https://github.com/newellnarco/neuroster-/pull/55) | `e5945f1` |
-| None | Art-asset specification (docs/ART_SPEC.md) for sprite-sheet replacement art | — | `—` |
-| None | Data-driven systems-map PNG diagram + generator (tools/gen_diagram.mjs) | — | `—` |
+| None | Art-asset specification (docs/ART_SPEC.md) for sprite-sheet replacement art | [#56](https://github.com/newellnarco/neuroster-/pull/56) | `3101150` |
+| None | Data-driven systems-map PNG diagram + generator (tools/gen_diagram.mjs) | [#56](https://github.com/newellnarco/neuroster-/pull/56) | `3101150` |
 
 ### CREATURES (5)
 
@@ -91,7 +92,7 @@ _board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
 |---|---|---|---|
 | 15c | Upgradeable tunnels + steel | — | `—` |
 
-### ECON (6)
+### ECON (7)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -101,6 +102,7 @@ _board_state.json updated: 2026-06-26T18:06:06Z · 87 items_
 | 2b | Wood economy: denser trees, sunflower seeds, wooden power & mills, cistern, fence | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | 2c | Fertility, food chain & sanitation | — | `—` |
 | None | Storage Depot capacity +200 → +1500 | [#44](https://github.com/newellnarco/neuroster-/pull/44) | `7f9ff2e` |
+| None | Mine Shaft → deep underground resources (vertical expansion slice) | — | `—` |
 
 ### ECON-OAK (1)
 
