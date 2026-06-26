@@ -16,6 +16,12 @@ const TERRAIN_COLORS = ['#6f9e4b', '#9c8158', '#7d7d82', '#3f78b0', '#d8c98a', '
 export const terrainColor = (t) => TERRAIN_COLORS[t] ?? TERRAIN_COLORS[0];
 export const isWater = (t) => t === TERRAIN.water;
 export const isBuildable = (t) => t !== TERRAIN.water;
+// A tile movers should avoid stepping into: water (can't swim) and mountains
+// (impassable terrain). Cheap O(1) lookup used by local steering in entities.js.
+export function isBlockedTile(world, x, y) {
+  const t = getTile(world.terrain, Math.round(x), Math.round(y));
+  return t === TERRAIN.water || t === TERRAIN.mountain;
+}
 
 // Pick a terrain type from a biome's weighted distribution.
 function weightedTerrain(rng, weights) {

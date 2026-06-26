@@ -1487,4 +1487,38 @@ console.log('Balance pass (conveyors & defense costs):');
   ok(`balance pass locked: fence wood:8 (< wall), belt ladder ${wood}/${plastic}/${metal}`);
 }
 
+// 41) Worker pathing: local avoidance keeps movers out of water/blocked tiles.
+console.log('Worker pathing (local obstacle avoidance):');
+{
+  const { stepRodent } = await import('../src/entities.js');
+  const { isBlockedTile, getTile, TERRAIN } = await import('../src/world.js');
+  const { GRID_W, GRID_H } = await import('../src/config.js');
+  const s = newGame(4242, 'rivers', 'syrian', 'Pathing', {});
+  // The helper exists and flags water as a tile to avoid.
+  let wx = -1, wy = -1;
+  outer: for (let y = 1; y < GRID_H - 1; y++) for (let x = 1; x < GRID_W - 1; x++) {
+    if (getTile(s.world.terrain, x, y) === TERRAIN.water) { wx = x; wy = y; break outer; }
+  }
+  assert(wx >= 0, 'rivers biome should carve a water tile');
+  assert(isBlockedTile(s.world, wx, wy), 'isBlockedTile flags a water tile as blocked');
+  assert(!isBlockedTile(s.world, s.world.spawn.x, s.world.spawn.y), 'the (land) spawn tile is not blocked');
+  ok('isBlockedTile marks water as impassable, land as free');
+
+  // Place a rodent just on one side of the water tile, target the far side so a
+  // straight line crosses the water — after many steps it must never END inside
+  // water (the avoidance redirects each blocked step to a free neighbour / holds).
+  const u = s.units[0];
+  u.order = null; u.phase = 'idle'; u.inBall = false; u.targetNode = null;
+  u.x = wx - 1.2; u.y = wy; u.needs.energy = 100;
+  u.order = { kind: 'goto', x: wx + 1.2, y: wy };
+  let everInWater = false;
+  for (let i = 0; i < 400 && u.order; i++) {
+    u.needs.energy = 100;
+    stepRodent(s, u, 0.1);
+    if (isBlockedTile(s.world, u.x, u.y)) everInWater = true;
+  }
+  assert(!everInWater, `a mover crossing toward water never ends a step inside it (at ${u.x.toFixed(1)},${u.y.toFixed(1)})`);
+  ok('local avoidance keeps a mover from stepping into water');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
