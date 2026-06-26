@@ -10,6 +10,10 @@
 GitHub renders the Mermaid diagrams below. This map is meant to be folded into
 the in-game **Help / How-to-Play** (icons + colour) as it firms up.
 
+> 🗺️ **At-a-glance picture:** [`docs/neuroster-systems-map.png`](./docs/neuroster-systems-map.png)
+> — a single styled PNG charting the whole hierarchy (resources, structures,
+> needs/care, species, progression). Regenerate with `node tools/gen_diagram.mjs`.
+
 ## 1. Resource flow (what makes what)
 
 Boxes are **structures**; rounded nodes are **resources**. An arrow into a
@@ -40,6 +44,7 @@ flowchart LR
   B_solar["🔆 Solar Panel"]
   B_hydro["🌀 Water Turbine"]
   B_refinery["🛢️ Refinery"]
+  B_oilrefinery["⚗️ Oil Refinery"]
   B_lab["🔬 Research Lab"]
   B_irrigation["🚿 Irrigation"]
   B_dam["🦫 Beaver Dam"]
@@ -64,6 +69,7 @@ flowchart LR
   R_stone(["🪨 Stone"])
   R_brick(["🧱 Brick"])
   R_armour(["🛡️ Armour"])
+  R_oil(["🛢️ Oil"])
   R_research(["🔬 Research"])
   R_seeds -->|0.25| B_farm
   B_farm -->|0.5| R_food
@@ -112,6 +118,8 @@ flowchart LR
   B_hydro -->|1.2| R_power
   R_coal -->|0.4| B_refinery
   B_refinery -->|0.3| R_plastic
+  R_oil -->|0.5| B_oilrefinery
+  B_oilrefinery -->|0.6| R_plastic
   B_lab -->|0.3| R_research
   R_water -->|0.3| B_irrigation
   B_irrigation -->|0.3| R_food
@@ -144,7 +152,8 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | ⚙️ Steel | 🏭 Steelworks |
 | 🧱 Brick | 🧱 Mason |
 | 🛡️ Armour | ⚒️ Forge |
-| 🟦 Plastic | 🛢️ Refinery |
+| 🛢️ Oil | — |
+| 🟦 Plastic | 🛢️ Refinery; ⚗️ Oil Refinery |
 | 🫧 Hamster Balls | 🫧 Ball Workshop |
 | ⚡ Power | 🌬️ Windmill; 🛞 Water Mill; 🎡 Wheel Generator; 🔌 Electric Wheel; 🏭 Coal Plant; 🔆 Solar Panel; 🌀 Water Turbine |
 | 🔬 Research | 🔬 Research Lab |
@@ -170,7 +179,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 
 | Structure | Cost | Consumes | Produces | Effect |
 |---|---|---|---|---|
-| 🚧 Wooden Fence | 🪵 wood 10 | — | — | +2 defense |
+| 🚧 Wooden Fence | 🪵 wood 8 | — | — | +2 defense |
 | 🧱 Wall (Wood) | 🪵 wood 12 | — | — | tiered fort (HP, upgradeable) |
 | 🗼 Watchtower | 🪵 wood 20, 🪨 stone 30 | — | — | +8 defense; vision / defense stances |
 | 🛤️ Tunnel (Wood) | 🪵 wood 15, 🟫 planks 8 | — | — | tiered fort (HP, upgradeable) |
@@ -204,7 +213,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 
 | Structure | Cost | Consumes | Produces | Effect |
 |---|---|---|---|---|
-| 🕳️ Burrow | 🪵 wood 20 | — | — | +3 housing |
+| 🕳️ Burrow | 🪵 wood 20 | — | — | +6 housing |
 | 🏛️ Meeting Burrow | 🪵 wood 35, 🟫 planks 15 | — | — |  |
 
 ### Production
@@ -219,6 +228,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | 🔥 Furnace | 🧱 brick 12, 🪨 stone 20 | ⛰️ ironore 0.45, ⚫ coal 0.25 | 🔩 iron 0.35 | pollutes 0.6 |
 | ⚒️ Forge | 🧱 brick 16, 🔩 iron 15 | 🔩 iron 0.3, 🟫 planks 0.2 | 🛡️ armour 0.12 |  |
 | 🛢️ Refinery | 🪨 stone 40, 🔩 iron 20 | ⚫ coal 0.4 | 🟦 plastic 0.3 | pollutes 0.9 |
+| ⚗️ Oil Refinery | 🧱 brick 18, 🔩 iron 25, ⚙️ steel 8 | 🛢️ oil 0.5 | 🟦 plastic 0.6 | pollutes 0.4 |
 | 🔬 Research Lab | 🟫 planks 30, 🔩 iron 10 | — | 🔬 research 0.3 |  |
 | 🏪 Trading Hut | 🪵 wood 40, 🟫 planks 20 | — | — |  |
 
@@ -277,6 +287,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | ⚙️ Steel | refined |  |
 | 🧱 Brick | refined |  |
 | 🛡️ Armour | refined |  |
+| 🛢️ Oil | raw |  |
 | 🟦 Plastic | refined |  |
 | 🫧 Hamster Balls | refined |  |
 | ⚡ Power | abstract | not stored (pool) |
@@ -366,4 +377,4 @@ flowchart LR
 
 ---
 
-_Generated from `src/config.js` — 64 structures, 22 resources, 7 species. Run `node tools/gen_systems.mjs` to refresh._
+_Generated from `src/config.js` — 65 structures, 23 resources, 7 species. Run `node tools/gen_systems.mjs` to refresh._

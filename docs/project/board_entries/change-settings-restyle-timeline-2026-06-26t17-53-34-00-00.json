@@ -1,0 +1,15 @@
+{
+  "op": "update",
+  "key": "change:settings-restyle",
+  "status": "Shipped",
+  "timeline": [
+    {
+      "at": "2026-06-26T17:53:34+00:00",
+      "status": "Shipped",
+      "note": "PR #55 merged (release e5945f1)"
+    }
+  ],
+  "updated": "2026-06-26T17:53:34+00:00",
+  "pr": "55",
+  "release": "e5945f1"
+}

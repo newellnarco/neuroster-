@@ -8,3 +8,6 @@ node_modules/
 # Python bytecode from the board tools (tools/*.py)
 __pycache__/
 *.pyc
+
+# Intermediate HTML from tools/gen_diagram.mjs (the committed artifact is the PNG)
+docs/neuroster-systems-map.html
