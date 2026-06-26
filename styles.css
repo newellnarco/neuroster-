@@ -357,6 +357,9 @@ ul.help b { color: var(--accent); font-weight: 600; }
 .help-nav button:hover { border-color: var(--accent); }
 .help-card h3 { margin: 16px 0 4px; font-size: 15px; color: var(--accent); scroll-margin-top: 52px;
   border-top: 1px solid var(--line); padding-top: 12px; }
+/* Embedded systems-map image in the help guide — fits the modal, click to open full size. */
+.help-map-img { display: block; width: 100%; height: auto; border: 1px solid var(--line);
+  border-radius: 8px; cursor: zoom-in; background: #14120f; }
 .namerow { display: flex; gap: 8px; }
 .namerow input { flex: 1; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
   border-radius: 8px; padding: 8px 12px; font-size: 15px; }
