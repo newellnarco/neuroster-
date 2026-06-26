@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T17:41:09Z · 83 items_
+_board_state.json updated: 2026-06-26T17:53:13Z · 85 items_
 
 ## Summary
 
@@ -13,13 +13,13 @@ _board_state.json updated: 2026-06-26T17:41:09Z · 83 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 1 |
-| Shipped | 75 |
+| Done | 2 |
+| Shipped | 76 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **83** |
+| **TOTAL** | **85** |
 
-**76 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**78 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -40,7 +40,7 @@ _board_state.json updated: 2026-06-26T17:41:09Z · 83 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (26)
+### (misc) (28)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -70,6 +70,8 @@ _board_state.json updated: 2026-06-26T17:41:09Z · 83 items_
 | None | Click a resource node with a rodent selected to send it gathering | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
 | None | Calmer normal speed + roomier event cadence | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
 | None | Any selected hamster can spend skill points (not just leader) | [#53](https://github.com/newellnarco/neuroster-/pull/53) | `3d89078` |
+| None | Themed Settings window (matches start/hamster screens); drop import/export | — | `—` |
+| None | Persistent on-map labels via the 🏷️ toggle (not hover-only) | — | `—` |
 
 ### CREATURES (5)
 
@@ -79,7 +81,7 @@ _board_state.json updated: 2026-06-26T17:41:09Z · 83 items_
 | 3 | Rodent species + recruiting + hybrids | — | `—` |
 | 4 | Per-creature needs (food/water/energy/fun/health) | — | `—` |
 | 5 | Sleep cycles per species/level | — | `—` |
-| None | Breeding overhaul: sexes + maturity, burrow-based slower breeding, gentler wet tail, starting housing | — | `—` |
+| None | Breeding overhaul: sexes + maturity, burrow-based slower breeding, gentler wet tail, starting housing | [#54](https://github.com/newellnarco/neuroster-/pull/54) | `8c187b1` |
 
 ### DEFENSE (1)
 

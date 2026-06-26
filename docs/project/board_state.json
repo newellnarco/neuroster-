@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T17:41:09Z",
+  "updated": "2026-06-26T17:53:13Z",
   "items": [
     {
       "key": "econ:1",
@@ -1924,6 +1924,46 @@
       "phase": null,
       "type": "New Feature",
       "area": "Gameplay",
+      "priority": "P1",
+      "status": "Shipped",
+      "pr": "54",
+      "release": "8c187b1",
+      "detail": "",
+      "timeline": [
+        {
+          "at": "2026-06-26T17:41:17+00:00",
+          "status": "Shipped",
+          "note": "PR #54 merged (release 8c187b1)"
+        }
+      ],
+      "screenshots": [],
+      "updated": "2026-06-26T17:41:17+00:00"
+    },
+    {
+      "key": "change:settings-restyle",
+      "issue": null,
+      "title": "Themed Settings window (matches start/hamster screens); drop import/export",
+      "arch": null,
+      "phase": null,
+      "type": "Change",
+      "area": "UI/UX",
+      "priority": "P2",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null
+    },
+    {
+      "key": "fix:map-labels",
+      "issue": null,
+      "title": "Persistent on-map labels via the 🏷️ toggle (not hover-only)",
+      "arch": null,
+      "phase": null,
+      "type": "Fix",
+      "area": "UI/UX",
       "priority": "P1",
       "status": "Done",
       "pr": 0,
