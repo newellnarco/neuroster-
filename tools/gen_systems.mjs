@@ -35,6 +35,10 @@ p('');
 p('GitHub renders the Mermaid diagrams below. This map is meant to be folded into');
 p('the in-game **Help / How-to-Play** (icons + colour) as it firms up.');
 p('');
+p('> 🗺️ **At-a-glance picture:** [`docs/neuroster-systems-map.png`](./docs/neuroster-systems-map.png)');
+p('> — a single styled PNG charting the whole hierarchy (resources, structures,');
+p('> needs/care, species, progression). Regenerate with `node tools/gen_diagram.mjs`.');
+p('');
 
 // --------------------------------------------------------------------------- //
 // 1. Resource production graph (data-driven from consumes/produces).            //

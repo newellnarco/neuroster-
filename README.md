@@ -12,6 +12,8 @@ natural disasters. It's a persistent world you keep building and maintaining.
 > [`DECISIONS.md`](./DECISIONS.md) (why it's built this way) ·
 > [`TODO.md`](./TODO.md) (backlog) · [`ROADMAP.md`](./ROADMAP.md) (arcs & history) ·
 > [`SYSTEMS.md`](./SYSTEMS.md) (🗺️ **systems & flow map** — resources/structures/animals/skills + balancing) ·
+> [`docs/neuroster-systems-map.png`](./docs/neuroster-systems-map.png) (🖼️ **visual systems map** — the whole hierarchy in one PNG) ·
+> [`docs/ART_SPEC.md`](./docs/ART_SPEC.md) (🎨 **art-asset spec** — sprite sheets to replace the procedural art) ·
 > [`docs/project/`](./docs/project/) (📋 **project wall** — plan & track work).
 
 ## 📋 Project wall (plan & track progress)
