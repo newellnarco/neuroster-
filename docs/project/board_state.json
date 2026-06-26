@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T18:23:02Z",
+  "updated": "2026-06-26T22:43:14Z",
   "items": [
     {
       "key": "econ:1",
@@ -2083,6 +2083,23 @@
       "screenshots": [],
       "updated": null,
       "parent": "add:tunnels-underground"
+    },
+    {
+      "key": "fix:tool-modes",
+      "issue": null,
+      "title": "Top-bar tool modes (👆 Select / 🎩 Demolish); building-click priority; direct-to-needs",
+      "arch": null,
+      "phase": null,
+      "type": "Fix",
+      "area": "UI/UX",
+      "priority": "P1",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T18:23:02Z · 89 items_
+_board_state.json updated: 2026-06-26T22:43:14Z · 90 items_
 
 ## Summary
 
@@ -13,13 +13,13 @@ _board_state.json updated: 2026-06-26T18:23:02Z · 89 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 0 |
+| Done | 1 |
 | Shipped | 82 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **89** |
+| **TOTAL** | **90** |
 
-**82 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**83 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -40,7 +40,7 @@ _board_state.json updated: 2026-06-26T18:23:02Z · 89 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (31)
+### (misc) (32)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -75,6 +75,7 @@ _board_state.json updated: 2026-06-26T18:23:02Z · 89 items_
 | None | Persistent on-map labels via the 🏷️ toggle (not hover-only) | [#55](https://github.com/newellnarco/neuroster-/pull/55) | `e5945f1` |
 | None | Art-asset specification (docs/ART_SPEC.md) for sprite-sheet replacement art | [#56](https://github.com/newellnarco/neuroster-/pull/56) | `3101150` |
 | None | Data-driven systems-map PNG diagram + generator (tools/gen_diagram.mjs) | [#56](https://github.com/newellnarco/neuroster-/pull/56) | `3101150` |
+| None | Top-bar tool modes (👆 Select / 🎩 Demolish); building-click priority; direct-to-needs | — | `—` |
 
 ### CREATURES (5)
 
