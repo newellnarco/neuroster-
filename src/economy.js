@@ -1,6 +1,6 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, FEEDER_SERVES, MINE_REPAIR, BURROW, BREEDING, GRID_W, GRID_H, RESCUE } from './config.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, FEEDER_SERVES, MINE_REPAIR, SHAFT_DEPTH, BURROW, BREEDING, GRID_W, GRID_H, RESCUE } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice, traitMul } from './state.js';
 import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
@@ -170,6 +170,9 @@ export function stepEconomy(state, dt) {
   if ((state._memorial || 0) > 0) state.morale = Math.min(100, (state.morale ?? 100) + (state._memorial) * 0.05 * dt);
   // Statues are a quiet, steady focus for the colony's spirit & better nature.
   if ((state._statues || 0) > 0) { state.morale = Math.min(100, (state.morale ?? 100) + state._statues * 0.04 * dt); addCompassion(state, state._statues * 0.012 * dt); }
+  // Fine Jewellery (cut from deep-mined gems) is a luxury the colony takes quiet
+  // pride in — a small, capped, steady morale lift while a stock is on hand.
+  if ((state.res.jewel || 0) > 0) state.morale = Math.min(100, (state.morale ?? 100) + Math.min(0.06, state.res.jewel * 0.004) * dt);
   // Valor (martial pride) ebbs toward a low baseline; a proud, battle-hardened
   // colony (high Valor) takes a quiet, morally-neutral lift to spirits & spark.
   { const v = state.valor ?? 20; state.valor = Math.max(0, Math.min(100, v + (20 - v) * 0.0015 * dt)); }
@@ -207,6 +210,7 @@ function updateConstruction(state, dt) {
   for (const b of state.buildings) {
     if (b.underConstruction) jobs.push(b);
     else if (b.upgrading) jobs.push(b);
+    else if (b.digging) jobs.push(b);
   }
   if (!jobs.length) { state._laborFactor = 1; state._jobs = 0; return; }
   // workforce: awake rodents weighted by build skill (beavers/gophers excel)
@@ -239,6 +243,14 @@ function updateConstruction(state, dt) {
         delete b.upgrading;
         addFx(state, b.x, b.y, '⬆️', 1.8);
         logMsg(state, `⬆️ ${BUILDINGS[b.type].name} upgrade complete!`);
+      }
+    } else if (b.digging) { // Mine Shaft sinking to a deeper, richer level
+      b.digging.progress += inc;
+      if (b.digging.progress >= b.digging.time) {
+        b.depth = b.digging.toDepth;
+        delete b.digging;
+        addFx(state, b.x, b.y, '💎', 1.8);
+        logMsg(state, `💎 The Mine Shaft reached depth level ${b.depth} — its gem yield is richer now.`);
       }
     }
   }
@@ -320,11 +332,14 @@ function runMine(state, b, def, dt, wb) {
     return;
   }
   if (b.nodeId == null) {
-    // claim the nearest unclaimed underground deposit in range
+    // Claim the nearest matching underground deposit in range. A Mine Shaft (deep)
+    // taps ONLY the deep layer (gem seams); an ordinary Mine takes the shallow
+    // layer and never claims a deep seam — so the two tiers don't compete.
     const r = def.radius || 1;
     let pick = null, bd = Infinity;
     for (const n of state.world.nodes) {
       if (n.amount <= 0 || n.claimedBy || NODE_TYPES[n.kind].surface !== false) continue;
+      if (!!NODE_TYPES[n.kind].deep !== !!def.deep) continue; // shafts ↔ deep seams; mines ↔ shallow seams
       const d = Math.abs(n.x - b.x) + Math.abs(n.y - b.y);
       if (d <= r && d < bd) { bd = d; pick = n; }
     }
@@ -333,7 +348,10 @@ function runMine(state, b, def, dt, wb) {
   }
   const n = state.world.nodes.find(o => o.id === b.nodeId);
   if (!n || n.amount <= 0) { collapseMine(state, b, n); return; }
-  const got = Math.min(n.amount, (def.rate || 1.2) * dt * wb * diffYieldMul(state) * (1 + state.mods.mineMul + (state._mega?.mineMul || 0)));
+  // Deep shafts ramp with DEPTH: each dug level multiplies yield (vertical
+  // expansion — deeper = richer). Ordinary mines have no depth (factor 1).
+  const depthMul = def.deep ? (1 + SHAFT_DEPTH.yieldPerLevel * (b.depth || 0)) : 1;
+  const got = Math.min(n.amount, (def.rate || 1.2) * depthMul * dt * wb * diffYieldMul(state) * (1 + state.mods.mineMul + (state._mega?.mineMul || 0)));
   n.amount -= got;
   b._remaining = Math.ceil(n.amount);
   addRes(state, NODE_TYPES[n.kind].resource, got);

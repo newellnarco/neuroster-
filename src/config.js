@@ -2,7 +2,7 @@
 // Adding content (resources, buildings, species, tech) mostly means editing this file.
 
 // Bump this whenever you ship a change you want to identify in-game.
-export const VERSION = 'v0.3.9';
+export const VERSION = 'v0.4.0';
 
 export const TILE = 32;          // pixel size of a world tile
 export const GRID_W = 40;        // world width  in tiles
@@ -39,6 +39,8 @@ export const RESOURCES = {
   brick:    { name: 'Brick',    icon: '🧱', kind: 'refined', color: '#b5562f' },
   armour:   { name: 'Armour',   icon: '🛡️', kind: 'refined', color: '#8c97a6' },
   oil:      { name: 'Oil',      icon: '🛢️', kind: 'raw',     color: '#2b2b33' },
+  gem:      { name: 'Gems',     icon: '💎', kind: 'raw',     color: '#5ad1e0' },
+  jewel:    { name: 'Jewellery',icon: '👑', kind: 'refined', color: '#ffd86b' },
   plastic:  { name: 'Plastic',  icon: '🟦', kind: 'refined', color: '#6fa8dc' },
   balls:    { name: 'Hamster Balls', icon: '🫧', kind: 'refined', color: '#bfe3ff' },
   power:    { name: 'Power',    icon: '⚡', kind: 'abstract', color: '#ffd54f' },
@@ -59,6 +61,10 @@ export const NODE_TYPES = {
   orevein:  { resource: 'ironore', icon: '⛰️', amount: 300, color: '#8d6e63', surface: false },
   coalseam: { resource: 'coal',    icon: '⚫', amount: 300, color: '#37474f', surface: false },
   oilseep:  { resource: 'oil',     icon: '🛢️', amount: 260, color: '#23232a', surface: false },
+  // Deep layer: a richer seam the surface (and ordinary Mines) can't reach. Only
+  // a Mine Shaft digs down to it. `deep:true` marks the lower tier — ordinary
+  // Mines skip it; Mine Shafts claim only it (see economy.runMine).
+  gemseam:  { resource: 'gem',     icon: '💎', amount: 180, color: '#2a6e7a', surface: false, deep: true },
 };
 
 // ---- Buildings -------------------------------------------------------------
@@ -251,6 +257,15 @@ export const BUILDINGS = {
     name: 'Mine', icon: '⛏️', desc: 'Digs an underground iron-ore or coal deposit. Shows remaining until it collapses. Can flood — repair with materials & time.',
     cost: { wood: 40, planks: 10 }, category: 'Extraction', mine: true, radius: 1, rate: 1.2,
   },
+  mineshaft: {
+    name: 'Mine Shaft', icon: '🕳️', desc: 'Sinks a deep shaft to tap a DEEP seam (💎 Gems) the surface and ordinary Mines can\'t reach. Click to dig DEEPER — each depth level yields more. A deep shaft can flood; repair with materials & time. (Unlocks at Main Hamster Lv.4.)',
+    cost: { planks: 30, iron: 15, brick: 8 }, category: 'Extraction', mine: true, deep: true, radius: 1, rate: 0.7, reqLevel: 4,
+  },
+  jeweller: {
+    name: 'Jeweller', icon: '💍', desc: 'A gem-cutter\'s workshop — cuts deep-mined Gems (with a little Iron) into fine Jewellery, a high-tier trade good that lifts colony morale and that rival groups covet.',
+    cost: { planks: 25, iron: 15, stone: 10 }, category: 'Production', reqLevel: 4,
+    produces: { jewel: 0.18 }, consumes: { gem: 0.4, iron: 0.1 },
+  },
   wheel: {
     name: 'Wheel Generator', icon: '🎡', desc: 'Rodents run wheels: Food → Power. Clean, but modest.',
     cost: { wood: 35, planks: 5 }, category: 'Automation',
@@ -390,6 +405,8 @@ export const BUILDING_TEX = {
   furnace:         { tex: 'brick', base: '#bb6f4a' },
   forge:           { tex: 'stone', base: '#9aa2ac' },
   // Metal / machinery (cool stone/steel cast)
+  mineshaft:       { tex: 'stone', base: '#5a6470' },
+  jeweller:        { tex: 'stone', base: '#c8b06a' },
   electricwheel:   { tex: 'stone', base: '#aab2bb' },
   solar:           { tex: 'stone', base: '#9aa6b6' },
   hydro:           { tex: 'stone', base: '#9fb0c4' },
@@ -569,7 +586,7 @@ export const FACTIONS = {
   squirrels: { name: 'Squirrels',  icon: '🐿️', covets: ['food', 'seeds', 'pellets'], offers: 'planks', desc: 'Nut-hoarders who covet your food & seeds.' },
   chipmunks: { name: 'Chipmunks',  icon: '🐿️', covets: ['seeds', 'grain', 'wheat'], offers: 'stone',  desc: 'Cheeky foragers; trade stone for grain.' },
   fieldmice: { name: 'Field Mice', icon: '🐭', covets: ['wheat', 'grain', 'food'],   offers: 'research', desc: 'Scholars who trade knowledge for grain.' },
-  packrats:  { name: 'Pack Rats',  icon: '🐀', covets: ['iron', 'planks', 'pellets'], offers: 'coal',  desc: 'Scavengers who raid the rich for shiny loot.' },
+  packrats:  { name: 'Pack Rats',  icon: '🐀', covets: ['jewel', 'iron', 'planks', 'pellets'], offers: 'coal',  desc: 'Scavengers who covet shiny jewellery and raid the rich for loot.' },
   // (each faction also gets a camp on the map — see factions.js)
 };
 export const TRADE = {
@@ -624,6 +641,18 @@ export const BOND_DECAY = 0.04;   // per second; gentle, so daily care keeps it 
 
 // Flooded mines must be repaired (materials + time) before they work again.
 export const MINE_REPAIR = { cost: { planks: 15, wood: 15 }, seconds: 35 };
+
+// ---- Mine Shaft depth ------------------------------------------------------
+// A Mine Shaft taps the DEEP layer (gem seams). Click to dig DEEPER: each level
+// costs materials and multiplies the shaft's yield — the vertical-expansion ramp
+// (deeper = richer). Capped so it stays bounded. Level 0 is the freshly-sunk
+// shaft; `digCost` is the price to reach the NEXT level.
+export const SHAFT_DEPTH = {
+  maxLevel: 3,                       // 0 (surface shaft) … 3 (deepest)
+  yieldPerLevel: 0.6,               // +60% yield per depth level (×(1+0.6·level))
+  digCost: [{ planks: 20, iron: 10 }, { planks: 30, iron: 20, brick: 6 }, { iron: 30, steel: 8, brick: 10 }],
+  digSeconds: 18,                   // labour-time to deepen one level (built like an upgrade)
+};
 
 // Construction & labour: buildings and upgrades take TIME, worked by your awake
 // rodents (beavers/gophers build faster). More builders finish sooner, but
@@ -886,7 +915,7 @@ export const BIOMES = {
   mountains: {
     name: 'Mountains', icon: '⛰️', desc: 'Rocky highlands — ore, coal & stone galore; little food, frequent quakes.',
     terrain: { grass: 0.22, dirt: 0.2, rock: 0.43, mountain: 0.15 }, water: 0.01,
-    nodeMul: { trees: 0.5, rock: 1.8, orevein: 2.0, coalseam: 2.0, bush: 0.3 },
+    nodeMul: { trees: 0.5, rock: 1.8, orevein: 2.0, coalseam: 2.0, gemseam: 2.0, bush: 0.3 },
     hazardMul: { wolf: 1.3, hawk: 1.4, raid: 0.9, flood: 0.4, quake: 1.9 },
     weathers: ['clear', 'snow', 'storm', 'wind'],
   },

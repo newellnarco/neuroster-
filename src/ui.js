@@ -1,7 +1,7 @@
 // ui.js — HUD, build/skill/evolution/rodent/threat panels, biome picker.
 import { RESOURCES, BUILDINGS, TECH, SPECIES, NEEDS, TRAITS, DISASTERS, EVOLUTIONS, BIOMES, BREEDS, HAMSTER_NAMES, CARE, SLEEP, FACTIONS, TRADE, DIFFICULTIES, DENSITIES, COAT_COLORS, COAT_PATTERNS, TILE, GRID_W, GRID_H, xpForLevel, GUARD_GEAR, NODE_TYPES } from './config.js';
 import { totalStored, population, wellbeingMul, colonyNeeds } from './state.js';
-import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine } from './buildings.js';
+import { placeBuilding, canPlace, researchTech, evolve, upgradeTrait, traitCost, recruit, demolish, mainLevel, renameFounder, careFor, repairMine, digDeeper, upgradeTunnel, upgradeTownhall, cleanBurrow, giftFaction, barterFaction, requestAid, hasTradingHut, takeInRescue, toggleGuard, equipGuard, toggleQuarantine } from './buildings.js';
 import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
@@ -881,6 +881,7 @@ export function createUI(state, ctx) {
       if (best) { view.selUnit = best.id; sfx('click'); document.querySelector('[data-tab="rodents"]').click(); renderRodents(); return; }
       const b = state.buildings.find(b => b.x === t.x && b.y === t.y);
       if (b && b.flooded) { const r = repairMine(state, b); if (!r.ok) flash(r.reason); return; }
+      if (b && BUILDINGS[b.type].deep && !b.underConstruction) { const r = digDeeper(state, b); flash(r.ok ? '⛏️ Digging deeper — richer gem yield' : r.reason || ''); return; }
       if (b && (BUILDINGS[b.type].tunnel || BUILDINGS[b.type].bridge || BUILDINGS[b.type].wall)) { const r = upgradeTunnel(state, b); flash(r.ok ? '🔧 Improved!' : r.reason || ''); return; }
       if (b && BUILDINGS[b.type].tower) { b.mode = b.mode === 'defend' ? 'watch' : 'defend'; sfx('click'); flash(b.mode === 'defend' ? '🗡️ Tower → DEFEND (stronger, but costs morale)' : '👁️ Tower → WATCH (wide vision, gentle)'); return; }
       if (b && BUILDINGS[b.type].townhall) { const r = upgradeTownhall(state, b); flash(r.ok ? 'Town Hall upgraded' : r.reason || ''); return; }
@@ -990,6 +991,7 @@ const JOB_KINDS = {
   bush:     { icon: '🌿', label: 'Seeds (forage bushes)' },
   orevein:  { icon: '⛰️', label: 'Iron ore (mine)' },
   coalseam: { icon: '⚫', label: 'Coal (mine)' },
+  gemseam:  { icon: '💎', label: 'Gems (deep — Mine Shaft)' },
 };
 
 // Short, plain-language notes shown when you click a resource chip.
@@ -1003,6 +1005,8 @@ const RESDESC = {
   food: 'feeds your colony — keep it stocked',
   planks: 'refined wood (Sawmill); for advanced builds',
   iron: 'refined ore (Smelter); for tough structures',
+  gem: 'deep-mined by a Mine Shaft; cut into Jewellery',
+  jewel: 'cut from gems (Jeweller); lifts morale & a coveted trade good',
   power: 'from wheels/solar/hydro/coal; runs machines',
   research: 'earned by labs & milestones; spend on Skills',
 };

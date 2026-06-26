@@ -2024,4 +2024,118 @@ console.log('On-map labels (🏷️ toggle):');
   ok('the selected rodent is labelled by name when labels are ON');
 }
 
+// 47) Deep mining: Mine Shaft → deep gem seam → Jeweller → Jewellery.
+console.log('Deep mining (Mine Shaft → gems → jewellery):');
+{
+  const { BUILDINGS, NODE_TYPES, RESOURCES, SHAFT_DEPTH, FACTIONS } = await import('../src/config.js');
+  const { placeBuilding, canPlace, digDeeper } = await import('../src/buildings.js');
+
+  // The new content exists and is wired sanely.
+  assert(RESOURCES.gem && RESOURCES.gem.kind === 'raw', 'a deep-only Gems resource exists');
+  assert(RESOURCES.jewel && RESOURCES.jewel.kind === 'refined', 'a refined Jewellery good exists');
+  assert(NODE_TYPES.gemseam && NODE_TYPES.gemseam.surface === false && NODE_TYPES.gemseam.deep === true,
+    'gemseam is a DEEP underground node (surface:false, deep:true)');
+  const shaft = BUILDINGS.mineshaft;
+  assert(shaft && shaft.mine && shaft.deep, 'a Mine Shaft building exists and taps the deep layer');
+  // Sensible cost: refined materials, nothing free, and it costs more than nothing.
+  assert(Object.keys(shaft.cost).length >= 2 && (shaft.cost.iron || 0) > 0 && (shaft.cost.planks || 0) > 0,
+    `Mine Shaft has a sensible cost (${JSON.stringify(shaft.cost)})`);
+  const jew = BUILDINGS.jeweller;
+  assert(jew && jew.consumes?.gem > 0 && jew.produces?.jewel > 0, 'a Jeweller turns Gems → Jewellery');
+  assert(FACTIONS.packrats.covets.includes('jewel'), 'jewellery is a coveted trade good (a real use)');
+  ok('content present: Gems/Jewellery resources, deep gemseam, Mine Shaft, Jeweller, covet wiring');
+
+  // A regular Mine NEVER claims a deep gem seam, and never makes gems.
+  {
+    const g = newGame(7001, 'mountains', 'syrian', 'Shallow', {});
+    // Drop a deep gem seam next to spawn and an ordinary Mine on top of it.
+    const sp = g.world.spawn;
+    g.world.nodes.push({ id: 9000, kind: 'gemseam', x: sp.x + 1, y: sp.y, amount: 100, max: 100 });
+    g.buildings.push({ id: g.nextId++, type: 'mine', x: sp.x + 1, y: sp.y, active: true });
+    const gem0 = g.res.gem || 0;
+    for (let i = 0; i < 100; i++) stepEconomy(g, 0.2);
+    assert((g.res.gem || 0) === gem0, 'an ordinary Mine does NOT mine the deep gem layer');
+    const node = g.world.nodes.find(n => n.id === 9000);
+    assert(node && node.amount === 100 && !node.claimedBy, 'the gem seam is untouched & unclaimed by a plain Mine');
+    ok('ordinary Mines cannot reach the deep gem layer (only a Mine Shaft can)');
+  }
+
+  // A Mine Shaft mines ONLY the deep gem seam; a stock of gems accumulates.
+  {
+    const g = newGame(7002, 'mountains', 'syrian', 'Deep', {});
+    g.popCap = 99; g.units.forEach(u => u.level = 8); // satisfy reqLevel gates
+    const sp = g.world.spawn;
+    g.world.nodes.push({ id: 9100, kind: 'gemseam', x: sp.x + 1, y: sp.y, amount: 200, max: 200 });
+    g.buildings.push({ id: g.nextId++, type: 'mineshaft', x: sp.x + 1, y: sp.y, active: true });
+    for (let i = 0; i < 400; i++) stepEconomy(g, 0.2);
+    const node = g.world.nodes.find(n => n.id === 9100);
+    assert(node.amount < 200 && node.claimedBy, `the Mine Shaft extracts gems from the deep seam (${node.amount.toFixed(0)}/200 left)`);
+    assert((g.res.gem || 0) > 0, `gems accumulate from the deep seam (${(g.res.gem || 0).toFixed(1)})`);
+    ok(`Mine Shaft mines the deep gem seam → Gems in store (${(g.res.gem || 0).toFixed(1)})`);
+
+    // …and a Jeweller cuts a stock of gems into Jewellery (with storage headroom).
+    g.buildings.push({ id: g.nextId++, type: 'storage', x: sp.x, y: sp.y + 2, active: true });
+    g.buildings.push({ id: g.nextId++, type: 'jeweller', x: sp.x - 1, y: sp.y, active: true });
+    g.res.gem = 50; g.res.iron = 30;
+    const j0 = g.res.jewel || 0;
+    for (let i = 0; i < 100; i++) stepEconomy(g, 0.2);
+    assert((g.res.jewel || 0) > j0, `the Jeweller cut gems into Jewellery (${(g.res.jewel || 0).toFixed(1)})`);
+    ok(`a Jeweller cuts gems → Jewellery (${(g.res.jewel || 0).toFixed(1)})`);
+
+    // Jewellery in store lends a small, capped morale lift (a luxury good's use).
+    {
+      const m = newGame(7006, 'woodland', 'syrian', 'Luxe', {});
+      m.morale = 50; m.res.jewel = 20;
+      const m0 = m.morale;
+      for (let i = 0; i < 40; i++) stepEconomy(m, 0.2);
+      assert(m.morale > m0, `stored Jewellery lifts colony morale (${m0} → ${m.morale.toFixed(1)})`);
+      ok('stored Jewellery is a luxury that lifts morale');
+    }
+  }
+
+  // Depth ramp: a deeper shaft yields more per tick than a fresh one.
+  {
+    function shaftYield(depth) {
+      const g = newGame(7003, 'mountains', 'syrian', 'Depth', {});
+      const sp = g.world.spawn;
+      g.world.nodes.push({ id: 9200, kind: 'gemseam', x: sp.x + 1, y: sp.y, amount: 9999, max: 9999 });
+      g.buildings.push({ id: g.nextId++, type: 'mineshaft', x: sp.x + 1, y: sp.y, active: true, depth });
+      const before = g.res.gem || 0;
+      for (let i = 0; i < 20; i++) stepEconomy(g, 0.2);
+      return (g.res.gem || 0) - before;
+    }
+    const shallow = shaftYield(0), deep = shaftYield(SHAFT_DEPTH.maxLevel);
+    assert(deep > shallow * 1.2, `a deeper shaft yields more (depth0 ${shallow.toFixed(1)} < deepest ${deep.toFixed(1)})`);
+    assert(SHAFT_DEPTH.maxLevel >= 2 && SHAFT_DEPTH.digCost.length === SHAFT_DEPTH.maxLevel, 'depth ramp is bounded & costed per level');
+    ok(`depth ramp: deeper shaft yields more (depth0 ${shallow.toFixed(1)} → deepest ${deep.toFixed(1)})`);
+  }
+
+  // digDeeper: pays a cost and (over time) raises the shaft's depth level.
+  {
+    const g = newGame(7004, 'mountains', 'syrian', 'Dig', {});
+    g.units.forEach(u => u.level = 8);
+    const sp = g.world.spawn;
+    g.world.nodes.push({ id: 9300, kind: 'gemseam', x: sp.x + 1, y: sp.y, amount: 9999, max: 9999 });
+    const shaftB = { id: g.nextId++, type: 'mineshaft', x: sp.x + 1, y: sp.y, active: true, depth: 0 };
+    g.buildings.push(shaftB);
+    for (const k of Object.keys(SHAFT_DEPTH.digCost[0])) g.res[k] = 999;
+    const r = digDeeper(g, shaftB);
+    assert(r.ok, 'digging deeper starts: ' + (r.reason || ''));
+    assert(shaftB.digging, 'the shaft is now digging deeper');
+    for (let i = 0; i < 400 && shaftB.digging; i++) stepEconomy(g, 0.2);
+    assert((shaftB.depth || 0) === 1, `the shaft reached depth level 1 (got ${shaftB.depth})`);
+    ok('digDeeper sinks the shaft one richer level (paid + labour-timed)');
+  }
+
+  // Old saves without the gem resource still load & simulate (defaults to 0).
+  {
+    const g = newGame(7005, 'woodland', 'syrian', 'Legacy', {});
+    delete g.res.gem; delete g.res.jewel; // pretend a pre-feature save
+    for (let i = 0; i < 30; i++) stepEconomy(g, 0.1); // must not throw
+    const back = importSaveString(exportSave(g));
+    assert(back.ok, 'a save missing the new resources still re-imports');
+    ok('saves without gems/jewellery default cleanly (no migration needed)');
+  }
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

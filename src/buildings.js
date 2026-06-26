@@ -1,5 +1,5 @@
 // buildings.js — placement validation, cost handling, tech & evolution.
-import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS, RESCUE, GUARD_GEAR } from './config.js';
+import { BUILDINGS, TECH, SPECIES, TRAITS, TRAIT_BASE_COST, EVOLUTIONS, CARE, NODE_TYPES, MINE_REPAIR, SHAFT_DEPTH, WASTE, FACTIONS, TRADE, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, fortTiers, TOWNHALL_TIERS, CONSTRUCTION, DAY_SECONDS, NAME_CHANGE_DAYS, RESCUE, GUARD_GEAR } from './config.js';
 
 // Labour-time for a project, from the total resources it costs (bigger = longer).
 export function buildTimeFor(cost) {
@@ -88,8 +88,8 @@ export function canPlace(state, type, x, y) {
   // Wells need water nearby; mines need a depleting node in range.
   if (def.needsWater && !hasWaterNear(state, x, y, def.radius || 3))
     return { ok: false, reason: 'Place near water (a pond/river)' };
-  if (def.mine && !undergroundNear(state, x, y, def.radius || 1))
-    return { ok: false, reason: 'Place on an underground iron-ore or coal seam' };
+  if (def.mine && !undergroundNear(state, x, y, def.radius || 1, !!def.deep))
+    return { ok: false, reason: def.deep ? 'Place on a deep 💎 gem seam (sink the shaft over one)' : 'Place on an underground iron-ore or coal seam' };
   // Belts feed off a nearby node OR chain off an adjacent belt (multi-segment networks).
   if (def.needsNode && !surfaceNodeNear(state, x, y, def.radius || 2) && !beltNear(state, x, y))
     return { ok: false, reason: 'Place near trees/rocks — or next to another conveyor to extend the network' };
@@ -117,8 +117,10 @@ function surfaceNodeNear(state, x, y, r) {
 function beltNear(state, x, y) {
   return state.buildings.some(b => BUILDINGS[b.type]?.belt && Math.abs(b.x - x) + Math.abs(b.y - y) <= 2);
 }
-function undergroundNear(state, x, y, r) {
-  return state.world.nodes.some(n => n.amount > 0 && !n.claimedBy && NODE_TYPES[n.kind].surface === false && Math.abs(n.x - x) <= r && Math.abs(n.y - y) <= r);
+// A matching underground seam sits in range. `deep` selects the layer: a Mine
+// Shaft (deep:true) wants a deep gem seam; an ordinary Mine wants a shallow one.
+function undergroundNear(state, x, y, r, deep = false) {
+  return state.world.nodes.some(n => n.amount > 0 && !n.claimedBy && NODE_TYPES[n.kind].surface === false && !!NODE_TYPES[n.kind].deep === !!deep && Math.abs(n.x - x) <= r && Math.abs(n.y - y) <= r);
 }
 
 export function placeBuilding(state, type, x, y) {
@@ -150,6 +152,24 @@ export function repairMine(state, b) {
   const secs = Math.round(MINE_REPAIR.seconds / (1 + 0.5 * gophers));
   b.repairUntil = (state.env?.lived || 0) + secs;
   logMsg(state, `🔧 Repairing a flooded mine (~${secs}s)${gophers ? ' — gophers digging in fast!' : ''}…`);
+  return { ok: true };
+}
+
+// Click a working Mine Shaft to dig DEEPER — the vertical-expansion ramp. Each
+// level costs materials and time (built like an upgrade) and multiplies its yield.
+// Capped at SHAFT_DEPTH.maxLevel. Repairing a flood always takes priority.
+export function digDeeper(state, b) {
+  if (!b || !BUILDINGS[b.type]?.deep) return { ok: false, reason: 'Not a Mine Shaft' };
+  if (b.flooded) return { ok: false, reason: 'Repair the flooded shaft first' };
+  if (b.underConstruction) return { ok: false, reason: 'Still being sunk' };
+  if (b.digging) return { ok: false, reason: 'Already digging deeper' };
+  const lvl = b.depth || 0;
+  if (lvl >= SHAFT_DEPTH.maxLevel) return { ok: false, reason: 'Already at the deepest level' };
+  const cost = SHAFT_DEPTH.digCost[lvl];
+  if (!canAfford(state, cost)) return { ok: false, reason: `Digging deeper needs ${costText(cost)}` };
+  spend(state, cost);
+  b.digging = { toDepth: lvl + 1, progress: 0, time: SHAFT_DEPTH.digSeconds };
+  logMsg(state, `⛏️ Sinking the Mine Shaft deeper to level ${lvl + 1} (~${SHAFT_DEPTH.digSeconds}s) — richer gem yield.`);
   return { ok: true };
 }
 
