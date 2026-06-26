@@ -25,6 +25,7 @@ export const RESOURCES = {
   wheat:    { name: 'Wheat',    icon: '🌾', kind: 'refined', color: '#d9b44a' },
   grain:    { name: 'Grain',    icon: '🟡', kind: 'refined', color: '#e0c060', nourish: 1.5 },
   pellets:  { name: 'Pellets',  icon: '🟤', kind: 'refined', color: '#b9853f', nourish: 2.4 },
+  nuts:     { name: 'Nuts',     icon: '🌰', kind: 'refined', color: '#9c6b3f' },
   fertilizer:{ name: 'Fertilizer', icon: '💩', kind: 'raw',  color: '#7a5a36' },
   planks:   { name: 'Planks',   icon: '🟫', kind: 'refined', color: '#caa05a' },
   iron:     { name: 'Iron',     icon: '🔩', kind: 'refined', color: '#cfd6dd' },
@@ -133,8 +134,13 @@ export const BUILDINGS = {
     cost: { wood: 30, planks: 15, seeds: 10 }, category: 'Wellbeing', sanctuary: true, health: 3,
   },
   sapling: {
-    name: 'Plant Tree', icon: '🌳', desc: 'Plant a tree. Growing forests SCRUB pollution from the air and green the colony — replant what industry burns. (Oak groves draw squirrels — coming soon.)',
+    name: 'Plant Tree', icon: '🌳', desc: 'Plant a tree. Growing forests SCRUB pollution from the air and green the colony — replant what industry burns. (For nuts & squirrels, plant an Oak.)',
     cost: { seeds: 10, water: 6 }, category: 'Wellbeing', tree: true,
+  },
+  oak: {
+    name: 'Oak Tree', icon: '🌰', desc: 'Plant an oak. Over time it grows acorns into Nuts — a coveted forest crop. Oak groves and a nut hoard DRAW SQUIRRELS: a kind colony (Compassion) trades with them for seeds & lore; a big hoard behind weak defenses gets raided.',
+    cost: { seeds: 14, water: 8, wood: 6 }, category: 'Food', tree: true,
+    produces: { nuts: 0.5 },
   },
   statue: {
     name: 'Statue', icon: '🗿', desc: 'A proud monument. A steady, quiet lift to colony morale — and a focus for its better nature (Compassion).',
@@ -526,6 +532,20 @@ export const POLLUTION = {
   farmMax: 0.5,       // up to −50% food output at 100 pollution
   sickAt: 45,         // above this, rodents' health drains
   healthDrain: 0.05,  // per second at full pollution, scaled above sickAt
+};
+
+// Oak → squirrel / nut economy. Planting oaks grows Nuts (a coveted forest
+// crop); oaks and a nut hoard build "squirrel pressure". When it peaks, a band
+// of squirrels arrives — a KIND colony (Compassion ≥ kindAt) or a small hoard
+// keeps it to friendly foraging/barter (nuts ⇄ seeds + forest lore); a big
+// hoard (≥ hoardAt) behind weak defenses gets RAIDED (respects peaceful mode).
+// The nut balance tips the colony toward trade / cooperation / raids.
+export const SQUIRREL = {
+  attractPerOak: 12,   // squirrel pressure per standing oak (0..100)
+  attractPerNut: 0.4,  // …plus this per stored nut (a hoard tempts them)
+  interval: 80,        // seconds-at-full-pressure between squirrel visits
+  hoardAt: 20,         // nuts above this, with low Compassion, invites a raid
+  kindAt: 55,          // Compassion at/above this keeps squirrels friendly
 };
 
 // Burrows get dirty as hamsters live in them. Left uncleaned they leak filth

@@ -10,7 +10,7 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './e
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction } from './environment.js';
-import { SEASONS, POLLUTION } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -104,6 +104,7 @@ export function stepEconomy(state, dt) {
   updateLoyalty(state, dt);
   stepEvents(state, dt);
   stepFactions(state, dt);
+  updateSquirrels(state, dt); // oak → nut economy: squirrels trade or raid
   stepRescues(state, dt);
   stepDecrees(state, dt); // moral dilemmas: spend a virtue on purpose for the group
   // Seasons turn; each new season opens with a festival — a communal lift.
@@ -380,6 +381,50 @@ function updateExploration(state, env) {
   for (const u of state.units) reveal(state.world, Math.round(u.x), Math.round(u.y), radius);
   // Watch-stance towers see far (early warning); other structures reveal a little.
   for (const b of state.buildings) reveal(state.world, b.x, b.y, (BUILDINGS[b.type]?.tower && b.mode !== 'defend' && !b.underConstruction) ? 7 : 3);
+}
+
+// Oak → squirrel / nut economy. Oaks grow Nuts (handled by the production loop);
+// oaks + a nut hoard build "squirrel pressure" (state.squirrelPressure, 0..100).
+// When it peaks a band of squirrels arrives — a KIND colony (or a small hoard)
+// gets friendly foraging/barter (nuts ⇄ seeds + forest lore + goodwill); a big
+// hoard behind weak defenses gets RAIDED for nuts (respects peaceful mode). So
+// the nut balance tips the colony toward trade / cooperation / raids.
+function updateSquirrels(state, dt) {
+  const oaks = state.buildings.filter(b => BUILDINGS[b.type]?.produces?.nuts && !b.underConstruction).length;
+  const nuts = state.res.nuts || 0;
+  const pressure = Math.min(100, oaks * SQUIRREL.attractPerOak + nuts * SQUIRREL.attractPerNut);
+  state.squirrelPressure = pressure;
+  if (pressure <= 0) { state._squirrelT = 0; return; }
+  // Higher pressure → squirrels come sooner.
+  state._squirrelT = (state._squirrelT || 0) + dt * (pressure / 100);
+  if (state._squirrelT < SQUIRREL.interval) return;
+  state._squirrelT = 0;
+  const sp = state.world.spawn;
+  const friendly = (state.compassion ?? 50) >= SQUIRREL.kindAt || nuts < SQUIRREL.hoardAt;
+  if (friendly) {
+    // Cooperation: squirrels forage peacefully and barter nuts for seeds & lore.
+    addCompassion(state, 2);
+    if (nuts >= 10 && Math.random() < 0.5) {
+      const take = Math.min(nuts, 8);
+      state.res.nuts = nuts - take;
+      addRes(state, 'seeds', take * 1.5);
+      addRes(state, 'research', 4);
+      logMsg(state, `🐿️ Squirrels bartered ${take} nuts for seeds & forest lore (+4 research). Goodwill grows.`);
+    } else {
+      addRes(state, 'food', 6);
+      logMsg(state, '🐿️ Friendly squirrels foraged your oaks and shared a little food.');
+    }
+    addFx(state, sp.x, sp.y, '🐿️', 2.2);
+  } else if (state.disasters !== false) {
+    // Raid: a hoard behind weak defenses gets robbed. Defense & Justice blunt it.
+    const guard = Math.max(0.15, 1 - (state.defense || 0) * 0.03 - Math.max(0, (state.justice ?? 50) - 50) * 0.004);
+    const steal = Math.min(nuts, Math.round(nuts * 0.4 * guard) + 3);
+    state.res.nuts = Math.max(0, nuts - steal);
+    state.res.food = Math.max(0, (state.res.food || 0) - Math.round(steal * 0.5));
+    state.morale = Math.max(0, (state.morale ?? 100) - 4);
+    addFx(state, sp.x, sp.y, '🐿️💢', 2.2);
+    logMsg(state, `🐿️ Squirrels raided your nut hoard and stole ${steal} nuts! Guard it (defense) or share it (Compassion) to keep the peace.`);
+  }
 }
 
 // Burrows accumulate filth; caretakers clean them; neglected ones degrade and

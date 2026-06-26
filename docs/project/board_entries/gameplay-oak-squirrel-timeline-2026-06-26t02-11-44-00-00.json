@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "gameplay:oak-squirrel",
+  "status": "In Progress",
+  "timeline": [
+    {
+      "at": "2026-06-26T02:11:44+00:00",
+      "status": "In Progress",
+      "note": "Oak building + Nuts resource + squirrel pressure & trade/raid events shipped data-first (PR #43); 4 smoke checks"
+    }
+  ],
+  "updated": "2026-06-26T02:11:44+00:00",
+  "pr": "43"
+}

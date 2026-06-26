@@ -594,4 +594,39 @@ console.log('Milestones (new goals):');
   ok(`new milestones present & firing (total ${MILESTONES.length})`);
 }
 
+// 21) Oak → squirrel / nut economy.
+console.log('Oak → squirrel / nut economy:');
+{
+  const { BUILDINGS, SQUIRREL, RESOURCES } = await import('../src/config.js');
+  assert(RESOURCES.nuts && BUILDINGS.oak?.produces?.nuts, 'Nuts resource + nut-producing Oak exist');
+
+  // An oak grows nuts over time (via the standard production loop).
+  const g = newGame(606, 'prairie', 'syrian', 'Oaks', {});
+  const sp = g.world.spawn;
+  g.buildings.push({ id: 9001, type: 'oak', x: sp.x, y: sp.y, active: true }); // already built
+  const before = g.res.nuts || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(g, 0.2);
+  assert((g.res.nuts || 0) > before, `an oak produces nuts over time (${before} → ${(g.res.nuts || 0).toFixed(1)})`);
+  assert((g.squirrelPressure || 0) > 0, 'oaks + nuts build squirrel pressure');
+  ok(`oaks grow nuts (${(g.res.nuts || 0).toFixed(1)}) and raise squirrel pressure (${Math.round(g.squirrelPressure)})`);
+
+  // A nut hoard behind weak defenses + low Compassion gets raided (nuts stolen).
+  const r = newGame(607, 'prairie', 'syrian', 'Hoard', {});
+  r.res.nuts = 60; r.compassion = 40; r.defense = 0; r.justice = 50; r.disasters = true;
+  r._squirrelT = 1e4; // force the visit this tick
+  const hoard = r.res.nuts;
+  stepEconomy(r, 0.1);
+  assert((r.res.nuts || 0) < hoard, `a hoard behind weak defenses gets raided (${hoard} → ${r.res.nuts})`);
+  ok(`squirrels raid an unguarded nut hoard (${hoard} → ${r.res.nuts} nuts)`);
+
+  // A kind colony stays on friendly terms — no raid, Compassion grows.
+  const k = newGame(608, 'prairie', 'syrian', 'Kind', {});
+  k.res.nuts = 60; k.compassion = 80; k.disasters = true;
+  k._squirrelT = 1e4;
+  const c0 = k.compassion;
+  stepEconomy(k, 0.1);
+  assert(k.compassion >= c0, 'a kind colony keeps squirrels friendly (Compassion does not fall)');
+  ok('a kind colony trades with squirrels instead of being raided');
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
