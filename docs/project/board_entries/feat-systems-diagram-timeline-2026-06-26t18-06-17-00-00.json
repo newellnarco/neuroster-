@@ -1,0 +1,15 @@
+{
+  "op": "update",
+  "key": "feat:systems-diagram",
+  "status": "Shipped",
+  "timeline": [
+    {
+      "at": "2026-06-26T18:06:17+00:00",
+      "status": "Shipped",
+      "note": "PR #56 merged (release 3101150)"
+    }
+  ],
+  "updated": "2026-06-26T18:06:17+00:00",
+  "pr": "56",
+  "release": "3101150"
+}
