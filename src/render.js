@@ -61,6 +61,7 @@ export function createRenderer(canvas, state, getView) {
     drawNodes(t);
     drawCamps(t);
     drawBuildings(t);
+    drawSelectedBuildings(getView());
     drawBodies();
     drawRodents(t);
     drawCaravans();
@@ -375,6 +376,19 @@ export function createRenderer(canvas, state, getView) {
     }
   }
 
+  // Highlight buildings in the current Buildings-tool selection with a dashed
+  // cyan tile outline so a multi-selection reads at a glance.
+  function drawSelectedBuildings(view) {
+    const sel = view && view.selBuildings; if (!sel || !sel.length) return;
+    ctx.save();
+    ctx.strokeStyle = '#6fb1ff'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+    for (const b of sel) {
+      if (!isSeen(state.world, b.x, b.y)) continue;
+      ctx.strokeRect(b.x * TILE + 2, b.y * TILE + 2, TILE - 4, TILE - 4);
+    }
+    ctx.restore();
+  }
+
   // Draw short connector stubs toward matching neighbours, leaving a centre gap
   // so a hamster travelling along the network stays visible.
   function drawConnectors(cx, cy, b, color, match) {
@@ -687,7 +701,15 @@ export function createRenderer(canvas, state, getView) {
         ctx.restore();
       }
       if (u.sick) glyph('🤢', cx + 9, cy - 11, 12); // wet tail
-      if (view.selUnit === u.id) { ctx.strokeStyle = '#ffd54f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, (VIS[u.species]?.size || 15) + 3, 0, 7); ctx.stroke(); }
+      // Selection ring: every multi-selected rodent gets a ring; the primary
+      // (selUnit) gets a brighter, slightly larger one.
+      const selUnits = view.selUnits && view.selUnits.length ? view.selUnits : (view.selUnit != null ? [view.selUnit] : []);
+      if (selUnits.includes(u.id)) {
+        const primary = view.selUnit === u.id;
+        ctx.strokeStyle = primary ? '#ffd54f' : 'rgba(255,213,79,0.7)';
+        ctx.lineWidth = primary ? 2 : 1.6;
+        ctx.beginPath(); ctx.arc(cx, cy, (VIS[u.species]?.size || 15) + (primary ? 3 : 2), 0, 7); ctx.stroke();
+      }
     }
   }
 
