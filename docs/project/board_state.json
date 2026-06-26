@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T16:47:49Z",
+  "updated": "2026-06-26T17:11:25Z",
   "items": [
     {
       "key": "econ:1",
@@ -1356,13 +1356,19 @@
       "type": "New Feature",
       "area": "Engine",
       "priority": "P2",
-      "status": "Backlog",
-      "pr": null,
+      "status": "Done",
+      "pr": "0",
       "release": null,
       "detail": "Bigger refactor; makes tunnels physically gate movement and gophers travel underground; lets dams use real river geography.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T17:09:36+00:00",
+          "status": "Done",
+          "note": "Pure A* core + mover integration behind steering fallback; 150 smoke checks"
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T17:09:36+00:00"
     },
     {
       "key": "add:river-dams",
@@ -1764,6 +1770,42 @@
         }
       ],
       "updated": "2026-06-26T15:46:41+00:00"
+    },
+    {
+      "key": "add:pathfinder-core",
+      "issue": null,
+      "title": "A* grid pathfinder core (pure module + tests)",
+      "arch": "ENGINE",
+      "phase": null,
+      "type": "New Feature",
+      "area": "Engine",
+      "priority": "P2",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null,
+      "parent": "add:true-pathfinding"
+    },
+    {
+      "key": "add:pathfinder-integration",
+      "issue": null,
+      "title": "Movers follow cached A* paths (fallback to steering)",
+      "arch": "ENGINE",
+      "phase": null,
+      "type": "New Feature",
+      "area": "Engine",
+      "priority": "P2",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null,
+      "parent": "add:true-pathfinding"
     }
   ]
 }

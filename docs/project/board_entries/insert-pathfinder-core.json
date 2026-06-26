@@ -1,3 +1,0 @@
-{ "key": "add:pathfinder-core", "title": "A* grid pathfinder core (pure module + tests)",
-  "type": "New Feature", "area": "Engine", "arch": "ENGINE", "priority": "P2", "status": "Done",
-  "parent": "add:true-pathfinding", "pr": 0 }

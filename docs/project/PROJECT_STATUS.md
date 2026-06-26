@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T16:47:49Z · 76 items_
+_board_state.json updated: 2026-06-26T17:11:25Z · 78 items_
 
 ## Summary
 
@@ -12,20 +12,19 @@ _board_state.json updated: 2026-06-26T16:47:49Z · 76 items_
 | in CI | 0 |
 | Todo | 0 |
 | Planned | 0 |
-| Backlog | 4 |
-| Done | 0 |
+| Backlog | 3 |
+| Done | 3 |
 | Shipped | 68 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
-| **TOTAL** | **76** |
+| **TOTAL** | **78** |
 
-**68 landed on `main`** · **4 open** (in-CI / todo / planned / backlog).
+**71 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
-| Backlog | P2 | None | True movement/pathfinding (gate tunnels, gopher travel, dams) | — | — |
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
 | Backlog | P3 | None | Tunnels / underground levels (vertical expansion) | — | — |
@@ -41,7 +40,7 @@ _board_state.json updated: 2026-06-26T16:47:49Z · 76 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (21)
+### (misc) (22)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -59,6 +58,7 @@ _board_state.json updated: 2026-06-26T16:47:49Z · 76 items_
 | None | Plastics & advanced refining (coal/oil → plastic) | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
 | None | Job assignment UI (assign rodents to resources/buildings) | [#50](https://github.com/newellnarco/neuroster-/pull/50) | `b4293ba` |
+| None | True movement/pathfinding (gate tunnels, gopher travel, dams) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
 | None | River geography for dams (real upstream tiles) | [#49](https://github.com/newellnarco/neuroster-/pull/49) | `2c8095b` |
 | None | Disease/health events + quarantine; Infirmary | [#47](https://github.com/newellnarco/neuroster-/pull/47) | `7a4e749` |
 | None | More milestones/achievements (first hybrid, day 30, apex evolution…) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
@@ -108,6 +108,13 @@ _board_state.json updated: 2026-06-26T16:47:49Z · 76 items_
 | 17b | Construction & labour | — | `—` |
 | 17c | Milestones / achievements | — | `—` |
 | 17d | Sand Bath + burrow upkeep | — | `—` |
+
+### ENGINE (2)
+
+| Phase | Item | PR | Release |
+|---|---|---|---|
+| None | A* grid pathfinder core (pure module + tests) | — | `—` |
+| None | Movers follow cached A* paths (fallback to steering) | — | `—` |
 
 ### INFRA (3)
 

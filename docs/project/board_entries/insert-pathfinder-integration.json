@@ -1,3 +1,0 @@
-{ "key": "add:pathfinder-integration", "title": "Movers follow cached A* paths (fallback to steering)",
-  "type": "New Feature", "area": "Engine", "arch": "ENGINE", "priority": "P2", "status": "Done",
-  "parent": "add:true-pathfinding", "pr": 0 }
