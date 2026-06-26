@@ -32,8 +32,11 @@
     <div id="resbar" class="resbar"></div>
     <div class="spacer"></div>
     <div class="controls">
-      <button id="tool-select" class="toolbtn" title="Select tool — click a hamster to care for it / direct it, click a building to use it">👆 Select</button>
-      <button id="tool-demolish" class="toolbtn" title="Demolish tool — left-click a building to tear it down for a 50% refund (no confirmation)">🎩 Demolish</button>
+      <button id="tool-animals" class="toolbtn" title="Animals tool — click a hamster to select it; drag a box to multi-select. Send the group to gather, eat/drink or go somewhere.">🐹 Animals</button>
+      <button id="tool-buildings" class="toolbtn" title="Buildings tool — click a building to use it (clean/upgrade/toggle); drag a box to multi-select buildings for bulk actions.">🏠 Buildings</button>
+      <button id="tool-demolish" class="toolbtn" title="Demolish tool — left-click a building to tear it down for a 50% refund; drag a box to bulldoze everything inside (no confirmation)">🎩 Demolish</button>
+      <button id="tool-multi" class="toolbtn multi-chip hidden" title="Act on the current multi-selection"></button>
+      <button id="tool-multi2" class="toolbtn multi-chip hidden" title="Secondary group action"></button>
       <span id="autosave-ind" class="autosave hidden">💾 Auto-saving…</span>
       <button id="btn-menu" title="Menu — save, load, settings & more">☰ Menu</button>
       <button id="btn-update" title="Save &amp; reload to get the newest version of the game">🔄 Update</button>
@@ -47,6 +50,7 @@
   <div id="needsbar" class="needsbar"></div>
   <div id="alertbar" class="alertbar hidden"></div>
 
+  <div id="marquee-box"></div>
   <main id="stage">
     <div id="board">
       <div id="viewport"><canvas id="game"></canvas></div>
@@ -57,7 +61,7 @@
       </div>
       <div id="flash" class="flash"></div>
       <div id="guide" class="guide hidden"></div>
-      <div class="hotkeys">👆 Select / 🎩 Demolish tools (top bar) · Click a building to use it (clean burrow, repair, upgrade…) · Click a hamster to care for it, then click a resource/feeder/well to send it to gather, eat or drink · Scroll = zoom · Right-drag = pan · Space = pause · 1/2/3 = speed · Esc / right-click = back to Select</div>
+      <div class="hotkeys">🐹 Animals / 🏠 Buildings / 🎩 Demolish tools (top bar) · Click to select; DRAG A BOX to multi-select (or bulldoze in Demolish) · With a group selected, click a resource/feeder/well/tile to order them all · Scroll = zoom · Right-drag = pan · Space = pause · 1/2/3 = speed · Esc = clear / back to Animals</div>
     </div>
 
     <div id="vsplit" class="vsplit" title="Drag to resize the panel"><span class="grip vgrip"></span><button id="vcollapse" class="split-btn" title="Hide / show the panel">›</button></div>

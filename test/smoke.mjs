@@ -2234,4 +2234,163 @@ console.log('Direct a hamster to a feeder/well to eat/drink:');
   }
 }
 
+// ---- Tool modes + marquee multi-select + group actions ----------------------
+console.log('Tool modes, marquee multi-select & group actions:');
+{
+  const {
+    TOOLS, isSelectTool, normRect, isDrag, DRAG_THRESHOLD,
+    unitsInRect, buildingsInRect, selectUnits, selectBuildings, clearSelection,
+    selectedUnits, groupGather, groupService, groupGoto, groupJob,
+    groupDemolish, groupCleanBurrows,
+  } = await import('../src/select.js');
+
+  // The three tools exist and the two select tools are recognised.
+  assert(TOOLS.join(',') === 'animals,buildings,demolish', 'tool set is animals/buildings/demolish');
+  assert(isSelectTool('animals') && isSelectTool('buildings') && !isSelectTool('demolish'), 'animals & buildings are select tools, demolish is not');
+  ok('three tool modes: animals (select rodents), buildings (select buildings), demolish');
+
+  // normRect orders bounds; isDrag distinguishes a drag from a tap.
+  const r = normRect(5, 8, 2, 3);
+  assert(r.x0 === 2 && r.y0 === 3 && r.x1 === 5 && r.y1 === 8, 'normRect orders min/max bounds');
+  assert(!isDrag(4, 4, 4, 4 + DRAG_THRESHOLD * 0.5), 'a sub-threshold move is NOT a drag (stays a click)');
+  assert(isDrag(4, 4, 4 + DRAG_THRESHOLD + 0.1, 4), 'a move past the threshold IS a drag (a marquee)');
+  ok('marquee threshold: small move = click, larger move = marquee');
+
+  // A marquee selects MULTIPLE rodents inside its rect (Animals tool).
+  {
+    const g = newGame(9101, 'prairie', 'syrian', 'Box', {});
+    const sp = g.world.spawn;
+    // Place three rodents inside a 4×4 box and one well outside it.
+    g.units[0].x = sp.x; g.units[0].y = sp.y;
+    g.units[1] && (g.units[1].x = sp.x + 1, g.units[1].y = sp.y + 1);
+    g.units[2] && (g.units[2].x = sp.x + 2, g.units[2].y = sp.y + 2);
+    const outsider = g.units[g.units.length - 1];
+    outsider.x = sp.x + 20; outsider.y = sp.y + 20;
+    const rect = normRect(sp.x - 0.2, sp.y - 0.2, sp.x + 3, sp.y + 3);
+    const inside = unitsInRect(g, rect);
+    assert(inside.length >= 3, `marquee captures the rodents in the box (got ${inside.length})`);
+    assert(!inside.includes(outsider), 'a rodent far outside the box is NOT selected');
+    const view = { selUnit: null, selUnits: [], selBuildings: [] };
+    selectUnits(view, inside);
+    assert(view.selUnits.length === inside.length, 'selectUnits stores every captured rodent id');
+    assert(view.selUnit === inside[0].id, 'selUnit tracks the primary (first) of the multi-selection');
+    ok(`marquee selects multiple rodents in a rect (${inside.length}); selUnit = primary`);
+  }
+
+  // Buildings marquee captures buildings by tile.
+  {
+    const g = newGame(9102, 'woodland', 'syrian', 'BoxB', {});
+    const sp = g.world.spawn;
+    const a = { id: g.nextId++, type: 'storage', x: sp.x, y: sp.y, active: true };
+    const b = { id: g.nextId++, type: 'storage', x: sp.x + 1, y: sp.y, active: true };
+    const far = { id: g.nextId++, type: 'storage', x: sp.x + 15, y: sp.y, active: true };
+    g.buildings.push(a, b, far);
+    const got = buildingsInRect(g, normRect(sp.x, sp.y, sp.x + 2, sp.y + 2));
+    assert(got.includes(a) && got.includes(b) && !got.includes(far), 'buildingsInRect captures buildings inside the box only');
+    const view = { selUnit: null, selUnits: [], selBuildings: [] };
+    selectBuildings(view, got);
+    assert(view.selBuildings.length === got.length, 'selectBuildings stores the captured buildings');
+    ok(`buildings marquee captures buildings by tile (${got.length})`);
+  }
+
+  // Group gather: a multi-selection sent to a node pins jobPref on ALL of them.
+  {
+    const g = newGame(9103, 'prairie', 'syrian', 'Gather', {});
+    const node = g.world.nodes.find(n => n.kind === 'rock' && n.amount > 0) || g.world.nodes.find(n => n.amount > 0);
+    assert(node, 'the map has a resource node to gather');
+    const team = g.units.slice(0, 3);
+    const res = groupGather(g, team, node);
+    assert(res.ok && res.n === team.length, 'groupGather reports the group size');
+    assert(team.every(u => u.jobPref === node.kind), 'EVERY selected rodent gets the node kind as its jobPref');
+    assert(team.every(u => u.order && u.order.kind === 'goto'), 'every selected rodent is ordered to the node');
+    ok(`group gather sets jobPref + goto on all ${team.length} selected rodents (→ ${res.resource})`);
+  }
+
+  // Group service: a multi-selection sent to a feeder/well gets a service order.
+  {
+    const { BUILDINGS } = await import('../src/config.js');
+    const wellType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].produces?.water);
+    const g = newGame(9104, 'woodland', 'syrian', 'Drink', {});
+    const sp = g.world.spawn;
+    const well = { id: g.nextId++, type: wellType, x: sp.x + 2, y: sp.y, active: true };
+    g.buildings.push(well);
+    const team = g.units.slice(0, 3);
+    const res = groupService(g, team, well);
+    assert(res.ok && res.need === 'water', 'groupService classifies the well as water');
+    assert(team.every(u => u.order && u.order.kind === 'service' && u.order.need === 'water'), 'every selected rodent has a water service order');
+    ok(`group service sends all ${team.length} selected rodents to drink`);
+  }
+
+  // Group goto: fans the group out (not all stacked on one tile).
+  {
+    const g = newGame(9105, 'prairie', 'syrian', 'Goto', {});
+    const team = g.units.slice(0, 5);
+    const res = groupGoto(g, team, 20, 14);
+    assert(res.ok && res.n === team.length, 'groupGoto orders the whole group');
+    assert(team.every(u => u.order && u.order.kind === 'goto'), 'every selected rodent gets a goto order');
+    const targets = new Set(team.map(u => `${u.order.x.toFixed(2)},${u.order.y.toFixed(2)}`));
+    assert(targets.size > 1, 'the group is fanned out across distinct targets (not all on one tile)');
+    ok(`group goto fans ${team.length} rodents out around the target`);
+  }
+
+  // Group job applies a pinned preference to everyone (the 🎯 buttons en masse).
+  {
+    const g = newGame(9106, 'prairie', 'syrian', 'Job', {});
+    const team = g.units.slice(0, 4);
+    groupJob(g, team, 'rock');
+    assert(team.every(u => u.jobPref === 'rock'), 'groupJob pins the kind on every selected rodent');
+    groupJob(g, team, null);
+    assert(team.every(u => u.jobPref === null), 'groupJob(null) clears every selected rodent back to Auto');
+    ok('group Job buttons apply to the whole multi-selection');
+  }
+
+  // Demolish-drag removes ALL buildings in a rect.
+  {
+    const g = newGame(9107, 'woodland', 'syrian', 'Bulldoze', {});
+    const sp = g.world.spawn;
+    const bs = [];
+    for (let i = 0; i < 4; i++) { const b = { id: g.nextId++, type: 'storage', x: sp.x + i, y: sp.y + 5, active: true }; g.buildings.push(b); bs.push(b); }
+    const keep = { id: g.nextId++, type: 'storage', x: sp.x + 20, y: sp.y + 5, active: true };
+    g.buildings.push(keep);
+    const inBox = buildingsInRect(g, normRect(sp.x, sp.y + 5, sp.x + 3, sp.y + 5));
+    const res = groupDemolish(g, inBox);
+    assert(res.ok && res.n === 4, `demolish-drag removes every building in the rect (removed ${res.n})`);
+    assert(bs.every(b => !g.buildings.includes(b)), 'all four boxed buildings are gone');
+    assert(g.buildings.includes(keep), 'a building outside the rect survives');
+    ok(`demolish-drag bulldozes all ${res.n} buildings in a rect, sparing those outside`);
+  }
+
+  // Group clean: cleans every dirty burrow in a building selection.
+  {
+    const { BUILDINGS } = await import('../src/config.js');
+    const burrowType = Object.keys(BUILDINGS).find(k => BUILDINGS[k].breed);
+    const g = newGame(9108, 'woodland', 'syrian', 'CleanAll', {});
+    const sp = g.world.spawn;
+    const dirty = [];
+    for (let i = 0; i < 3; i++) { const b = { id: g.nextId++, type: burrowType, x: sp.x + i, y: sp.y + 6, active: true, dirt: 5 }; g.buildings.push(b); dirty.push(b); }
+    const cleanAlready = { id: g.nextId++, type: burrowType, x: sp.x + 5, y: sp.y + 6, active: true, dirt: 0 };
+    g.buildings.push(cleanAlready);
+    const res = groupCleanBurrows(g, [...dirty, cleanAlready]);
+    assert(res.ok && res.n === 3, `group clean cleans only the dirty burrows (cleaned ${res.n})`);
+    assert(dirty.every(b => (b.dirt || 0) === 0), 'every dirty burrow in the selection is now clean');
+    ok(`group clean tidies all ${res.n} dirty burrows in a building selection`);
+  }
+
+  // Tool toggle switches the selection target type; clearSelection resets both.
+  {
+    const g = newGame(9109, 'woodland', 'syrian', 'Toggle', {});
+    const view = { tool: 'animals', selUnit: null, selUnits: [], selBuildings: [] };
+    selectUnits(view, g.units.slice(0, 2));
+    assert(view.selUnits.length === 2 && view.selBuildings.length === 0, 'animals tool fills selUnits');
+    clearSelection(view);
+    assert(view.selUnits.length === 0 && view.selUnit === null && view.selBuildings.length === 0, 'clearSelection empties everything');
+    const sp = g.world.spawn;
+    const b = { id: g.nextId++, type: 'storage', x: sp.x, y: sp.y, active: true }; g.buildings.push(b);
+    selectBuildings(view, [b]);
+    assert(view.selBuildings.length === 1, 'buildings tool fills selBuildings');
+    assert(selectedUnits(g, { selUnits: [g.units[0].id] }).length === 1, 'selectedUnits resolves ids → live units');
+    ok('tool toggle switches target type (rodents ↔ buildings); selection clears cleanly');
+  }
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

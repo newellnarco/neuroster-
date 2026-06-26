@@ -33,7 +33,7 @@ export function startGame(canvas) {
     const el = document.getElementById(id); if (el) el.textContent = VERSION;
   }
 
-  const view = { placing: null, hover: null, canPlace: false, paused: false, speed: 1, selUnit: null, tool: 'select' };
+  const view = { placing: null, hover: null, canPlace: false, paused: false, speed: 1, selUnit: null, selUnits: [], selBuildings: [], marquee: null, tool: 'animals' };
   // Seed the camera from this colony's saved view preferences (zoom + pan center),
   // so a reload restores the player's last view. setupCanvas reads view.zoom and
   // view.centerFracX/Y; leaving them unset keeps the "start centered on town" default.
