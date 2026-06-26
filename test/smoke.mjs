@@ -965,4 +965,70 @@ console.log('Building textures (glyph treatment):');
   ok(`textured one-offs now vary by material (${nonWood} non-timber treatments)`);
 }
 
+// 29) Production chain: Mason → brick, Furnace → iron, Forge → armour; armour boosts defense.
+console.log('Production chain (Mason / Furnace / Forge + brick + armour):');
+{
+  const { BUILDINGS, RESOURCES, ARMOUR } = await import('../src/config.js');
+  const { totalOffense } = await import('../src/events.js');
+  // New resources & buildings exist with valid cost/produce/consume.
+  assert(RESOURCES.brick && RESOURCES.armour, 'brick & armour are real resources');
+  for (const t of ['mason', 'furnace', 'forge']) {
+    const d = BUILDINGS[t];
+    assert(d && d.category === 'Production', `${t} exists in Production`);
+    assert(d.cost && Object.values(d.cost).every(v => v > 0), `${t} has a valid cost`);
+    assert(d.produces && Object.values(d.produces).every(v => v > 0), `${t} has a valid produce`);
+    assert(d.consumes && Object.values(d.consumes).every(v => v > 0), `${t} consumes inputs`);
+  }
+  assert(BUILDINGS.mason.produces.brick && BUILDINGS.mason.consumes.stone, 'Mason: stone → brick');
+  assert(BUILDINGS.furnace.produces.iron && BUILDINGS.furnace.consumes.ironore, 'Furnace: ore → iron');
+  assert(BUILDINGS.forge.produces.armour && BUILDINGS.forge.consumes.iron && BUILDINGS.forge.consumes.planks, 'Forge: iron+planks → armour');
+  ok('Mason/Furnace/Forge exist with valid cost/consume/produce; brick & armour are resources');
+
+  const built = (s, type, x, y) => { s.buildings.push({ id: s.nextId++, type, x, y, active: true }); };
+
+  // Mason fires stone into brick.
+  const m = newGame(1200, 'mountains', 'syrian', 'Brick', {});
+  m.res = { stone: 400 };
+  built(m, 'mason', m.world.spawn.x + 2, m.world.spawn.y);
+  const b0 = m.res.brick || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(m, 0.2);
+  assert((m.res.brick || 0) > b0, `Mason turns stone → brick (${b0} → ${(m.res.brick || 0).toFixed(1)})`);
+  ok(`Mason produces brick (${(m.res.brick || 0).toFixed(1)})`);
+
+  // Furnace smelts ore + coal into iron.
+  const f = newGame(1201, 'mountains', 'syrian', 'Furn', {});
+  f.res = { ironore: 200, coal: 200 };
+  built(f, 'furnace', f.world.spawn.x + 2, f.world.spawn.y);
+  const i0 = f.res.iron || 0;
+  for (let i = 0; i < 30; i++) stepEconomy(f, 0.2);
+  assert((f.res.iron || 0) > i0, `Furnace smelts ore → iron (${i0} → ${(f.res.iron || 0).toFixed(1)})`);
+  assert((f.res.ironore || 0) < 200, 'Furnace consumes ore');
+  ok(`Furnace smelts ore into iron (${(f.res.iron || 0).toFixed(1)})`);
+
+  // Forge hammers iron + planks into armour.
+  const g = newGame(1202, 'mountains', 'syrian', 'Forge', {});
+  g.res = { iron: 200, planks: 200 };
+  built(g, 'forge', g.world.spawn.x + 2, g.world.spawn.y);
+  const a0 = g.res.armour || 0;
+  for (let i = 0; i < 40; i++) stepEconomy(g, 0.2);
+  assert((g.res.armour || 0) > a0, `Forge makes armour (${a0} → ${(g.res.armour || 0).toFixed(2)})`);
+  assert((g.res.iron || 0) < 200 && (g.res.planks || 0) < 200, 'Forge consumes iron & planks');
+  ok(`Forge forges armour from iron + planks (${(g.res.armour || 0).toFixed(2)})`);
+
+  // Armour in store raises colony defense (and lends a little guard offense).
+  const d = newGame(1203, 'prairie', 'syrian', 'Armed', {});
+  d.res.armour = 0;
+  stepEconomy(d, 0.1);
+  const def0 = d.defense, off0 = totalOffense(d);
+  d.res.armour = 10;
+  stepEconomy(d, 0.1);
+  const def1 = d.defense, off1 = totalOffense(d);
+  assert(def1 > def0, `stored armour raises colony defense (${def0} → ${def1})`);
+  assert(off1 > off0, `stored armour arms the guard's offense (${off0} → ${off1})`);
+  // The contribution is capped — a huge stockpile can't trivialise threats.
+  d.res.armour = 9999; stepEconomy(d, 0.1);
+  assert(d.defense - def0 <= ARMOUR.defCap + 1e-6, `armour defense is capped at ${ARMOUR.defCap}`);
+  ok(`armour boosts defense ${def0}→${def1} & offense ${off0}→${off1} (capped at ${ARMOUR.defCap})`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);

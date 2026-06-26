@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR } from './config.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan } from './factions.js';
@@ -106,6 +106,8 @@ export function totalOffense(state) {
     if (u.guard) o += (GUARD_GEAR[u.gear || 0]?.atk || 0); // trained/equipped guards
   }
   o += state._doc?.offense || 0; // War Strategy doctrine
+  // Forged Armour arms the guard — a capped lift to colony offense.
+  o += Math.min(ARMOUR.atkCap, (state.res?.armour || 0) * ARMOUR.atkPerSet);
   return o;
 }
 

@@ -31,6 +31,9 @@ flowchart LR
   B_sawmill["🪚 Sawmill"]
   B_smelter["🔥 Smelter"]
   B_steelworks["🏭 Steelworks"]
+  B_mason["🧱 Mason"]
+  B_furnace["🔥 Furnace"]
+  B_forge["⚒️ Forge"]
   B_wheel["🎡 Wheel Generator"]
   B_electricwheel["🔌 Electric Wheel"]
   B_coalplant["🏭 Coal Plant"]
@@ -58,6 +61,9 @@ flowchart LR
   R_coal(["⚫ Coal"])
   R_iron(["🔩 Iron"])
   R_steel(["⚙️ Steel"])
+  R_stone(["🪨 Stone"])
+  R_brick(["🧱 Brick"])
+  R_armour(["🛡️ Armour"])
   R_research(["🔬 Research"])
   R_seeds -->|0.25| B_farm
   B_farm -->|0.5| R_food
@@ -88,6 +94,14 @@ flowchart LR
   R_iron -->|0.4| B_steelworks
   R_coal -->|0.3| B_steelworks
   B_steelworks -->|0.25| R_steel
+  R_stone -->|0.4| B_mason
+  B_mason -->|0.3| R_brick
+  R_ironore -->|0.45| B_furnace
+  R_coal -->|0.25| B_furnace
+  B_furnace -->|0.35| R_iron
+  R_iron -->|0.3| B_forge
+  R_planks -->|0.2| B_forge
+  B_forge -->|0.12| R_armour
   R_food -->|0.4| B_wheel
   B_wheel -->|0.6| R_power
   R_food -->|0.4| B_electricwheel
@@ -126,8 +140,10 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | 💩 Manure | droppings → ♻️ Composter; cleaning a burrow/house |
 | 🪴 Fertilizer | ⚙️ Fertilizer Mill |
 | 🟫 Planks | 🪚 Sawmill |
-| 🔩 Iron | 🔥 Smelter |
+| 🔩 Iron | 🔥 Smelter; 🔥 Furnace |
 | ⚙️ Steel | 🏭 Steelworks |
+| 🧱 Brick | 🧱 Mason |
+| 🛡️ Armour | ⚒️ Forge |
 | 🟦 Plastic | 🛢️ Refinery |
 | 🫧 Hamster Balls | 🫧 Ball Workshop |
 | ⚡ Power | 🌬️ Windmill; 🛞 Water Mill; 🎡 Wheel Generator; 🔌 Electric Wheel; 🏭 Coal Plant; 🔆 Solar Panel; 🌀 Water Turbine |
@@ -199,6 +215,9 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | 🪚 Sawmill | 🪵 wood 40, 🪨 stone 10 | 🪵 wood 0.6 | 🟫 planks 0.4 |  |
 | 🔥 Smelter | 🪵 wood 30, 🪨 stone 40 | ⛰️ ironore 0.5, ⚫ coal 0.3 | 🔩 iron 0.3 | pollutes 0.8 |
 | 🏭 Steelworks | 🪨 stone 50, 🔩 iron 20 | 🔩 iron 0.4, ⚫ coal 0.3 | ⚙️ steel 0.25 | pollutes 1 |
+| 🧱 Mason | 🪵 wood 25, 🪨 stone 30 | 🪨 stone 0.4 | 🧱 brick 0.3 |  |
+| 🔥 Furnace | 🧱 brick 12, 🪨 stone 20 | ⛰️ ironore 0.45, ⚫ coal 0.25 | 🔩 iron 0.35 | pollutes 0.6 |
+| ⚒️ Forge | 🧱 brick 16, 🔩 iron 15 | 🔩 iron 0.3, 🟫 planks 0.2 | 🛡️ armour 0.12 |  |
 | 🛢️ Refinery | 🪨 stone 40, 🔩 iron 20 | ⚫ coal 0.4 | 🟦 plastic 0.3 | pollutes 0.9 |
 | 🔬 Research Lab | 🟫 planks 30, 🔩 iron 10 | — | 🔬 research 0.3 |  |
 | 🏪 Trading Hut | 🪵 wood 40, 🟫 planks 20 | — | — |  |
@@ -207,7 +226,7 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 
 | Structure | Cost | Consumes | Produces | Effect |
 |---|---|---|---|---|
-| 📦 Storage Depot | 🪵 wood 25 | — | — | +200 storage |
+| 📦 Storage Depot | 🪵 wood 25 | — | — | +1500 storage |
 | 🛢️ Water Cistern | 🪵 wood 26, 🟫 planks 8 | — | — | +300 storage |
 
 ### Wellbeing
@@ -256,6 +275,8 @@ comes from droppings (Composter) & burrow cleaning; ⚡ power from wheels/wind/w
 | 🟫 Planks | refined |  |
 | 🔩 Iron | refined |  |
 | ⚙️ Steel | refined |  |
+| 🧱 Brick | refined |  |
+| 🛡️ Armour | refined |  |
 | 🟦 Plastic | refined |  |
 | 🫧 Hamster Balls | refined |  |
 | ⚡ Power | abstract | not stored (pool) |
@@ -345,4 +366,4 @@ flowchart LR
 
 ---
 
-_Generated from `src/config.js` — 61 structures, 20 resources, 7 species. Run `node tools/gen_systems.mjs` to refresh._
+_Generated from `src/config.js` — 64 structures, 22 resources, 7 species. Run `node tools/gen_systems.mjs` to refresh._

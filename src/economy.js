@@ -10,7 +10,7 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './e
 import { stepEvents, stepFactions } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
@@ -257,6 +257,8 @@ function recomputeBuildings(state) {
   // Caretaker huts auto-tend energy, fun & health — easing larger settlements.
   fun += caretakers * 4; health += caretakers * 4;
   defense = Math.round(defense * (1 + evoBonus(state, 'all', 'defense'))) + (state._mega?.defense || 0) + (state._doc?.defense || 0);
+  // Forged Armour in store hardens the colony's defense (capped — a steady edge).
+  defense += Math.round(Math.min(ARMOUR.defCap, (state.res?.armour || 0) * ARMOUR.defPerSet));
   storage += state._mega?.storage || 0; // Great Granary expands the vaults
   state.popCap = popCap; state.storageCap = storage; state.defense = defense;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
