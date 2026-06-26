@@ -1470,4 +1470,21 @@ console.log('Difficulty scales yields & breeding:');
   ok(`difficulty scales breeding speed (relaxed ${easyB.toFixed(3)} > harsh ${hardB.toFixed(3)} per tick)`);
 }
 
+// 40) Balance pass: corrected costs/outputs now the full build set has landed.
+console.log('Balance pass (conveyors & defense costs):');
+{
+  const { BUILDINGS } = await import('../src/config.js');
+  // Wooden Fence is the cheapest raw-defense perimeter: cheaper than the Wall,
+  // which earns its keep with HP/upgrades/protect keys.
+  assert(BUILDINGS.woodfence.cost.wood === 8, `fence re-costed to wood:8 (got ${BUILDINGS.woodfence.cost.wood})`);
+  assert(BUILDINGS.woodfence.cost.wood < BUILDINGS.wall.cost.wood, 'the flat fence is cheaper than the upgradeable wall');
+  // Belt tiers form a clean strictly-increasing throughput ladder, and the
+  // plastic (refined-chain) belt now sits well above the free wood belt.
+  const wood = BUILDINGS.conveyor.belt.rate, plastic = BUILDINGS.conveyorPlastic.belt.rate, metal = BUILDINGS.conveyorMetal.belt.rate;
+  assert(plastic === 1.8, `plastic belt bumped to rate 1.8 (got ${plastic})`);
+  assert(wood < plastic && plastic < metal, `belt throughput strictly increases by tier (${wood} < ${plastic} < ${metal})`);
+  assert(plastic - wood >= 0.7, `the plastic tier is a meaningful step over wood (Δ${(plastic - wood).toFixed(1)})`);
+  ok(`balance pass locked: fence wood:8 (< wall), belt ladder ${wood}/${plastic}/${metal}`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
