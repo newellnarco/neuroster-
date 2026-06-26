@@ -1,6 +1,6 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS, buildingTex } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, RESOURCES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS, buildingTex } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather, seasonKey, seasonTint } from './environment.js';
 import { buildTextures } from './textures.js';
@@ -65,6 +65,7 @@ export function createRenderer(canvas, state, getView) {
     drawRodents(t);
     drawCaravans();
     drawRescue(t);
+    drawMapLabels(getView());
     drawFx();
     drawHover(getView());
     drawDayNight();
@@ -808,6 +809,28 @@ export function createRenderer(canvas, state, getView) {
   }
   function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
+  // ---------- Persistent on-map labels (toggled by 🏷️) ----------
+  // When labels are ON we draw a small, legible name pill near each visible
+  // building, the kind of each resource node, and the selected rodent — so the
+  // player can read the map without hovering every entity. Cheap: a handful of
+  // short fills per visible entity, only when the toggle is on.
+  function drawMapLabels(view) {
+    if (!view || !view.showLabels) return;
+    for (const lbl of collectMapLabels(state, view)) {
+      labelPill(lbl.text, lbl.x * TILE + TILE / 2, lbl.y * TILE + TILE / 2 + (lbl.dy || 0), lbl.accent);
+    }
+  }
+  // A compact outlined name tag with a translucent backing for legibility over
+  // any terrain. Kept small so dense colonies stay readable.
+  function labelPill(text, cx, y, accent) {
+    ctx.font = '600 9px system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w = ctx.measureText(text).width + 8, h = 12;
+    ctx.fillStyle = 'rgba(20,17,12,0.66)'; roundRect(cx - w / 2, y - h / 2, w, h, 4); ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.strokeText(text, cx, y); // outline for contrast
+    ctx.fillStyle = accent || '#f3ead9'; ctx.fillText(text, cx, y);
+  }
+
   // ---------- Overlays ----------
   function drawFx() {
     const now = state.env?.lived || 0;
@@ -857,6 +880,30 @@ export function createRenderer(canvas, state, getView) {
   function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
   return { draw };
+}
+
+// Build the list of persistent on-map labels for the current world, gated by the
+// 🏷️ labels toggle. Returns [] when labels are off, so the render path stays
+// empty and cheap; when on it yields one label per visible building (its name),
+// each visible resource node (its kind), and the selected rodent (its name).
+// Pure & DOM-free so the smoke test can assert the toggle drives the code path.
+export function collectMapLabels(state, view) {
+  if (!view || !view.showLabels) return [];
+  const out = [];
+  const seen = (x, y) => isSeen(state.world, Math.round(x), Math.round(y));
+  for (const b of state.buildings || []) {
+    if (b.underConstruction) continue;
+    const def = BUILDINGS[b.type]; if (!def || !seen(b.x, b.y)) continue;
+    out.push({ kind: 'building', text: def.name, x: b.x, y: b.y, dy: 16, accent: '#f0d486' });
+  }
+  for (const n of state.world?.nodes || []) {
+    if (n.amount <= 0 || !seen(n.x, n.y)) continue;
+    const nt = NODE_TYPES[n.kind]; if (!nt) continue;
+    out.push({ kind: 'node', text: nt.icon + ' ' + (RESOURCES[nt.resource]?.name || n.kind), x: n.x, y: n.y, dy: 17, accent: '#cfe6b8' });
+  }
+  const sel = view.selUnit != null ? state.units?.find(u => u.id === view.selUnit) : null;
+  if (sel && seen(sel.x, sel.y)) out.push({ kind: 'unit', text: sel.name || `#${sel.id}`, x: sel.x, y: sel.y, dy: -16, accent: '#ffd54f' });
+  return out;
 }
 
 // Add an alpha to a "#rrggbb" or "rgb(...)" colour string.
