@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "gameplay:scout-waypoint",
+  "status": "In Progress",
+  "timeline": [
+    {
+      "at": "2026-06-26T01:07:08+00:00",
+      "status": "In Progress",
+      "note": "Click-to-go + Explore task implemented; reveals fog until the map is fully mapped (PR #43)"
+    }
+  ],
+  "updated": "2026-06-26T01:07:08+00:00",
+  "pr": "43"
+}
