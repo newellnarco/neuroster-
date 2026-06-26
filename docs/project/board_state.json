@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T06:42:53Z",
+  "updated": "2026-06-26T06:50:24Z",
   "items": [
     {
       "key": "econ:1",
@@ -1001,13 +1001,19 @@
       "type": "Enhancement",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Todo",
+      "status": "In Progress",
       "pr": null,
       "release": null,
       "detail": "Belts ship wood→plastic→metal already; add chaining node→belt→belt→storage with direction.",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-26T06:50:24+00:00",
+          "status": "In Progress",
+          "note": "Partial remainder of econ:2 (#43 shipped single-segment conveyors + plastic tier; multi-segment belt→belt chaining still open). Started this session."
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-26T06:50:24+00:00"
     },
     {
       "key": "fix:difficulty-scale",
@@ -1261,7 +1267,7 @@
       "type": "Enhancement",
       "area": "UI/UX",
       "priority": "P3",
-      "status": "Todo",
+      "status": "In Progress",
       "pr": "43",
       "release": null,
       "detail": "Include offense raids vs AI colonies.",
@@ -1275,10 +1281,15 @@
           "at": "2026-06-26T06:42:49+00:00",
           "status": "Todo",
           "note": "Reverted from In Progress: not delivered in PR #43 (Threats panel never renamed); back to active queue"
+        },
+        {
+          "at": "2026-06-26T06:50:24+00:00",
+          "status": "In Progress",
+          "note": "Partial: #43 shipped the military mechanics (guard skill + tiered equipment) but not the screen promotion. Building the Defense & Military screen this session."
         }
       ],
       "screenshots": [],
-      "updated": "2026-06-26T06:42:49+00:00"
+      "updated": "2026-06-26T06:50:24+00:00"
     },
     {
       "key": "change:evolution-branches",

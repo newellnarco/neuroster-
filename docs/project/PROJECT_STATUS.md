@@ -2,15 +2,15 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T06:42:53Z · 73 items_
+_board_state.json updated: 2026-06-26T06:50:24Z · 73 items_
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| In Progress | 0 |
+| In Progress | 2 |
 | in CI | 0 |
-| Todo | 5 |
+| Todo | 3 |
 | Planned | 0 |
 | Backlog | 19 |
 | Done | 0 |
@@ -25,11 +25,11 @@ _board_state.json updated: 2026-06-26T06:42:53Z · 73 items_
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
+| In Progress | P2 | ECON | Multi-segment conveyor belt networks | — | — |
+| In Progress | P3 | None | Promote Threats panel → Defense & Military screen | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
 | Todo | P2 | RENDER | Animation & realism polish + seasonal atmosphere + audio | — | — |
-| Todo | P2 | ECON | Multi-segment conveyor belt networks | — | — |
 | Todo | P2 | None | AI colonies compete for nodes + richer on-map diplomacy/combat | — | — |
 | Todo | P3 | None | Job assignment UI (assign rodents to resources/buildings) | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
-| Todo | P3 | None | Promote Threats panel → Defense & Military screen | — | [#43](https://github.com/newellnarco/neuroster-/pull/43) |
 | Backlog | P2 | PROD | Production chain: Furnace / Forge / Mason + brick + armour | — | — |
 | Backlog | P2 | None | Validate EVENT_PACE/GRACE feel across biomes & difficulties | — | — |
 | Backlog | P2 | None | True movement/pathfinding (gate tunnels, gopher travel, dams) | — | — |
