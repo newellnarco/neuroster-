@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T07:15:49Z",
+  "updated": "2026-06-26T07:20:04Z",
   "items": [
     {
       "key": "econ:1",
@@ -1522,6 +1522,11 @@
           "at": "2026-06-26T07:15:49+00:00",
           "status": "Done",
           "note": "CI green on PR #44 (88 smoke checks + browser smoke); awaiting merge"
+        },
+        {
+          "at": "2026-06-26T07:20:04+00:00",
+          "status": "Done",
+          "note": "Added slight zigzag (alternating tabs 5px lower) so the two rows read clearly; still on PR #44"
         }
       ],
       "screenshots": [
@@ -1529,9 +1534,14 @@
           "at": "2026-06-26T07:15:48+00:00",
           "path": "docs/screenshots/tabs-section-grid.png",
           "caption": "Double-stacked 4×2 folder-style section tabs (all 8 fit)"
+        },
+        {
+          "at": "2026-06-26T07:20:04+00:00",
+          "path": "docs/screenshots/tabs-section-grid.png",
+          "caption": "Zigzag section tabs — two rows read clearly, all 8 visible"
         }
       ],
-      "updated": "2026-06-26T07:15:49+00:00"
+      "updated": "2026-06-26T07:20:04+00:00"
     }
   ]
 }
