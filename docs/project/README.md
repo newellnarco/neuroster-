@@ -78,6 +78,21 @@ To fold + render **locally** (e.g. before pushing):
 python tools/compact_board_fragments.py
 ```
 
+## Standing rule: sweep the wall at the start AND end of every session
+
+Reconciling the board is a **ritual, not an afterthought** — it runs twice per session:
+
+- **At session start** — before any feature work, verify every `In Progress` item against its
+  PR (merged PRs → `Shipped` with `pr`+`release`; aspirational/undelivered items → back to `Todo`;
+  partially-delivered items → keep `In Progress` and ticket the remainder). Then `audit`, drop
+  fragments, `compact`, and commit.
+- **At session end** — record everything that changed during the session (new PRs, merges, partial
+  progress) the same way, and commit, so the next session starts from an honest board.
+
+This is enforced by the `SessionStart` + `Stop` hooks in
+[`.claude/settings.json`](../../.claude/settings.json) (the SessionStart hook runs the audit and
+injects a reminder; the Stop hook reminds once per session to sweep + commit before ending).
+
 ## Status lifecycle
 
 ```

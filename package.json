@@ -7,10 +7,15 @@
     "start": "node server.js",
     "serve": "node server.js",
     "check": "for f in src/*.js main.js server.js test/*.mjs; do node --check \"$f\" || exit 1; done",
-    "test": "npm run check && node test/smoke.mjs"
+    "test": "npm run check && node test/smoke.mjs",
+    "verify:browser": "node test/browser-smoke.mjs",
+    "test:all": "npm test && npm run verify:browser"
   },
   "engines": {
     "node": ">=16"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.0"
   },
   "license": "MIT"
 }

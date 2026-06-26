@@ -57,7 +57,7 @@ export function stepEconomy(state, dt) {
     const def = BUILDINGS[b.type];
     if (!def || b.active === false || b.underConstruction) continue;
     if (def.mine) { runMine(state, b, def, dt, wb); continue; }
-    if (def.belt) { runBelt(state, b, def, dt, wb); continue; }
+    if (def.belt) { continue; } // belts run as connected networks — see runBeltNetworks below
 
     let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)); // leader inspires; builders divert labour; play-enrichment distracts a little
     if (def.category === 'Food') {
@@ -87,6 +87,8 @@ export function stepEconomy(state, dt) {
     if (def.pollutes && rate > 0) pollSrc += def.pollutes; // running industry emits smog
   }
   state._pollSrc = pollSrc;
+  // 3b) Conveyors haul as connected belt NETWORKS (multi-segment chaining).
+  runBeltNetworks(state, dt, wb);
   // Remove any mines that collapsed this tick (deposit exhausted).
   if (state._collapse && state._collapse.length) {
     for (const b of state._collapse) { const i = state.buildings.indexOf(b); if (i >= 0) state.buildings.splice(i, 1); }
@@ -311,20 +313,48 @@ function collapseMine(state, b, n) {
   logMsg(state, `⛏️ A mine collapsed — its ${n ? NODE_TYPES[n.kind].resource : 'ore'} seam ran out.`);
 }
 
-// Conveyor belts auto-transport from the nearest in-range SURFACE node to storage.
-function runBelt(state, b, def, dt, wb) {
-  const r = def.radius || 2;
-  let target = null, bd = Infinity;
-  for (const n of state.world.nodes) {
-    if (n.amount <= 0 || NODE_TYPES[n.kind].surface === false) continue;
-    const d = Math.abs(n.x - b.x) + Math.abs(n.y - b.y);
-    if (d <= r && d < bd) { bd = d; target = n; }
+// Belts that sit within BELT_LINK tiles of each other form a single conveyor
+// NETWORK. A network reaches every surface node in range of ANY of its belts and
+// hauls at the SUM of its belts' rates — so a relay belt placed away from nodes
+// still extends reach and adds throughput. Build long chains to drain far seams.
+export const BELT_LINK = 2;
+function runBeltNetworks(state, dt, wb) {
+  const belts = state.buildings.filter(b => {
+    const def = BUILDINGS[b.type];
+    return def?.belt && b.active !== false && !b.underConstruction;
+  });
+  if (!belts.length) return;
+
+  // Union-find over belts linked within BELT_LINK (Manhattan) of one another.
+  const parent = belts.map((_, i) => i);
+  const find = (i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+  for (let i = 0; i < belts.length; i++) for (let j = i + 1; j < belts.length; j++) {
+    if (Math.abs(belts[i].x - belts[j].x) + Math.abs(belts[i].y - belts[j].y) <= BELT_LINK)
+      parent[find(i)] = find(j);
   }
-  if (!target) { b._flow = 0; return; }
-  const got = Math.min(target.amount, def.belt.rate * dt * wb);
-  target.amount -= got;
-  addRes(state, NODE_TYPES[target.kind].resource, got);
-  b._flow = 1;
+  const nets = new Map();
+  belts.forEach((b, i) => { const root = find(i); (nets.get(root) || nets.set(root, []).get(root)).push(b); });
+
+  for (const net of nets.values()) {
+    // Total haul this tick = sum of each belt's rate (higher tiers move more).
+    let cap = 0;
+    for (const b of net) { cap += BUILDINGS[b.type].belt.rate; b._flow = 0; }
+    cap *= dt * wb;
+    // Every surface node within a belt's own radius of any belt in the network.
+    const reach = state.world.nodes.filter(n => {
+      if (n.amount <= 0 || NODE_TYPES[n.kind].surface === false) return false;
+      return net.some(b => Math.abs(n.x - b.x) + Math.abs(n.y - b.y) <= (BUILDINGS[b.type].radius || 2));
+    }).sort((a, b) => b.amount - a.amount); // drain the richest seams first
+    if (!reach.length) continue;
+    let hauled = 0;
+    for (const n of reach) {
+      if (cap <= 0) break;
+      const got = Math.min(n.amount, cap);
+      n.amount -= got; cap -= got; hauled += got;
+      addRes(state, NODE_TYPES[n.kind].resource, got);
+    }
+    if (hauled > 0) for (const b of net) b._flow = 1; // animate the whole live network
+  }
 }
 
 function powerMultiplier(state) {
