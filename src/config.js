@@ -170,7 +170,11 @@ export const BUILDINGS = {
   },
   woodfence: {
     name: 'Wooden Fence', icon: '🚧', desc: 'A cheap timber palisade — light defense vs ground predators & raids. Quick to ring the colony (wood can burn in wildfire).',
-    cost: { wood: 10 }, category: 'Defense', defense: 2,
+    // Balance pass: the upgradeable Wall (wood:12) gave HP + protect keys for
+    // barely more wood, leaving the flat fence dominated. Cut to wood:8 so the
+    // fence keeps a real niche — the cheapest raw defense-per-wood for quickly
+    // ringing a perimeter (no HP/upgrades; the Wall is the investment path).
+    cost: { wood: 8 }, category: 'Defense', defense: 2,
   },
   ballworkshop: {
     name: 'Ball Workshop', icon: '🫧', desc: 'Rolls Plastic into Hamster Balls (needs a Refinery making plastic). Select a rodent → 🫧 to send it rolling around the world SAFE from predators — happiness & curiosity rise. Only ONE rodent can roll at a time; balls are for travel & fun, not hauling. Anxiety builds, so it pops out before long; and on a HOT day it can OVERHEAT and die inside if you don\'t let it out in time.',
@@ -273,7 +277,11 @@ export const BUILDINGS = {
   },
   conveyorPlastic: {
     name: 'Conveyor (Plastic)', icon: '🟦', desc: 'Faster plastic belt: better throughput than wood. Chains with any belt to extend a network.',
-    cost: { plastic: 20, planks: 10 }, category: 'Automation', belt: { rate: 1.6, tier: 2 }, radius: 2, needsNode: true,
+    // Balance pass: plastic is a whole coal/oil → refinery chain to make, yet at
+    // rate 1.6 this middle belt sat too close to the wood belt (1.0) to justify
+    // the investment, and was outclassed by the metal belt (2.4, just iron). Bump
+    // the throughput to 1.8 so the plastic tier earns its refining cost.
+    cost: { plastic: 20, planks: 10 }, category: 'Automation', belt: { rate: 1.8, tier: 2 }, radius: 2, needsNode: true,
   },
   conveyorMetal: {
     name: 'Conveyor (Metal)', icon: '⚙️', desc: 'Fastest metal belt: highest throughput from nearby nodes. Chains with any belt to extend a network.',
@@ -643,6 +651,12 @@ export const WETTAIL = {
 // Fertilizer auto-feeds Food buildings for a big yield boost.
 export const FERTILIZER_BOOST = 0.7;
 
+// Feeders & Auto-Waterers have finite THROUGHPUT. Each station serves about this
+// many rodents at full effectiveness; beyond that, queueing degrades its per-
+// station drain-cut (see economy.js updatePerUnitNeeds), so a growing colony must
+// build more stations rather than leaning on one. Lower = stricter crowding.
+export const FEEDER_SERVES = 6;
+
 // ---- Disease / outbreaks ---------------------------------------------------
 // Beyond wet-tail (filth-driven, per-rodent), a colony can suffer a contagious
 // OUTBREAK: a sickness that spreads rodent-to-rodent, worse the more CROWDED the
@@ -808,10 +822,20 @@ export const FAMILY_NAMES = [
 
 // Start-of-game options for replayability: difficulty scales danger & starting
 // stock; density scales how abundant resource nodes are in the generated world.
+// Difficulty modulates the whole game, not just combat:
+//   disasterMul → event SEVERITY (how hard each disaster hits)
+//   startMul    → the starting resource bundle
+//   paceMul     → event PACING: ×gaps between events (>1 = calmer, gentler cadence)
+//   graceMul    → ×the peaceful grace period before any threats begin
+//   yieldMul    → resource production / mining / belt-haul output
+//   breedMul    → breeding speed
+// Easier settings get longer grace, gentler pacing, richer yields & faster
+// breeding; harder settings get the reverse. paceMul/graceMul/yieldMul/breedMul
+// are read by events.js & economy.js (see eventPace/graceSeconds, yieldMul).
 export const DIFFICULTIES = {
-  relaxed: { name: 'Relaxed', icon: '😌', disasterMul: 0.55, startMul: 1.4, desc: 'Gentle threats, generous start. Build & relax.' },
-  normal:  { name: 'Normal',  icon: '⚖️', disasterMul: 1.0,  startMul: 1.0, desc: 'The intended balance.' },
-  harsh:   { name: 'Harsh',   icon: '🔥', disasterMul: 1.6,  startMul: 0.8, desc: 'Frequent, fierce dangers and a lean start.' },
+  relaxed: { name: 'Relaxed', icon: '😌', disasterMul: 0.55, startMul: 1.4, paceMul: 1.35, graceMul: 1.5, yieldMul: 1.2,  breedMul: 1.25, desc: 'Gentle threats, generous start, richer yields. Build & relax.' },
+  normal:  { name: 'Normal',  icon: '⚖️', disasterMul: 1.0,  startMul: 1.0, paceMul: 1.0,  graceMul: 1.0, yieldMul: 1.0,  breedMul: 1.0,  desc: 'The intended balance.' },
+  harsh:   { name: 'Harsh',   icon: '🔥', disasterMul: 1.6,  startMul: 0.8, paceMul: 0.78, graceMul: 0.7, yieldMul: 0.85, breedMul: 0.8,  desc: 'Frequent, fierce dangers, lean start & yields.' },
 };
 export const DENSITIES = {
   sparse: { name: 'Sparse', icon: '🍂', mul: 0.6, desc: 'Scarce resources — expand & explore to survive.' },
@@ -941,10 +965,14 @@ export const EVOLUTIONS = {
 };
 
 export const STARTING = {
-  // Generous starting stock so the first guided builds (Burrow, Farm, Well,
-  // Storage, Sawmill, Wheel) all land with margin to spare — including a few
-  // planks so the Wheel is buildable before a Sawmill exists.
-  resources: { wood: 140, stone: 75, food: 120, seeds: 60, water: 100, planks: 12 },
+  // Tuned for a good first-10-minutes curve now that far more early buildings
+  // exist (sunflower, toybox, sandbath, cistern, auto-waterer, feeder, …). WOOD
+  // is the dominant early currency — Burrow(20) Farm(30) Well(20) Storage(25)
+  // Sawmill(40) Wheel(35) already total ~170 — so it's the most generous; PLANKS
+  // are bumped a touch so a Feeder/Auto-Waterer (8 planks) is reachable before
+  // the Sawmill ramps; FOOD trimmed slightly so the Farm pulls its weight sooner.
+  // Total (521) stays comfortably under the 700 cap so nothing spills on day one.
+  resources: { wood: 160, stone: 75, food: 110, seeds: 60, water: 100, planks: 16 },
   hamsters: 5,
   storageCap: 700,
 };

@@ -1,6 +1,6 @@
 // economy.js — per-tick simulation: environment, production, per-creature needs,
 // breeding, loyalty, exploration, and threats.
-import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
+import { BUILDINGS, NEEDS, NODE_TYPES, SPECIES, BOND_DECAY, EDIBLES, RESOURCES, WASTE, WETTAIL, FERTILIZER_BOOST, FEEDER_SERVES, MINE_REPAIR, BURROW, GRID_W, GRID_H, RESCUE } from './config.js';
 import { addRes, population, logMsg, wellbeingMul, evoBonus, addFx, canAfford, spend, killUnit, addCompassion, addJustice, traitMul } from './state.js';
 import { stepDecrees } from './decrees.js';
 import { doctrineBonuses } from './doctrines.js';
@@ -10,10 +10,17 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName } from './e
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt } from './world.js';
+
+// Difficulty doesn't only scale combat/events — it modulates the whole economy.
+// yieldMul scales resource OUTPUT (production buildings, mines, belt hauling);
+// breedMul scales BREEDING speed. Easier settings produce & breed faster, harder
+// settings slower (see config.js DIFFICULTIES). Exported for the smoke test.
+export function diffYieldMul(state) { return DIFFICULTIES[state?.difficulty]?.yieldMul ?? 1; }
+export function diffBreedMul(state) { return DIFFICULTIES[state?.difficulty]?.breedMul ?? 1; }
 
 // Run one simulation tick. dt is seconds per tick.
 export function stepEconomy(state, dt) {
@@ -38,6 +45,7 @@ export function stepEconomy(state, dt) {
   // 3) Building production / refining.
   const wb = wellbeingMul(state);
   const powerMul = powerMultiplier(state);
+  const diffY = diffYieldMul(state); // difficulty scales economic output (yields)
   // Dams hold back the river: each one cuts non-dam water sources' flow upstream.
   const dams = state.buildings.filter(b => BUILDINGS[b.type]?.upstreamPenalty).length;
   const upstreamMul = Math.max(0.3, 1 - 0.3 * dams);
@@ -59,7 +67,7 @@ export function stepEconomy(state, dt) {
     if (def.mine) { runMine(state, b, def, dt, wb); continue; }
     if (def.belt) { continue; } // belts run as connected networks — see runBeltNetworks below
 
-    let rate = dt * wb * powerMul * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)) * (state.quarantine ? (1 - DISEASE.quarantineOutput) : 1); // leader inspires; builders divert labour; play distracts; a quarantine confines the colony
+    let rate = dt * wb * powerMul * diffY * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)) * (state.quarantine ? (1 - DISEASE.quarantineOutput) : 1); // difficulty yield; leader inspires; builders divert labour; play distracts; a quarantine confines the colony
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
       let bonus = state.mods.foodMul + env.foodMul + (mega.foodMul || 0) + (doc.foodMul || 0);
@@ -222,7 +230,7 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 700, defense = 0, /* base cap matches STARTING.storageCap */ fun = 0, health = 0, feeders = 0, waterers = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0, statues = 0;
+  let popCap = 0, storage = 700, defense = 0, /* base cap matches STARTING.storageCap */ fun = 0, health = 0, feeders = 0, waterers = 0, feederN = 0, watererN = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0, statues = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
@@ -240,7 +248,9 @@ function recomputeBuildings(state) {
     distract += def.distract || 0;
     health += def.health || 0;
     feeders += def.feeder || 0;
+    if (def.feeder) feederN++;   // count stations (for crowding throughput)
     waterers += def.waterer || 0;
+    if (def.waterer) watererN++;
     caretakers += def.caretaker || 0;
     vets += def.vet || 0;
     if (def.sanctuary) sanctuaries++;
@@ -263,7 +273,8 @@ function recomputeBuildings(state) {
   storage += state._mega?.storage || 0; // Great Granary expands the vaults
   state.popCap = popCap; state.storageCap = storage; state.defense = defense;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
-  state._waterers = waterers; state._caretakers = caretakers; state._hygiene = hygiene;
+  state._waterers = waterers; state._feederN = feederN; state._watererN = watererN;
+  state._caretakers = caretakers; state._hygiene = hygiene;
   state._distract = Math.min(0.2, distract); // enrichment-for-fun trades a little output (capped)
   state._defendTowers = defendTowers; state._watchTowers = watchTowers;
 }
@@ -303,7 +314,7 @@ function runMine(state, b, def, dt, wb) {
   }
   const n = state.world.nodes.find(o => o.id === b.nodeId);
   if (!n || n.amount <= 0) { collapseMine(state, b, n); return; }
-  const got = Math.min(n.amount, (def.rate || 1.2) * dt * wb * (1 + state.mods.mineMul + (state._mega?.mineMul || 0)));
+  const got = Math.min(n.amount, (def.rate || 1.2) * dt * wb * diffYieldMul(state) * (1 + state.mods.mineMul + (state._mega?.mineMul || 0)));
   n.amount -= got;
   b._remaining = Math.ceil(n.amount);
   addRes(state, NODE_TYPES[n.kind].resource, got);
@@ -342,7 +353,7 @@ function runBeltNetworks(state, dt, wb) {
     // Total haul this tick = sum of each belt's rate (higher tiers move more).
     let cap = 0;
     for (const b of net) { cap += BUILDINGS[b.type].belt.rate; b._flow = 0; }
-    cap *= dt * wb;
+    cap *= dt * wb * diffYieldMul(state); // difficulty scales haul yield
     // Every surface node within a belt's own radius of any belt in the network.
     const reach = state.world.nodes.filter(n => {
       if (n.amount <= 0 || NODE_TYPES[n.kind].surface === false) return false;
@@ -370,8 +381,27 @@ function powerMultiplier(state) {
 
 // Each rodent eats, drinks, gets bored, and ages its health independently.
 function updatePerUnitNeeds(state, dt, env) {
-  const feederFactor = Math.max(0.4, 1 - (state._feeders || 0) * 0.15);
-  const watererFactor = Math.max(0.4, 1 - (state._waterers || 0) * 0.15);
+  // Feeder/waterer THROUGHPUT scales with crowding: each station serves a limited
+  // number of rodents well, and its per-station effectiveness degrades as the
+  // population it must feed/water rises (queueing). Like burrow filth, this means
+  // you must build MORE feeders/waterers as the colony grows — one feeder can't
+  // satisfy an ever-larger warren. crowdEff(stations) → 1 (well-served) … →0.3
+  // (overwhelmed): each station's 15% drain-cut is scaled by how crowded it is.
+  const pop = population(state);
+  // crowdEff(stationCount): 1 (well-served) … 0.3 (overwhelmed) — full strength up
+  // to FEEDER_SERVES rodents per station, then it falls off with the queue.
+  const crowdEff = (stations) => {
+    if (stations <= 0) return 0;
+    const perStation = pop / stations; // rodents each station must serve
+    return Math.max(0.3, Math.min(1, FEEDER_SERVES / Math.max(1, perStation)));
+  };
+  // Feeders/waterers cut need drain (the summed `feeder`/`waterer` value), but the
+  // cut is SCALED by how crowded the stations are: a single feeder for a swollen
+  // colony helps far less than one per handful of rodents — build more as you grow.
+  const feederEff = state._feederEff = crowdEff(state._feederN || 0);
+  const watererEff = state._watererEff = crowdEff(state._watererN || 0);
+  const feederFactor = Math.max(0.4, 1 - (state._feeders || 0) * 0.15 * feederEff);
+  const watererFactor = Math.max(0.4, 1 - (state._waterers || 0) * 0.15 * watererEff);
   const funRecover = (state._funBld || 0) * 0.05 * dt;     // Playgrounds + caretakers
   const healthRecover = (state._healthBld || 0) * 0.04 * dt; // Infirmaries + caretakers
   const energyRecover = (state._caretakers || 0) * 0.6 * dt; // caretakers ease rest needs
@@ -829,7 +859,7 @@ function updateBreeding(state, dt) {
   if (burrows === 0 || population(state) >= state.popCap) return;
   const wb = wellbeingMul(state);
   if (wb < 0.7 || (state.res.food || 0) < 5) return;
-  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
+  state._breed = (state._breed || 0) + dt * burrows * wb * 0.04 * diffBreedMul(state) * (1 + (state._leadBreed || 0) + (state._mega?.breed || 0) + (state._doc?.breed || 0) + evoProtect(state, 'breed')) * Math.max(0, 1 + (state._envMods?.seasonBreed || 0));
   if (state._breed >= 1) {
     state._breed = 0;
     state.res.food -= 5;

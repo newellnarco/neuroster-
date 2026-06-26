@@ -1370,4 +1370,121 @@ console.log('Main Hamster level unlocks:');
   ok(`a level-gated ability unlocks & applies at threshold (Refining II @ Lv.${TECH.refining2.reqLevel})`);
 }
 
+// 36) Difficulty knob: event pacing & grace scale with the chosen difficulty.
+console.log('Difficulty pacing & grace knob:');
+{
+  const { eventPace, graceSeconds } = await import('../src/events.js');
+  const { DIFFICULTIES } = await import('../src/config.js');
+  const mk = (d) => newGame(2200, 'woodland', 'syrian', 'Pace', { difficulty: d });
+  const relaxed = mk('relaxed'), normal = mk('normal'), harsh = mk('harsh');
+  // Easier → MORE grace and gentler (longer) pacing; harder → less.
+  assert(graceSeconds(relaxed) > graceSeconds(normal), `relaxed has more grace than normal (${graceSeconds(relaxed)} > ${graceSeconds(normal)})`);
+  assert(graceSeconds(normal) > graceSeconds(harsh), `normal has more grace than harsh (${graceSeconds(normal)} > ${graceSeconds(harsh)})`);
+  assert(eventPace(relaxed) > eventPace(normal), `relaxed has gentler pacing than normal (${eventPace(relaxed).toFixed(2)} > ${eventPace(normal).toFixed(2)})`);
+  assert(eventPace(normal) > eventPace(harsh), `normal has gentler pacing than harsh (${eventPace(normal).toFixed(2)} > ${eventPace(harsh).toFixed(2)})`);
+  // The knobs live on the difficulty config (a real, tunable dial).
+  assert(DIFFICULTIES.relaxed.graceMul > 1 && DIFFICULTIES.harsh.graceMul < 1, 'graceMul reads >1 for relaxed, <1 for harsh');
+  assert(DIFFICULTIES.relaxed.paceMul > 1 && DIFFICULTIES.harsh.paceMul < 1, 'paceMul reads >1 for relaxed, <1 for harsh');
+  ok(`event pace/grace scale by difficulty (grace ${graceSeconds(relaxed)}/${graceSeconds(normal)}/${graceSeconds(harsh)}, pace ${eventPace(relaxed).toFixed(1)}/${eventPace(normal).toFixed(1)}/${eventPace(harsh).toFixed(1)})`);
+}
+
+// 37) Feeder/waterer throughput degrades with crowding (build more as you grow).
+console.log('Feeder/waterer crowding throughput:');
+{
+  const { FEEDER_SERVES } = await import('../src/config.js');
+  // One feeder serving a small colony vs an oversized one: per-feeder
+  // effectiveness must drop as the population per feeder rises.
+  function feederEff(popN, feeders) {
+    const g = newGame(2300, 'woodland', 'syrian', 'Feed', {});
+    while (g.units.length < popN) g.units.push({ ...g.units[0], id: g.nextId++, needs: { ...g.units[0].needs } });
+    while (g.units.length > popN) g.units.pop();
+    const sp = g.world.spawn;
+    for (let i = 0; i < feeders; i++) g.buildings.push({ id: g.nextId++, type: 'feeder', x: sp.x + i, y: sp.y, active: true });
+    stepEconomy(g, 0.1);
+    return g._feederEff;
+  }
+  const lightlyLoaded = feederEff(FEEDER_SERVES, 1);   // ~1 feeder per FEEDER_SERVES rodents
+  const overcrowded = feederEff(FEEDER_SERVES * 3, 1); // 3× the rodents per feeder
+  assert(lightlyLoaded > overcrowded, `a feeder serving more rodents is less effective each (${lightlyLoaded.toFixed(2)} > ${overcrowded.toFixed(2)})`);
+  assert(overcrowded >= 0.3 - 1e-9, 'per-feeder effectiveness has a sane floor (>=0.3)');
+  // Building MORE feeders for the same crowded colony restores effectiveness.
+  const moreFeeders = feederEff(FEEDER_SERVES * 3, 3);
+  assert(moreFeeders > overcrowded, `adding feeders for a big colony raises per-feeder effectiveness (${overcrowded.toFixed(2)} → ${moreFeeders.toFixed(2)})`);
+  ok(`feeder throughput degrades with crowding & recovers with more stations (${lightlyLoaded.toFixed(2)} vs ${overcrowded.toFixed(2)} → ${moreFeeders.toFixed(2)})`);
+}
+
+// 38) Starting economy: the re-tuned bundle is exact (normal) & within cap.
+console.log('Starting economy bundle:');
+{
+  const { STARTING } = await import('../src/config.js');
+  const intended = { wood: 160, stone: 75, food: 110, seeds: 60, water: 100, planks: 16 };
+  for (const [k, v] of Object.entries(intended))
+    assert(STARTING.resources[k] === v, `starting ${k} is ${v} (got ${STARTING.resources[k]})`);
+  const total = Object.values(STARTING.resources).reduce((a, b) => a + b, 0);
+  assert(total <= STARTING.storageCap, `the starting bundle fits the cap (${total} <= ${STARTING.storageCap})`);
+  // On normal difficulty (startMul 1) a fresh colony gets exactly the bundle, no spill.
+  const s = newGame(2400, 'woodland', 'syrian', 'Start', { difficulty: 'normal' });
+  for (const [k, v] of Object.entries(intended)) assert(s.res[k] === v, `new game stocks ${v} ${k} (got ${s.res[k]})`);
+  // Wood is the most generous (it's the dominant early currency).
+  assert(STARTING.resources.wood >= Math.max(...Object.entries(STARTING.resources).filter(([k]) => k !== 'wood').map(([, v]) => v)), 'wood is the largest starting stock');
+  ok(`starting bundle re-tuned & within cap (total ${total}/${STARTING.storageCap})`);
+}
+
+// 39) Difficulty also scales resource YIELDS & BREEDING (not just combat/events).
+console.log('Difficulty scales yields & breeding:');
+{
+  const { diffYieldMul, diffBreedMul } = await import('../src/economy.js');
+  const { DIFFICULTIES } = await import('../src/config.js');
+  // The config knobs read in the intended direction (easier > 1 > harder).
+  assert(DIFFICULTIES.relaxed.yieldMul > 1 && DIFFICULTIES.harsh.yieldMul < 1, 'yieldMul >1 relaxed, <1 harsh');
+  assert(DIFFICULTIES.relaxed.breedMul > 1 && DIFFICULTIES.harsh.breedMul < 1, 'breedMul >1 relaxed, <1 harsh');
+
+  // Production yield: a Mason makes more brick on easier difficulty over the same time.
+  function brickOver(d) {
+    const g = newGame(2500, 'mountains', 'syrian', 'Yield', { difficulty: d });
+    g.res = { stone: 400 };
+    g.buildings.push({ id: g.nextId++, type: 'mason', x: g.world.spawn.x + 2, y: g.world.spawn.y, active: true });
+    const b0 = g.res.brick || 0;
+    for (let i = 0; i < 40; i++) stepEconomy(g, 0.2);
+    return (g.res.brick || 0) - b0;
+  }
+  const easyY = brickOver('relaxed'), normY = brickOver('normal'), hardY = brickOver('harsh');
+  assert(easyY > normY && normY > hardY, `harder difficulty cuts yield (relaxed ${easyY.toFixed(1)} > normal ${normY.toFixed(1)} > harsh ${hardY.toFixed(1)})`);
+  assert(Math.abs(diffYieldMul({ difficulty: 'normal' }) - 1) < 1e-9, 'normal yield multiplier is 1 (the baseline)');
+  ok(`difficulty scales resource yields (${easyY.toFixed(1)}/${normY.toFixed(1)}/${hardY.toFixed(1)} brick)`);
+
+  // Breeding: the per-tick breed accumulator scales with difficulty.
+  function breedRate(d) {
+    const g = newGame(2501, 'woodland', 'syrian', 'Breed', { difficulty: d });
+    g.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
+    g.res.food = 9999; g.popCap = 99;
+    for (let k = 0; k < 6; k++) g.buildings.push({ id: g.nextId++, type: 'burrow', x: g.world.spawn.x + 1 + k, y: g.world.spawn.y, active: true });
+    g._breed = 0;
+    g.units.forEach(u => { u.needs.food = 100; u.needs.water = 100; u.needs.fun = 100; u.needs.health = 100; });
+    stepEconomy(g, 0.2);
+    return g._breed; // accumulator advance for one tick (before any birth resets it)
+  }
+  const easyB = breedRate('relaxed'), hardB = breedRate('harsh');
+  assert(easyB > hardB, `easier difficulty breeds faster (relaxed ${easyB.toFixed(4)} > harsh ${hardB.toFixed(4)})`);
+  assert(Math.abs(diffBreedMul({ difficulty: 'normal' }) - 1) < 1e-9, 'normal breed multiplier is 1 (the baseline)');
+  ok(`difficulty scales breeding speed (relaxed ${easyB.toFixed(3)} > harsh ${hardB.toFixed(3)} per tick)`);
+}
+
+// 40) Balance pass: corrected costs/outputs now the full build set has landed.
+console.log('Balance pass (conveyors & defense costs):');
+{
+  const { BUILDINGS } = await import('../src/config.js');
+  // Wooden Fence is the cheapest raw-defense perimeter: cheaper than the Wall,
+  // which earns its keep with HP/upgrades/protect keys.
+  assert(BUILDINGS.woodfence.cost.wood === 8, `fence re-costed to wood:8 (got ${BUILDINGS.woodfence.cost.wood})`);
+  assert(BUILDINGS.woodfence.cost.wood < BUILDINGS.wall.cost.wood, 'the flat fence is cheaper than the upgradeable wall');
+  // Belt tiers form a clean strictly-increasing throughput ladder, and the
+  // plastic (refined-chain) belt now sits well above the free wood belt.
+  const wood = BUILDINGS.conveyor.belt.rate, plastic = BUILDINGS.conveyorPlastic.belt.rate, metal = BUILDINGS.conveyorMetal.belt.rate;
+  assert(plastic === 1.8, `plastic belt bumped to rate 1.8 (got ${plastic})`);
+  assert(wood < plastic && plastic < metal, `belt throughput strictly increases by tier (${wood} < ${plastic} < ${metal})`);
+  assert(plastic - wood >= 0.7, `the plastic tier is a meaningful step over wood (Δ${(plastic - wood).toFixed(1)})`);
+  ok(`balance pass locked: fence wood:8 (< wall), belt ladder ${wood}/${plastic}/${metal}`);
+}
+
 console.log(`\nALL SMOKE TESTS PASSED (${pass} checks).`);
