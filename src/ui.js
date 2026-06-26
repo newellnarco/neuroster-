@@ -87,9 +87,11 @@ export function createUI(state, ctx) {
       <div class="grid">${items.map(([id, def]) => {
         const afford = canAffordCost(def.cost);
         const lvlLocked = def.reqLevel && mainLevel(state) < def.reqLevel;
-        return `<button class="card ${view.placing === id ? 'sel' : ''} ${afford && !lvlLocked ? '' : 'poor'} ${lvlLocked ? 'locked' : ''}" data-build="${id}" ${lvlLocked ? 'disabled' : ''}>
-          <div class="ico">${def.icon}</div><div class="nm">${def.name}${lvlLocked ? ' 🔒' : ''}</div>
-          <div class="cost">${costStr(def.cost)}${def.reqLevel ? ` · Lv.${def.reqLevel}` : ''}</div><div class="ds">${def.desc}</div>
+        const active = view.placing === id;
+        return `<button class="card ${active ? 'sel' : ''} ${afford && !lvlLocked ? '' : 'poor'} ${lvlLocked ? 'locked' : ''}" data-build="${id}" ${lvlLocked ? 'disabled' : ''}
+          title="${active ? 'Placing — click the map to build, or click here again / right-click / Esc to cancel' : def.name}">
+          <div class="ico">${def.icon}</div><div class="nm">${active ? '✕ ' : ''}${def.name}${lvlLocked ? ' 🔒' : ''}</div>
+          <div class="cost">${active ? 'Placing… (click to cancel)' : costStr(def.cost) + (def.reqLevel ? ` · Lv.${def.reqLevel}` : '')}</div><div class="ds">${def.desc}</div>
         </button>`;
       }).join('')}</div>`).join('');
     bind('[data-build]', (btn) => { view.placing = view.placing === btn.dataset.build ? null : btn.dataset.build; renderBuild(); });
@@ -831,7 +833,14 @@ export function createUI(state, ctx) {
       const t = toTile(e);
       if (view.placing) {
         const r = placeBuilding(state, view.placing, t.x, t.y);
-        if (!r.ok) flash(r.reason); else { sfx('place'); renderBuild(); renderResbar(); }
+        if (!r.ok) flash(r.reason);
+        else {
+          sfx('place');
+          // Revert to the select (hand) cursor after a successful place so build
+          // mode isn't sticky — unless Shift is held for rapid repeat-placement.
+          if (!e.shiftKey) { view.placing = null; view.canPlace = false; flash('↩︎ Back to select'); }
+          renderBuild(); renderResbar();
+        }
         return;
       }
       // select a rodent under the cursor
