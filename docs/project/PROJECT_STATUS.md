@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T16:12:40Z · 76 items_
+_board_state.json updated: 2026-06-26T16:24:41Z · 76 items_
 
 ## Summary
 
@@ -12,14 +12,14 @@ _board_state.json updated: 2026-06-26T16:12:40Z · 76 items_
 | in CI | 0 |
 | Todo | 1 |
 | Planned | 0 |
-| Backlog | 16 |
-| Done | 3 |
-| Shipped | 52 |
+| Backlog | 12 |
+| Done | 4 |
+| Shipped | 55 |
 | Deferred | 4 |
 | Closed-No-Op | 0 |
 | **TOTAL** | **76** |
 
-**55 landed on `main`** · **17 open** (in-CI / todo / planned / backlog).
+**59 landed on `main`** · **13 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -36,12 +36,8 @@ _board_state.json updated: 2026-06-26T16:12:40Z · 76 items_
 | Backlog | P3 | None | Balance pass once conveyors & more buildings land | — | — |
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
-| Backlog | P3 | None | Plastics & advanced refining (coal/oil → plastic) | — | — |
 | Backlog | P3 | None | Tunnels / underground levels (vertical expansion) | — | — |
 | Backlog | P3 | None | River geography for dams (real upstream tiles) | — | — |
-| Backlog | P3 | None | Disease/health events + quarantine; Infirmary | — | — |
-| Backlog | P3 | None | Species-specific evolution branches (beaver dams, rat swarms…) | — | — |
-| Backlog | P3 | None | Tie Main Hamster level to more unlocks (buildings/species) | — | — |
 
 ## Deferred (intentional)
 
@@ -54,18 +50,22 @@ _board_state.json updated: 2026-06-26T16:12:40Z · 76 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (8)
+### (misc) (12)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
 | None | Hamster balls — free-roam transport (heat + anxiety) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Directable exploration: scout waypoint | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
-| None | More NPC animal events (merchant, predator parley, aid requests) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | More NPC animal events (merchant, predator parley, aid requests) | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
 | None | Texture the remaining one-off building glyphs | [#45](https://github.com/newellnarco/neuroster-/pull/45) | `656ab96` |
-| None | AI colonies compete for nodes + richer on-map diplomacy/combat | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | Plastics & advanced refining (coal/oil → plastic) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| None | AI colonies compete for nodes + richer on-map diplomacy/combat | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
+| None | Disease/health events + quarantine; Infirmary | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
 | None | More milestones/achievements (first hybrid, day 30, apex evolution…) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
 | None | Promote Threats panel → Defense & Military screen | [#44](https://github.com/newellnarco/neuroster-/pull/44) | `7f9ff2e` |
+| None | Species-specific evolution branches (beaver dams, rat swarms…) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
 | None | Per-unit need decay modified by traits (Vigor) | [#43](https://github.com/newellnarco/neuroster-/pull/43) | `1546f53` |
+| None | Tie Main Hamster level to more unlocks (buildings/species) | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
 
 ### CREATURES (4)
 
@@ -127,7 +127,7 @@ _board_state.json updated: 2026-06-26T16:12:40Z · 76 items_
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
-| 1 | Production chain: Furnace / Forge / Mason + brick + armour | [#0](https://github.com/newellnarco/neuroster-/pull/0) | `—` |
+| 1 | Production chain: Furnace / Forge / Mason + brick + armour | [#46](https://github.com/newellnarco/neuroster-/pull/46) | `88e01b2` |
 
 ### PROGRESSION (5)
 
