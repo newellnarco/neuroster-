@@ -1,0 +1,14 @@
+{
+  "op": "update",
+  "key": "ux:marquee-multiselect",
+  "status": "Done",
+  "timeline": [
+    {
+      "at": "2026-06-26T22:53:19+00:00",
+      "status": "Done",
+      "note": "Animals/Buildings/Demolish tools + left-drag marquee multi-select + group orders (gather/eat/drink/move) + bulk demolish/clean; 184 checks"
+    }
+  ],
+  "updated": "2026-06-26T22:53:19+00:00",
+  "pr": "0"
+}
