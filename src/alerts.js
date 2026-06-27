@@ -75,6 +75,13 @@ export function computeAlerts(state) {
     }
   }
 
+  // Over-planted oak grove — squirrel swarm pressure (raids food & water).
+  const tension = state.squirrelTension || 0;
+  if (tension >= 0.6) {
+    push(tension >= 1 ? 'critical' : 'warning', 'squirrels', '🐿️',
+      'Oak grove is overcrowded — squirrels swarm and may raid your food & water. Thin the oaks, guard them, or share (Compassion).', 'build');
+  }
+
   // A neighbour AI colony is contesting a resource seam (your yield there drops).
   {
     const contested = (state.world?.nodes || []).filter(n => n.contestedBy);

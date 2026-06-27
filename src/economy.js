@@ -506,13 +506,20 @@ function updateSquirrels(state, dt) {
   const nuts = state.res.nuts || 0;
   const pressure = Math.min(100, oaks * SQUIRREL.attractPerOak + nuts * SQUIRREL.attractPerNut);
   state.squirrelPressure = pressure;
-  if (pressure <= 0) { state._squirrelT = 0; return; }
+  // Over-planting oaks draws SO MANY squirrels the grove gets crowded — tension
+  // (0..1) climbs with every oak past a comfortable count, regardless of the hoard.
+  const crowd = Math.max(0, oaks - SQUIRREL.crowdAt);
+  state.squirrelTension = Math.min(1, crowd * SQUIRREL.tensionPerOak);
+  if (pressure <= 0) { state._squirrelT = 0; state.squirrelTension = 0; return; }
   // Higher pressure → squirrels come sooner.
   state._squirrelT = (state._squirrelT || 0) + dt * (pressure / 100);
   if (state._squirrelT < SQUIRREL.interval) return;
   state._squirrelT = 0;
   const sp = state.world.spawn;
-  const friendly = (state.compassion ?? 50) >= SQUIRREL.kindAt || nuts < SQUIRREL.hoardAt;
+  // A crowded grove overrides goodwill: too many squirrels WILL raid — even a kind
+  // colony, even with a thin hoard. Otherwise a big hoard + low Compassion invites it.
+  const swarming = crowd >= SQUIRREL.swarmAt;
+  const friendly = !swarming && ((state.compassion ?? 50) >= SQUIRREL.kindAt || nuts < SQUIRREL.hoardAt);
   if (friendly) {
     // Cooperation: squirrels forage peacefully and barter nuts for seeds & lore.
     addCompassion(state, 2);
@@ -528,14 +535,23 @@ function updateSquirrels(state, dt) {
     }
     addFx(state, sp.x, sp.y, '🐿️', 2.2);
   } else if (state.disasters !== false) {
-    // Raid: a hoard behind weak defenses gets robbed. Defense & Justice blunt it.
+    // Raid: defense & Justice blunt it; a crowded grove means a bigger, hungrier swarm.
     const guard = Math.max(0.15, 1 - (state.defense || 0) * 0.03 - Math.max(0, (state.justice ?? 50) - 50) * 0.004);
+    const swarmMul = 1 + crowd * 0.5; // each excess oak swells the raiding party
     const steal = Math.min(nuts, Math.round(nuts * 0.4 * guard) + 3);
     state.res.nuts = Math.max(0, nuts - steal);
-    state.res.food = Math.max(0, (state.res.food || 0) - Math.round(steal * 0.5));
-    state.morale = Math.max(0, (state.morale ?? 100) - 4);
+    // A hungry, thirsty swarm robs the larder AND the water store — the price of
+    // an overcrowded oak grove.
+    const foodLoot = Math.round((6 + steal * 0.5 + crowd * 3) * guard * swarmMul);
+    const waterLoot = Math.round((4 + crowd * 4) * guard * swarmMul);
+    state.res.food = Math.max(0, (state.res.food || 0) - foodLoot);
+    state.res.water = Math.max(0, (state.res.water || 0) - waterLoot);
+    state.morale = Math.max(0, (state.morale ?? 100) - (4 + crowd));
     addFx(state, sp.x, sp.y, '🐿️💢', 2.2);
-    logMsg(state, `🐿️ Squirrels raided your nut hoard and stole ${steal} nuts! Guard it (defense) or share it (Compassion) to keep the peace.`);
+    if (swarming)
+      logMsg(state, `🐿️💢 Your overcrowded oak grove drew a swarm of squirrels — they raided ${steal} nuts, ${foodLoot} food & ${waterLoot} water! Thin the oaks, guard them (defense), or share (Compassion).`);
+    else
+      logMsg(state, `🐿️ Squirrels raided your nut hoard — ${steal} nuts, ${foodLoot} food & ${waterLoot} water gone! Guard it (defense) or share it (Compassion) to keep the peace.`);
   }
 }
 

@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T02:29:49Z",
+  "updated": "2026-06-27T02:45:02Z",
   "items": [
     {
       "key": "econ:1",
@@ -2182,6 +2182,40 @@
       ],
       "screenshots": [],
       "updated": "2026-06-26T22:59:24+00:00"
+    },
+    {
+      "key": "gameplay:plant-trees-squirrels",
+      "issue": null,
+      "title": "Plant trees by species; oaks draw squirrels (over-plant → swarm raids food & water)",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "Done",
+      "pr": "66",
+      "release": null,
+      "detail": "Build > Trees picker: rodents plant a chosen species (Shade Tree, Pine, Berry, Oak) for seeds/food. All scrub pollution; pine trickles wood, berry trickles food. ONLY oaks grow nuts, and only nuts draw squirrels: a kind colony trades, but over-planting oaks builds squirrel tension (state.squirrelTension) and a crowded grove summons a swarm that raids food AND water (overrides goodwill). Distinct on-map visuals per species + a tension alert.",
+      "timeline": [
+        {
+          "at": "2026-06-27T02:40:00+00:00",
+          "status": "In Progress",
+          "note": "Added Trees build category + pine/berry species; reworked updateSquirrels so oak count drives tension and a swarm raids food & water; per-species tree visuals; tension alert. npm test 186 checks + verify:browser green."
+        },
+        {
+          "at": "2026-06-27T02:45:02+00:00",
+          "status": "Done",
+          "note": "Opened PR #66 (draft). npm test 186 checks + verify:browser green; awaiting CI."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-27T02:40:00+00:00",
+          "path": "docs/screenshots/tree-picker.png",
+          "caption": "Build > Trees: choose a species to plant (Shade Tree, Pine, Berry, Oak) — costs in seeds/food; only the oak draws squirrels."
+        }
+      ],
+      "updated": "2026-06-27T02:45:02+00:00"
     }
   ]
 }

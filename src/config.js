@@ -150,13 +150,24 @@ export const BUILDINGS = {
     name: 'Sanctuary', icon: '🏡', desc: 'A refuge for lost & hurt animals. Stray creatures arrive more often to be taken in, and caring for them steadily raises colony Compassion.',
     cost: { wood: 30, planks: 15, seeds: 10 }, category: 'Wellbeing', sanctuary: true, health: 3,
   },
+  // ---- Trees: a rodent picks the SPECIES to plant. All cost Seeds (+ a little
+  // food/water to nurse the sapling) and scrub pollution; each has its own gift.
+  // ONLY the oak grows nuts, and only nuts draw squirrels — see updateSquirrels.
   sapling: {
-    name: 'Plant Tree', icon: '🌳', desc: 'Plant a tree. Growing forests SCRUB pollution from the air and green the colony — replant what industry burns. (For nuts & squirrels, plant an Oak.)',
-    cost: { seeds: 10, water: 6 }, category: 'Wellbeing', tree: true,
+    name: 'Shade Tree', icon: '🌳', desc: 'Plant a leafy shade tree. Growing forests SCRUB pollution from the air and green the colony — replant what industry burns. Pure greenery: no crop, no squirrels.',
+    cost: { seeds: 8, water: 4 }, category: 'Trees', tree: true,
+  },
+  pine: {
+    name: 'Pine', icon: '🌲', desc: 'A hardy evergreen. Scrubs pollution year-round and sheds needles & deadfall for a slow trickle of Wood. Bears no nuts, so it draws no squirrels.',
+    cost: { seeds: 10, food: 4 }, category: 'Trees', tree: true, produces: { wood: 0.06 },
+  },
+  berry: {
+    name: 'Berry Tree', icon: '🍒', desc: 'A fruiting tree that grows a steady trickle of Food (berries) and greens the colony. Sweet, not nutty — squirrels pass it by.',
+    cost: { seeds: 10, food: 6 }, category: 'Trees', tree: true, produces: { food: 0.12 },
   },
   oak: {
-    name: 'Oak Tree', icon: '🌰', desc: 'Plant an oak. Over time it grows acorns into Nuts — a coveted forest crop. Oak groves and a nut hoard DRAW SQUIRRELS: a kind colony (Compassion) trades with them for seeds & lore; a big hoard behind weak defenses gets raided.',
-    cost: { seeds: 14, water: 8, wood: 6 }, category: 'Food', tree: true,
+    name: 'Oak Tree', icon: '🌰', desc: 'Plant an oak. Over time it grows acorns into Nuts — a coveted forest crop. ONLY oaks draw SQUIRRELS: a kind colony trades with them for seeds & lore. But plant TOO MANY and the swarm strains the peace — overcrowded groves get RAIDED for food & water. Thin the grove, guard it (defense), or share (Compassion).',
+    cost: { seeds: 14, food: 6, wood: 4 }, category: 'Trees', tree: true,
     produces: { nuts: 0.5 },
   },
   sunflower: {
@@ -743,6 +754,9 @@ export const SQUIRREL = {
   interval: 80,        // seconds-at-full-pressure between squirrel visits
   hoardAt: 20,         // nuts above this, with low Compassion, invites a raid
   kindAt: 55,          // Compassion at/above this keeps squirrels friendly
+  crowdAt: 4,          // a comfortable oak count — plant MORE and the grove crowds
+  tensionPerOak: 0.2,  // squirrel tension (0..1) added per oak beyond crowdAt
+  swarmAt: 3,          // oaks-over-crowdAt where the swarm WILL raid (overrides goodwill)
 };
 
 // Beavers harvest wood for the colony's water works (aquifers, dams, irrigation)

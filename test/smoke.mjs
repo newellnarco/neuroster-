@@ -780,6 +780,30 @@ console.log('Oak → squirrel / nut economy:');
   stepEconomy(k, 0.1);
   assert(k.compassion >= c0, 'a kind colony keeps squirrels friendly (Compassion does not fall)');
   ok('a kind colony trades with squirrels instead of being raided');
+
+  // Tree variety: several plantable species, all trees, but ONLY the oak grows
+  // nuts — so only the oak draws squirrels.
+  const species = ['sapling', 'pine', 'berry', 'oak'];
+  assert(species.every(t => BUILDINGS[t]?.tree), 'multiple plantable tree species exist (sapling/pine/berry/oak)');
+  const nutBearers = species.filter(t => BUILDINGS[t]?.produces?.nuts);
+  assert(nutBearers.length === 1 && nutBearers[0] === 'oak', 'only the oak bears nuts — only oaks entice squirrels');
+  assert(species.every(t => Object.keys(BUILDINGS[t].cost).includes('seeds')), 'every tree costs seeds (seeds/food economy)');
+  ok(`tree-species picker: ${species.join(', ')} — only the oak draws squirrels`);
+
+  // Too many oaks → the swarm raids FOOD and WATER, overriding goodwill: a kind,
+  // small-hoard colony still gets hit once the grove is overcrowded.
+  const o = newGame(609, 'prairie', 'syrian', 'Grove', {});
+  const op = o.world.spawn;
+  const oakN = SQUIRREL.crowdAt + Math.ceil(1 / SQUIRREL.tensionPerOak); // enough to max tension
+  for (let i = 0; i < oakN; i++)
+    o.buildings.push({ id: 9100 + i, type: 'oak', x: op.x + (i % 5), y: op.y + Math.floor(i / 5), active: true });
+  o.res.nuts = 5; o.res.food = 100; o.res.water = 100; o.compassion = 90; o.defense = 0; o.justice = 50; o.disasters = true;
+  o._squirrelT = 1e4; // force the visit this tick
+  const f0 = o.res.food, w0 = o.res.water;
+  stepEconomy(o, 0.1);
+  assert((o.squirrelTension || 0) >= 1, `an overcrowded oak grove maxes squirrel tension (${(o.squirrelTension || 0).toFixed(2)})`);
+  assert(o.res.food < f0 && o.res.water < w0, `the swarm raids food (${f0}→${o.res.food.toFixed(0)}) AND water (${w0}→${o.res.water.toFixed(0)}) despite high Compassion`);
+  ok(`too many oaks → swarm raids food & water (food ${f0}→${o.res.food.toFixed(0)}, water ${w0}→${o.res.water.toFixed(0)})`);
 }
 
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,

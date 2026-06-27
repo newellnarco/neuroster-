@@ -299,16 +299,38 @@ export function createRenderer(canvas, state, getView) {
     ctx.save(); ctx.clip(); ctx.globalAlpha = alpha; if (blend) ctx.globalCompositeOperation = blend;
     ctx.fillStyle = pat; ctx.fillRect(x, y, w, h); ctx.restore();
   }
-  function drawTree(x, y, sc) {
+  // `type` (optional) tints/shapes a planted tree by species so the player reads
+  // which kind they chose: pine = conical evergreen, oak = warm canopy + acorns,
+  // berry = canopy dotted with fruit. Wild tree-node clusters pass no type.
+  function drawTree(x, y, sc, type) {
     const sway = Math.sin(animT * 1.1 + x * 0.12 + y * 0.05) * 1.3 * sc; // wind sway (canopy only)
     ctx.fillStyle = '#7a5230'; ctx.fillRect(x - 1.5 * sc, y, 3 * sc, 8 * sc);          // trunk
     ctx.beginPath(); ctx.rect(x - 1.5 * sc, y, 3 * sc, 8 * sc); texClip('bark', x - 2 * sc, y, 4 * sc, 8 * sc, 0.7); // bark texture
-    const r = 7 * sc, cxp = x + sway, cyp = y - 2 * sc;
-    ctx.fillStyle = '#2f6d2f'; ball(cxp, cyp, r); ball(cxp - r * 0.6, cyp + 3 * sc, r * 0.8); ball(cxp + r * 0.6, cyp + 3 * sc, r * 0.8);
+    const cxp = x + sway;
+    if (type === 'pine') {
+      // Conical evergreen: stacked dark-green tiers, no broad canopy.
+      ctx.fillStyle = '#1f5e3a';
+      for (let i = 0; i < 3; i++) {
+        const ty = y - 1 * sc - i * 3.2 * sc, tw = (7 - i * 1.8) * sc, th = 4.6 * sc;
+        ctx.beginPath(); ctx.moveTo(cxp, ty - th); ctx.lineTo(cxp - tw, ty); ctx.lineTo(cxp + tw, ty); ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(150,210,150,0.4)'; ball(cxp - 1.4 * sc, y - 7 * sc, 1.6 * sc); // sun-kissed tip
+      return;
+    }
+    const r = 7 * sc, cyp = y - 2 * sc;
+    ctx.fillStyle = type === 'oak' ? '#3a7a2c' : type === 'berry' ? '#3f7d44' : '#2f6d2f';
+    ball(cxp, cyp, r); ball(cxp - r * 0.6, cyp + 3 * sc, r * 0.8); ball(cxp + r * 0.6, cyp + 3 * sc, r * 0.8);
     // leaf texture across the canopy (soft-light keeps the green)
     ctx.beginPath(); ctx.arc(cxp, cyp + 1 * sc, r * 1.35, 0, 7); texClip('leaf', cxp - r * 1.4, cyp - r * 1.4, r * 2.8, r * 2.8, 0.5, 'soft-light');
     ctx.fillStyle = 'rgba(150,210,120,0.55)'; ball(cxp - r * 0.3, cyp - r * 0.5, r * 0.5);  // top-left highlight
     ctx.fillStyle = 'rgba(0,40,0,0.18)'; ball(cxp + r * 0.4, cyp + r * 0.3, r * 0.5);       // bottom-right shade
+    if (type === 'berry') { // scatter of red berries
+      ctx.fillStyle = '#d23b3b';
+      for (const [dx, dy] of [[-0.4, -0.3], [0.5, 0.1], [-0.1, 0.4], [0.2, -0.5]]) dot(cxp + dx * r, cyp + dy * r, 1.2 * sc, '#d23b3b');
+    } else if (type === 'oak') { // a couple of ripe acorns
+      ctx.fillStyle = '#9c6b3f';
+      for (const [dx, dy] of [[-0.3, 0.3], [0.4, -0.1]]) dot(cxp + dx * r, cyp + dy * r, 1.4 * sc, '#9c6b3f');
+    }
   }
   function drawBoulder(x, y, sc) {
     const r = 7 * sc;
@@ -348,7 +370,7 @@ export function createRenderer(canvas, state, getView) {
       const cx = b.x * TILE + TILE / 2, cy = b.y * TILE + TILE / 2;
       ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(cx, cy + TILE * 0.30, 11, 4.5, 0, 0, 7); ctx.fill();
       if (b.underConstruction) { drawSite(cx, cy, b, t); continue; }
-      if (BUILDINGS[b.type].tree) { drawTree(cx, cy - 2, 1); continue; } // planted tree
+      if (BUILDINGS[b.type].tree) { drawTree(cx, cy - 2, 1, b.type); continue; } // planted tree (by species)
       if (b.type === 'wheel') { drawWheel(cx, cy - 3, t, b); continue; }
       if (b.type === 'conveyor' || b.type === 'conveyorPlastic' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }
