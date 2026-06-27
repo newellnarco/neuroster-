@@ -2,30 +2,29 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-27T03:49:20Z · 94 items_
+_board_state.json updated: 2026-06-27T03:49:49Z · 94 items_
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| In Progress | 1 |
+| In Progress | 0 |
 | in CI | 0 |
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 0 |
+| Done | 1 |
 | Shipped | 87 |
 | Deferred | 2 |
 | Closed-No-Op | 1 |
 | **TOTAL** | **94** |
 
-**87 landed on `main`** · **4 open** (in-CI / todo / planned / backlog).
+**88 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
-| In Progress | P2 | None | Rabbits: carrot/cabbage gardens → manure → fertilizer, and predator bait | — | — |
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
 | Backlog | P3 | RENDER | Full multi-level underground world view (descend/ascend, separate grid + render) | — | — |
@@ -39,7 +38,7 @@ _board_state.json updated: 2026-06-27T03:49:20Z · 94 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (36)
+### (misc) (37)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -79,6 +78,7 @@ _board_state.json updated: 2026-06-27T03:49:20Z · 94 items_
 | None | Embed the systems-map PNG as a 🗺️ tab in the in-game Help guide | [#61](https://github.com/newellnarco/neuroster-/pull/61) | `ebde584` |
 | None | Plant trees by species; oaks draw squirrels (over-plant → swarm raids food & water) | [#66](https://github.com/newellnarco/neuroster-/pull/66) | `d329e1f` |
 | None | Crops, trees & animals take time to grow in before they're useful | [#67](https://github.com/newellnarco/neuroster-/pull/67) | `d0b8892` |
+| None | Rabbits: carrot/cabbage gardens → manure → fertilizer, and predator bait | [#69](https://github.com/newellnarco/neuroster-/pull/69) | `—` |
 
 ### CREATURES (5)
 
