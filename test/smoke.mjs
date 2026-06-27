@@ -806,6 +806,47 @@ console.log('Oak → squirrel / nut economy:');
   ok(`too many oaks → swarm raids food & water (food ${f0}→${o.res.food.toFixed(0)}, water ${w0}→${o.res.water.toFixed(0)})`);
 }
 
+// 21d) Growth / maturation: crops, trees & animals take time to become useful.
+console.log('Growth & maturation (crops, trees, animals grow in):');
+{
+  const { BUILDINGS, GROWTH, growTime, buildingMaturity, BREEDING } = await import('../src/config.js');
+  const { workMaturity, PUP_WORK } = await import('../src/entities.js');
+
+  // growTime: food producers & trees grow in; instant buildings don't.
+  assert(growTime(BUILDINGS.sunflower) === GROWTH.cropGrow, 'a food producer (sunflower) grows in over cropGrow seconds');
+  assert(growTime(BUILDINGS.oak) === GROWTH.treeGrow, 'a tree (oak) grows in over the longer treeGrow time');
+  assert(growTime(BUILDINGS.wheel) === 0 && growTime(BUILDINGS.burrow) === 0, 'non-producers (wheel, burrow) are instant — no grow-in');
+
+  // buildingMaturity: just-built ≈ 0, no stamp = mature (legacy/founding/fixtures).
+  assert(buildingMaturity({ type: 'sunflower', builtAt: 100 }, 100) === 0, 'a just-built producer starts at 0 maturity');
+  assert(buildingMaturity({ type: 'sunflower', builtAt: 100 }, 100 + GROWTH.cropGrow) === 1, 'it reaches full maturity after cropGrow seconds');
+  assert(buildingMaturity({ type: 'sunflower' }, 1e6) === 1, 'a building with no builtAt stamp counts as fully grown');
+
+  // A young crop yields far less than the same crop once grown (isolated: a fresh
+  // colony has no other seed source, so the sunflower's ramp is the whole delta).
+  const m = newGame(701, 'prairie', 'syrian', 'Grow', {});
+  const mp = m.world.spawn;
+  m.units = []; // isolate the sunflower's ramp from rodents foraging seeds
+  const sun = { id: m.nextId++, type: 'sunflower', x: mp.x, y: mp.y, active: true, builtAt: m.env.lived || 0 };
+  m.buildings.push(sun);
+  const sy0 = m.res.seeds || 0;
+  for (let i = 0; i < 6; i++) stepEconomy(m, 0.2); // ~1.2s in — still a seedling
+  const youngGain = (m.res.seeds || 0) - sy0;
+  sun.builtAt = (m.env.lived || 0) - GROWTH.cropGrow - 5; // now fully grown in
+  const sy1 = m.res.seeds || 0;
+  for (let i = 0; i < 6; i++) stepEconomy(m, 0.2);
+  const matureGain = (m.res.seeds || 0) - sy1;
+  assert(youngGain < matureGain * 0.4, `a young crop yields far less than a grown one (young ${youngGain.toFixed(2)} ≪ mature ${matureGain.toFixed(2)})`);
+  ok(`crops grow in: yield ramps from ${youngGain.toFixed(2)} (seedling) to ${matureGain.toFixed(2)} (grown)`);
+
+  // Animals grow into usefulness: a pup works at reduced effort, ramping to full.
+  assert(workMaturity({ age: BREEDING.maturityAge }) === 1, 'a mature rodent works at full effort');
+  assert(Math.abs(workMaturity({ age: 0 }) - PUP_WORK) < 1e-9, 'a newborn pup works at the reduced PUP_WORK rate');
+  assert(workMaturity({}) === 1, 'a legacy rodent (no age) works at full effort');
+  assert(workMaturity({ age: 0 }) < workMaturity({ age: BREEDING.maturityAge }), 'young animals are less useful at work until grown');
+  ok(`animals grow into usefulness: pup works at ${PUP_WORK} → full at maturity`);
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');

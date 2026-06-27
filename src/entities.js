@@ -70,6 +70,13 @@ export function makeRodent(state, species, x, y) {
 // Missing age (old saves) is treated as adult so legacy colonies keep breeding.
 export const isMature = (u) => (u.age ?? BREEDING.maturityAge) >= BREEDING.maturityAge;
 
+// A juvenile pulls less weight at work than a grown adult — a pup gathers at
+// PUP_WORK and ramps to full effort as it ages into maturity, so young animals
+// only "become useful" once grown. Mature/legacy rodents (no age) = full.
+export const PUP_WORK = 0.4;
+export const workMaturity = (u) =>
+  Math.min(1, PUP_WORK + (1 - PUP_WORK) * (u.age ?? BREEDING.maturityAge) / BREEDING.maturityAge);
+
 // ---- Effective stats (species × traits × tech × evolution × productivity) --
 export function productivity(state, u) {
   const n = u.needs;
@@ -208,7 +215,7 @@ export function stepRodent(state, u, dt) {
     case 'work': {
       const n = u.targetNode;
       if (!n || n.amount <= 0) { u.phase = 'seek'; u.targetNode = null; return; }
-      u.progress += mineOf(state, u) * dt * 1.5;
+      u.progress += mineOf(state, u) * dt * 1.5 * workMaturity(u); // juveniles work slower until grown
       u.needs.energy = Math.max(0, u.needs.energy - NEEDS.energy.workDrain * dt);
       if (u.progress >= 1) {
         const cap = carryOf(state, u);
