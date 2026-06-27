@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-26T22:59:24Z",
+  "updated": "2026-06-27T00:38:23Z",
   "items": [
     {
       "key": "econ:1",
@@ -1662,13 +1662,19 @@
       "type": "Decision",
       "area": "Infra",
       "priority": "P3",
-      "status": "Deferred",
-      "pr": null,
+      "status": "Closed-No-Op",
+      "pr": "0",
       "release": null,
       "detail": "Deploy is a hand-made container (see README.md / DECISIONS.md).",
-      "timeline": [],
+      "timeline": [
+        {
+          "at": "2026-06-27T00:38:01+00:00",
+          "status": "Closed-No-Op",
+          "note": "Closed (not deferred): documented as a known DSM≤7.1 no-compose constraint in README — the hand-built single container (3a) is the canonical path; compose works on Container Manager 7.2+ (3b). Nothing to action."
+        }
+      ],
       "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "updated": "2026-06-27T00:38:01+00:00"
     },
     {
       "key": "feat:beaver-wood-store",
