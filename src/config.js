@@ -84,6 +84,10 @@ export const BUILDINGS = {
     name: 'Storage Depot', icon: '📦', desc: '+1500 storage. Haul drop-off point.',
     cost: { wood: 25 }, category: 'Storage', storage: 1500,
   },
+  grainsilo: {
+    name: 'Grain Silo', icon: '🛢️', desc: 'Dedicated grain storage (+2500 Grain) that is OFF the general books — silo grain no longer crowds out wood, stone and the rest in your storehouses. Stock the harvest without choking the depot.',
+    cost: { wood: 20, stone: 20, planks: 8 }, category: 'Storage', grainCap: 2500,
+  },
   farm: {
     name: 'Farm', icon: '🌾', desc: 'Turns Seeds into Food. Much better on fertile ground (near water).',
     cost: { wood: 30 }, category: 'Food', produces: { food: 0.5 }, consumes: { seeds: 0.25 }, fertileBonus: true,
@@ -93,8 +97,8 @@ export const BUILDINGS = {
     cost: { wood: 35, planks: 10 }, category: 'Food', produces: { wheat: 0.7 }, consumes: { seeds: 0.3, water: 0.2 }, fertileBonus: true,
   },
   mill: {
-    name: 'Mill', icon: '🏯', desc: 'Mills Wheat into Grain (better food).',
-    cost: { wood: 30, stone: 30 }, category: 'Food', produces: { grain: 0.5 }, consumes: { wheat: 0.7 },
+    name: 'Mill', icon: '🏯', desc: 'Mills Wheat into Grain (better food) — and saves back some grain as SEED: a steady trickle of Seeds to replant fields & gardens, so milling helps close the seed loop.',
+    cost: { wood: 30, stone: 30 }, category: 'Food', produces: { grain: 0.5, seeds: 0.15 }, consumes: { wheat: 0.7 },
   },
   pelletpress: {
     name: 'Pellet Press', icon: '🟤', desc: 'Presses Grain into nourishing Hamster Pellets (best food).',

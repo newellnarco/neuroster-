@@ -895,6 +895,39 @@ console.log('Rabbits (carrot/cabbage gardens → manure → fertilizer; predator
   ok(`once rabbits run out, rodents are exposed again (lost ${lost2})`);
 }
 
+// 21f) Grain silo (off-book grain storage) + mill seed byproduct.
+console.log('Grain silo (off-book storage) + mill seeds:');
+{
+  const { BUILDINGS } = await import('../src/config.js');
+  const { totalStored } = await import('../src/state.js');
+
+  assert(BUILDINGS.grainsilo?.grainCap > 0, 'Grain Silo provides dedicated grain capacity');
+  assert(BUILDINGS.mill?.produces?.seeds > 0, 'the Mill now saves back grain as Seeds');
+
+  // Grain held within silo capacity does NOT count against general storage.
+  const g = newGame(811, 'prairie', 'syrian', 'Silo', {});
+  g.buildings.push({ id: g.nextId++, type: 'grainsilo', x: g.world.spawn.x, y: g.world.spawn.y, active: true });
+  stepEconomy(g, 0.1); // recompute building effects → state.grainCap
+  assert((g.grainCap || 0) >= BUILDINGS.grainsilo.grainCap, `a silo raises grainCap (${g.grainCap})`);
+  g.res.wood = 100;
+  const baseStored = totalStored(g);
+  g.res.grain = (g.res.grain || 0) + 500; // bank 500 grain in the silo
+  assert(Math.abs(totalStored(g) - baseStored) < 1e-6, `silo grain is off-book — general storage unchanged (${baseStored.toFixed(1)})`);
+  // Grain beyond the silo capacity DOES count against general storage again.
+  g.res.grain = g.grainCap + 300;
+  assert(totalStored(g) > baseStored + 200, 'grain over silo capacity spills onto the general books');
+  ok(`grain silo banks ${g.grainCap} grain off the general storehouse books`);
+
+  // A mill turns wheat into grain AND a trickle of seed grain.
+  const m = newGame(812, 'prairie', 'syrian', 'Mill', {});
+  m.units = []; // isolate the mill from foraging
+  m.buildings.push({ id: m.nextId++, type: 'mill', x: m.world.spawn.x, y: m.world.spawn.y, active: true });
+  m.res.wheat = 50; m.res.seeds = 0; m.res.grain = 0;
+  for (let i = 0; i < 20; i++) stepEconomy(m, 0.2);
+  assert((m.res.grain || 0) > 0 && (m.res.seeds || 0) > 0, `milling yields grain (${(m.res.grain || 0).toFixed(1)}) AND seed (${(m.res.seeds || 0).toFixed(1)})`);
+  ok(`mill saves back seed grain (grain ${(m.res.grain || 0).toFixed(1)}, seeds ${(m.res.seeds || 0).toFixed(1)})`);
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');

@@ -33,7 +33,8 @@ export function createUI(state, ctx) {
       const nm = labels ? `<span class="rnm">${escHtml(r.name)}</span>` : '';
       return `<span class="res" title="${escHtml(tip)}">${r.icon}${nm}<b>${fmt(state.res[k] || 0)}</b></span>`;
     }).join('') +
-      `<span class="res storage" title="Storage used / cap — build Storage Depots to raise the cap; surplus over the cap is wasted (click to pin)">📦${labels ? '<span class="rnm">Storage</span>' : ''}<b>${fmt(totalStored(state))}/${state.storageCap}</b></span>`;
+      `<span class="res storage" title="Storage used / cap — build Storage Depots to raise the cap; surplus over the cap is wasted (click to pin)">📦${labels ? '<span class="rnm">Storage</span>' : ''}<b>${fmt(totalStored(state))}/${state.storageCap}</b></span>` +
+      (((state.grainCap || 0) > 0) ? `<span class="res storage" title="Grain Silo — dedicated Grain storage, kept OFF the general books so it doesn't crowd out other goods. Build more Grain Silos to bank a bigger harvest.">🛢️${labels ? '<span class="rnm">Grain Silo</span>' : ''}<b>${fmt(Math.min(state.res.grain || 0, state.grainCap))}/${state.grainCap}</b></span>` : '');
   }
 
   // ---- Environment bar (biome, day/clock, weather, level, defense) ----
