@@ -2,13 +2,13 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-27T02:57:22Z · 93 items_
+_board_state.json updated: 2026-06-27T03:49:20Z · 94 items_
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| In Progress | 0 |
+| In Progress | 1 |
 | in CI | 0 |
 | Todo | 0 |
 | Planned | 0 |
@@ -17,14 +17,15 @@ _board_state.json updated: 2026-06-27T02:57:22Z · 93 items_
 | Shipped | 87 |
 | Deferred | 2 |
 | Closed-No-Op | 1 |
-| **TOTAL** | **93** |
+| **TOTAL** | **94** |
 
-**87 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**87 landed on `main`** · **4 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
+| In Progress | P2 | None | Rabbits: carrot/cabbage gardens → manure → fertilizer, and predator bait | — | — |
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
 | Backlog | P3 | RENDER | Full multi-level underground world view (descend/ascend, separate grid + render) | — | — |

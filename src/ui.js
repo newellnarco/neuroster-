@@ -6,7 +6,7 @@ import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
 import { computeAlerts } from './alerts.js';
-import { MEGAPROJECTS, DECREES, growTime } from './config.js';
+import { MEGAPROJECTS, DECREES, growTime, RABBIT } from './config.js';
 import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount, costText as megaCostText } from './megaprojects.js';
 import { resolveDecree, choiceAllowed, dismissDecree } from './decrees.js';
 import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
@@ -59,6 +59,7 @@ export function createUI(state, ctx) {
       (((state.pollution ?? 0) > 8) ? `<span class="env${(state.pollution > 45) ? ' decree-due' : ''}" title="Pollution — coal industry (coal plant, smelter, steelworks, refinery, electric wheel) emits smog. It poisons farm yield and, when high, sickens rodents. Forests scrub it; clean power (wheels, solar, hydro) emits none.">🏭 ${L ? 'Pollution ' : ''}${Math.round(state.pollution)}</span>` : '') +
       (((state.squirrelPressure ?? 0) > 5) ? `<span class="env${(state.squirrelPressure > 60) ? ' decree-due' : ''}" title="Squirrel pressure — oaks and a Nut hoard draw squirrels. A kind colony (Compassion) trades with them for seeds & lore; a big hoard behind weak defenses gets raided. Plant Oaks for Nuts; share or guard the hoard.">🐿️ ${L ? 'Squirrels ' : ''}${Math.round(state.squirrelPressure)}</span>` : '') +
       ((state.beaverMood != null) ? `<span class="env${(state.beaverMood < 35) ? ' decree-due' : ''}" title="Beavers — they harvest wood into their OWN store (hamsters tap it when colony wood is low). Take too much and they sour and sabotage the dams (water flow drops). Keep colony wood stocked so you don't over-tap them. Store: ${Math.round(state.beaverWood || 0)} wood · Mood ${Math.round(state.beaverMood)}/100.">🦫 ${L ? 'Beavers ' : ''}${Math.round(state.beaverWood || 0)}w·${Math.round(state.beaverMood)}%</span>` : '') +
+      (((state.rabbitCap || 0) > 0 || (state.rabbits || 0) > 0) ? `<span class="env${((state.rabbits || 0) < 1 && (state.rabbitCap || 0) > 0) ? ' decree-due' : ''}" title="Rabbit warren — keep a Carrot Garden AND a Cabbage Garden stocked and the herd grows, producing lots of Manure (→ fertilizer → bigger crops). A plentiful warren (≥${RABBIT.baitAbundance}) also lures predators away from your rodents. Starve them (no carrots/cabbage) and the warren dwindles. Feed in store: 🥕${Math.round(state.res.carrot || 0)} 🥬${Math.round(state.res.cabbage || 0)}.">🐇 ${L ? 'Rabbits ' : ''}${Math.round(state.rabbits || 0)}/${state.rabbitCap || 0}</span>` : '') +
       `<span class="env" title="Defense / Offense">${L ? 'Defense ' : ''}🛡️${state.defense} ⚔️${totalOffense(state)}</span>` +
       `<span class="env" title="${milestoneTip(state)}">🏆 ${Object.keys(state.milestones || {}).length}/${MILESTONES.length}</span>` +
       (megaCount(state) ? `<span class="env" title="Megaprojects completed — permanent colony-wide wonders">🏛️ ${megaCount(state)}</span>` : '');

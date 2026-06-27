@@ -847,6 +847,54 @@ console.log('Growth & maturation (crops, trees, animals grow in):');
   ok(`animals grow into usefulness: pup works at ${PUP_WORK} → full at maturity`);
 }
 
+// 21e) Rabbits: veg-fed warren → manure (→ fertilizer), and predator bait.
+console.log('Rabbits (carrot/cabbage gardens → manure → fertilizer; predator bait):');
+{
+  const { BUILDINGS, RESOURCES, RABBIT } = await import('../src/config.js');
+  const { removeUnits } = await import('../src/events.js');
+
+  assert(RESOURCES.carrot && RESOURCES.cabbage, 'Carrot & Cabbage resources exist');
+  assert(BUILDINGS.carrotgarden?.produces?.carrot && BUILDINGS.cabbagegarden?.produces?.cabbage, 'Carrot & Cabbage gardens grow their veg');
+  assert(BUILDINGS.rabbithutch?.rabbithutch, 'Rabbit Hutch exists');
+
+  // A hutch stocked with carrot + cabbage grows a warren and makes lots of manure.
+  const g = newGame(801, 'prairie', 'syrian', 'Warren', {});
+  const gp = g.world.spawn;
+  g.buildings.push({ id: g.nextId++, type: 'rabbithutch', x: gp.x, y: gp.y, active: true });
+  g.res.carrot = 50; g.res.cabbage = 50; g.res.manure = 0; g.rabbits = 0;
+  const man0 = g.res.manure || 0;
+  for (let i = 0; i < 40; i++) stepEconomy(g, 0.25);
+  assert((g.rabbits || 0) > 1, `a fed warren grows from 0 (now ${(g.rabbits || 0).toFixed(1)} rabbits, cap ${g.rabbitCap})`);
+  assert((g.res.manure || 0) > man0, `the warren produces manure (${man0} → ${(g.res.manure || 0).toFixed(1)})`);
+  ok(`fed rabbit warren grows to ${(g.rabbits || 0).toFixed(1)} & makes manure (${(g.res.manure || 0).toFixed(1)})`);
+
+  // Starved (no carrots/cabbage) the warren dwindles.
+  const s = newGame(802, 'prairie', 'syrian', 'Starve', {});
+  s.buildings.push({ id: s.nextId++, type: 'rabbithutch', x: s.world.spawn.x, y: s.world.spawn.y, active: true });
+  s.res.carrot = 0; s.res.cabbage = 0; s.rabbits = 5;
+  const r0 = s.rabbits;
+  for (let i = 0; i < 20; i++) stepEconomy(s, 0.25);
+  assert(s.rabbits < r0, `a starved warren dwindles (${r0} → ${s.rabbits.toFixed(1)} rabbits)`);
+  ok(`starved warren shrinks without carrot/cabbage (${r0} → ${s.rabbits.toFixed(1)})`);
+
+  // Predator bait: an abundant warren is eaten instead of the rodents.
+  const p = newGame(803, 'prairie', 'syrian', 'Bait', {});
+  while (p.units.length < 5) p.units.push({ ...p.units[0], id: p.nextId++, inBall: false });
+  p.rabbits = 6; // ≥ baitAbundance
+  const units0 = p.units.length, rab0 = p.rabbits;
+  const lost = removeUnits(p, 3);
+  assert(lost === 0 && p.units.length === units0, 'an abundant warren spares the rodents from a predator');
+  assert(p.rabbits === rab0 - 3, `the predator took rabbits instead (${rab0} → ${p.rabbits})`);
+  ok(`abundant rabbits lure predators off the rodents (${rab0}→${p.rabbits} rabbits, 0 rodents lost)`);
+
+  // With no rabbits left, predators fall back to the rodents.
+  p.rabbits = 0;
+  const u1 = p.units.length;
+  const lost2 = removeUnits(p, 2);
+  assert(lost2 > 0 && p.units.length < u1, 'with the warren gone, predators take rodents again');
+  ok(`once rabbits run out, rodents are exposed again (lost ${lost2})`);
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');
