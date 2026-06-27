@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T04:15:23Z",
+  "updated": "2026-06-27T04:15:57Z",
   "items": [
     {
       "key": "econ:1",
@@ -2348,8 +2348,8 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "In Progress",
-      "pr": null,
+      "status": "Done",
+      "pr": "71",
       "release": null,
       "detail": "The 4 wild factions (squirrels/chipmunks/fieldmice/packrats) now relate to EACH OTHER, not just the player. factions.stepInterFactions gives each its own community prosperity (0..100) and a relation with every other neighbour, pulled by resource interests: shared covets → rivalry → WAR; wanting each other's offer / no competition → symbiosis → ALLIANCE. Wars bleed both communities and distract them from raiding you; alliances let both prosper and, if hostile to you, embolden their raids. Surfaced in the Trade panel (prosperity + ⚔️/🤝 relations + a neighbours-affairs header) and the event log (war/pact/peace declarations). Emergent + deterministic.",
       "timeline": [
@@ -2357,6 +2357,11 @@
           "at": "2026-06-27T04:20:00+00:00",
           "status": "In Progress",
           "note": "Added factionAffinity/getRelation/stepInterFactions + RELATIONS; prosperity & pairwise war/alliance; spillover in events.stepFactions (war distracts, alliance emboldens); Trade-panel community view. npm test 195 + verify:browser green."
+        },
+        {
+          "at": "2026-06-27T04:15:57+00:00",
+          "status": "Done",
+          "note": "Opened PR #71 (draft). npm test 195 + verify:browser green; awaiting CI."
         }
       ],
       "screenshots": [
@@ -2366,7 +2371,7 @@
           "caption": "Trade panel: neighbours' own affairs — Chipmunks ⚔️ Field Mice at war over grain, Squirrels 🤝 allied (100% prosperity); log announces the war."
         }
       ],
-      "updated": null
+      "updated": "2026-06-27T04:15:57+00:00"
     }
   ]
 }
