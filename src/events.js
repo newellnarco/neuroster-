@@ -2,7 +2,7 @@
 import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS, RABBIT } from './config.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
-import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST } from './factions.js';
+import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST, stepInterFactions } from './factions.js';
 
 // Repelling is a choice between kindness and preservation:
 //  • With a Vet Clinic you HEAL the injured attacker — morale rises, and a
@@ -288,6 +288,7 @@ export function stepFactions(state, dt) {
   const lived = state.env?.lived || 0;
   const grace = graceSeconds(state); // difficulty scales grace before raids/contests
   const pace = eventPace(state);     // …and the cadence of competition & raids
+  stepInterFactions(state, dt); // neighbours' own economies & mutual war/alliance
   expireContests(state, lived); // contests that have run their course lapse
   for (const [id, f] of Object.entries(FACTIONS)) {
     const st = state.factions[id] || (state.factions[id] = { standing: 0, raidTimer: 150 });
@@ -315,7 +316,11 @@ export function stepFactions(state, dt) {
       st.raidTimer = (150 + 120 * hash(id + Math.floor(lived))) * pace;
       if (lived < grace || state.disasters === false) continue; // peaceful mode: no raids
       if ((state.truceUntil || 0) > lived) continue; // a brokered truce stays the raiders' paws
-      const pressure = Math.max(0, -st.standing) + Math.min(45, hoard * 0.12);
+      let pressure = Math.max(0, -st.standing) + Math.min(45, hoard * 0.12);
+      // Spillover from their own affairs: a neighbour at war with another is
+      // distracted from you; an alliance with low standing emboldens them.
+      if (st._atWar) pressure *= 0.5;
+      else if (st._allied && st.standing < 0) pressure *= 1.3;
       if (pressure > 14) fireFactionRaid(state, id, f, pressure);
     }
   }
@@ -330,8 +335,9 @@ function stepCompetition(state, id, f, st, lived, hoard) {
   if (standing >= CONTEST.cedeStanding) { resolveContest(state, id); return; }
   if (lived < graceSeconds(state) || state.disasters === false) return; // peaceful early game / mode
   if ((state.truceUntil || 0) > lived) return; // a truce stays competition too
-  // Envy (hoarding their coveted goods) makes even a neutral neighbour grab a seam.
-  const contestUrge = standing < CONTEST.contestBelow || hoard > 0;
+  // Envy (hoarding their coveted goods) makes even a neutral neighbour grab a seam
+  // — unless they're tied up in a war with another neighbour.
+  const contestUrge = (standing < CONTEST.contestBelow || hoard > 0) && !st._atWar;
   if (contestUrge && !hasContest(state, id)) contestNode(state, id, lived);
 }
 

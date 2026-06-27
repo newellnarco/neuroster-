@@ -928,6 +928,34 @@ console.log('Grain silo (off-book storage) + mill seeds:');
   ok(`mill saves back seed grain (grain ${(m.res.grain || 0).toFixed(1)}, seeds ${(m.res.seeds || 0).toFixed(1)})`);
 }
 
+// 21g) Inter-faction communities: rivalry/symbiosis, prosperity, war/alliance.
+console.log('Inter-faction communities (rivalry → war, symbiosis → alliance):');
+{
+  const { FACTIONS } = await import('../src/config.js');
+  const { factionAffinity, getRelation, stepInterFactions, RELATIONS } = await import('../src/factions.js');
+
+  // Affinity reads off resource interests: shared covets → rivalry; one wanting
+  // the other's offer / no competition → symbiosis.
+  assert(factionAffinity('chipmunks', 'fieldmice') <= RELATIONS.warAt, 'chipmunks & fieldmice (both covet grain+wheat) are bitter rivals');
+  assert(factionAffinity('packrats', 'squirrels') >= RELATIONS.allyAt, 'packrats & squirrels (planks trade) trend symbiotic');
+  assert(factionAffinity('squirrels', 'chipmunks') > RELATIONS.warAt && factionAffinity('squirrels', 'chipmunks') < RELATIONS.allyAt, 'a mild rivalry stays neutral');
+
+  // Run the community sim: relations drift to their targets, prosperity moves.
+  const g = newGame(901, 'prairie', 'syrian', 'Neighbours', {});
+  for (const id of Object.keys(FACTIONS)) g.factions[id] = g.factions[id] || { standing: 0, raidTimer: 150 };
+  for (let i = 0; i < 700; i++) stepInterFactions(g, 0.2); // ~140s
+  const warRel = getRelation(g, 'chipmunks', 'fieldmice');
+  const allyRel = getRelation(g, 'packrats', 'squirrels');
+  assert(warRel <= RELATIONS.warAt, `rivals drift into war (${warRel.toFixed(0)})`);
+  assert(allyRel >= RELATIONS.allyAt, `partners drift into a pact (${allyRel.toFixed(0)})`);
+  assert(g.factions.fieldmice._atWar === true, 'a community fighting a neighbour is flagged at war');
+  assert(g.factions.packrats._allied === true, 'a trading community is flagged allied');
+  // The peaceful trade hub out-prospers a war-torn neighbour.
+  assert((g.factions.packrats.prosperity || 0) > (g.factions.fieldmice.prosperity || 0),
+    `peace & trade out-prosper war (packrats ${Math.round(g.factions.packrats.prosperity)}% > fieldmice ${Math.round(g.factions.fieldmice.prosperity)}%)`);
+  ok(`neighbours run their own lives: chipmunks↔fieldmice war (${warRel.toFixed(0)}), packrats pacts (${allyRel.toFixed(0)}); prosperity diverges`);
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');

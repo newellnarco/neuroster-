@@ -145,3 +145,94 @@ export function stepCaravans(state) {
   const now = state.env?.lived || 0;
   state.caravans = state.caravans.filter(c => now - c.born < c.life);
 }
+
+// ---- Inter-faction communities (Arc: neighbours with their own lives) -------
+// The neighbours don't only relate to YOU — they relate to EACH OTHER. Each runs
+// its own little community economy (st.prosperity 0..100) and holds a RELATION
+// with every other neighbour (state.factionRelations), pulled by their resource
+// interests: two who covet the SAME goods drift to RIVALRY → war; two where one
+// wants the other's OFFER drift to SYMBIOSIS → a trade alliance. Wars bleed both
+// communities (and distract them from raiding you); alliances let both prosper —
+// and, if they both dislike you, lean on your colony together. Emergent, and it
+// spills back onto the player (see events.stepFactions).
+export const RELATIONS = {
+  driftRate: 0.6,     // relation points/sec toward the resource-driven target
+  prosperGrow: 0.25,  // base prosperity growth/sec for a community at peace
+  warAt: -50,         // relation ≤ this → the pair is at WAR
+  allyAt: 20,         // relation ≥ this → the pair is ALLIED (symbiosis)
+  warDrain: 0.5,      // prosperity each warring community loses/sec
+  allyBoost: 0.2,     // extra prosperity each allied community gains/sec
+  eventInterval: 45,  // seconds between logged relation transitions
+};
+
+function fhash(s) { s = '' + s; let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; } return (h % 1000) / 1000; }
+
+// Stable key for an unordered faction pair.
+export function relKey(a, b) { return a < b ? `${a}|${b}` : `${b}|${a}`; }
+
+// A resource both factions covet (for flavour text); '' if none.
+export function sharedCovet(a, b) {
+  const fa = FACTIONS[a], fb = FACTIONS[b]; if (!fa || !fb) return '';
+  const r = fa.covets.find(x => fb.covets.includes(x));
+  return r || '';
+}
+
+// The relation a pair NATURALLY trends toward, from their resource interests:
+//   • coveting the SAME goods → rivalry (−): they compete for the same forage.
+//   • one wanting the other's OFFER → symbiosis (+): a natural trade.
+//   • no competition at all → mildly cordial (a small + baseline).
+export function factionAffinity(a, b) {
+  const fa = FACTIONS[a], fb = FACTIONS[b]; if (!fa || !fb) return 0;
+  const rivalry = fa.covets.filter(r => fb.covets.includes(r)).length;
+  const symbiosis = (fa.covets.includes(fb.offers) ? 1 : 0) + (fb.covets.includes(fa.offers) ? 1 : 0);
+  const cordial = rivalry === 0 ? 25 : 0; // neighbours who don't compete get along
+  return Math.max(-100, Math.min(100, symbiosis * 55 - rivalry * 30 + cordial));
+}
+
+export function getRelation(state, a, b) {
+  return (state.factionRelations && state.factionRelations[relKey(a, b)]) || 0;
+}
+
+// Advance every neighbour's community economy and their mutual relations.
+export function stepInterFactions(state, dt) {
+  if (!state.factions) return;
+  const ids = Object.keys(FACTIONS).filter(id => state.factions[id]);
+  if (ids.length < 2) return;
+  const rels = state.factionRelations || (state.factionRelations = {});
+  // Seed prosperity once per community.
+  for (const id of ids) { const st = state.factions[id]; if (st.prosperity == null) st.prosperity = 40 + 20 * fhash(id); }
+  // 1) Each pair's relation drifts toward its resource-driven target.
+  const atWar = {}, allied = {};
+  for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+    const k = relKey(ids[i], ids[j]);
+    const target = factionAffinity(ids[i], ids[j]);
+    const cur = rels[k] || 0;
+    rels[k] = Math.max(-100, Math.min(100, cur + Math.sign(target - cur) * Math.min(Math.abs(target - cur), RELATIONS.driftRate * dt)));
+    if (rels[k] <= RELATIONS.warAt) { atWar[ids[i]] = true; atWar[ids[j]] = true; }
+    else if (rels[k] >= RELATIONS.allyAt) { allied[ids[i]] = true; allied[ids[j]] = true; }
+  }
+  // 2) Community economies grow at peace, bleed at war, thrive in alliance.
+  for (const id of ids) {
+    const st = state.factions[id];
+    let dp = RELATIONS.prosperGrow - (atWar[id] ? RELATIONS.warDrain : 0) + (allied[id] ? RELATIONS.allyBoost : 0);
+    st.prosperity = Math.max(0, Math.min(100, (st.prosperity || 0) + dp * dt));
+    st._atWar = !!atWar[id]; st._allied = !!allied[id]; // spillover flags (events.stepFactions + UI)
+  }
+  // 3) Log the dramatic transitions (war declared / pact struck / peace settled).
+  state._relEventT = (state._relEventT || 0) + dt;
+  if (state._relEventT >= RELATIONS.eventInterval) {
+    state._relEventT = 0;
+    const seen = state._relState || (state._relState = {});
+    for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+      const a = ids[i], b = ids[j], k = relKey(a, b), r = rels[k];
+      const now = r <= RELATIONS.warAt ? 'war' : r >= RELATIONS.allyAt ? 'ally' : 'neutral';
+      if (seen[k] && seen[k] !== now) {
+        const fa = FACTIONS[a], fb = FACTIONS[b], sc = sharedCovet(a, b);
+        if (now === 'war') logMsg(state, `${fa.icon}⚔️${fb.icon} The ${fa.name} and ${fb.name} have gone to WAR${sc ? ` over ${sc}` : ''} — both turn from your colony to fight each other.`);
+        else if (now === 'ally') logMsg(state, `${fa.icon}🤝${fb.icon} The ${fa.name} and ${fb.name} struck a trade pact — a prospering alliance on your doorstep.`);
+        else logMsg(state, `${fa.icon}${fb.icon} The ${fa.name} and ${fb.name} settled into an uneasy peace.`);
+      }
+      seen[k] = now;
+    }
+  }
+}
