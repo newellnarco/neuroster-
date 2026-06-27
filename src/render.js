@@ -1,6 +1,6 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
-import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, RESOURCES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS, buildingTex } from './config.js';
+import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, RESOURCES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS, buildingTex, buildingMaturity, growTime } from './config.js';
 import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
 import { dayFraction, currentWeather, seasonKey, seasonTint } from './environment.js';
 import { buildTextures } from './textures.js';
@@ -363,6 +363,15 @@ export function createRenderer(canvas, state, getView) {
     ctx.fillStyle = '#7cdc6a'; ctx.fillRect(n.x * TILE + 4, n.y * TILE + TILE - 4, w * pct, 3);
   }
 
+  // A small sprout + green maturity ring over a producer that's still growing in.
+  function drawGrowBadge(cx, cy, m) {
+    const bx = cx + 9, by = cy - 11, r = 6;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.arc(bx, by, r, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#7cdc6a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(bx, by, r, -Math.PI / 2, -Math.PI / 2 + Math.max(0, Math.min(1, m)) * Math.PI * 2); ctx.stroke();
+    glyph('🌱', bx, by, 9);
+  }
+
   // ---------- Buildings ----------
   function drawBuildings(t) {
     for (const b of state.buildings) {
@@ -370,7 +379,12 @@ export function createRenderer(canvas, state, getView) {
       const cx = b.x * TILE + TILE / 2, cy = b.y * TILE + TILE / 2;
       ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(cx, cy + TILE * 0.30, 11, 4.5, 0, 0, 7); ctx.fill();
       if (b.underConstruction) { drawSite(cx, cy, b, t); continue; }
-      if (BUILDINGS[b.type].tree) { drawTree(cx, cy - 2, 1, b.type); continue; } // planted tree (by species)
+      if (BUILDINGS[b.type].tree) { // planted tree — grows from a sapling to full size as it matures
+        const bm = buildingMaturity(b, state.env.lived);
+        drawTree(cx, cy - 2, 0.5 + 0.5 * bm, b.type);
+        if (bm < 1) drawGrowBadge(cx, cy, bm);
+        continue;
+      }
       if (b.type === 'wheel') { drawWheel(cx, cy - 3, t, b); continue; }
       if (b.type === 'conveyor' || b.type === 'conveyorPlastic' || b.type === 'conveyorMetal') { drawConveyor(cx, cy - 2, t, b); continue; }
       if (b.type === 'mine') { drawMine(cx, cy, b); continue; }
@@ -389,6 +403,10 @@ export function createRenderer(canvas, state, getView) {
       glyph(BUILDINGS[b.type].icon, cx, cy - 3, TILE * 0.78);
       if (BUILDINGS[b.type].tower) glyph(b.mode === 'defend' ? '🗡️' : '👁️', cx + 9, cy - 9, 11); // stance badge
       animateBuilding(cx, cy, b);
+      { // a young crop/field still growing in shows a sprout + maturity ring
+        const bm = buildingMaturity(b, state.env.lived);
+        if (bm < 1 && growTime(BUILDINGS[b.type]) > 0) drawGrowBadge(cx, cy, bm);
+      }
       // dirty / degraded burrow: buzzing flies and a grime tint
       if (BUILDINGS[b.type].breed && (b.dirt || 0) > 18) {
         if (b.degraded) { ctx.fillStyle = 'rgba(80,60,20,0.28)'; ctx.fillRect(b.x * TILE + 2, b.y * TILE + 2, TILE - 4, TILE - 4); }

@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T02:45:02Z",
+  "updated": "2026-06-27T02:54:36Z",
   "items": [
     {
       "key": "econ:1",
@@ -2192,9 +2192,9 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "66",
-      "release": null,
+      "release": "d329e1f",
       "detail": "Build > Trees picker: rodents plant a chosen species (Shade Tree, Pine, Berry, Oak) for seeds/food. All scrub pollution; pine trickles wood, berry trickles food. ONLY oaks grow nuts, and only nuts draw squirrels: a kind colony trades, but over-planting oaks builds squirrel tension (state.squirrelTension) and a crowded grove summons a swarm that raids food AND water (overrides goodwill). Distinct on-map visuals per species + a tension alert.",
       "timeline": [
         {
@@ -2206,6 +2206,11 @@
           "at": "2026-06-27T02:45:02+00:00",
           "status": "Done",
           "note": "Opened PR #66 (draft). npm test 186 checks + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-27T02:46:07+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #66 (squash d329e1f). Trees picker + oak/squirrel tension shipped."
         }
       ],
       "screenshots": [
@@ -2215,7 +2220,41 @@
           "caption": "Build > Trees: choose a species to plant (Shade Tree, Pine, Berry, Oak) — costs in seeds/food; only the oak draws squirrels."
         }
       ],
-      "updated": "2026-06-27T02:45:02+00:00"
+      "updated": "2026-06-27T02:46:07+00:00"
+    },
+    {
+      "key": "gameplay:growth-maturation",
+      "issue": null,
+      "title": "Crops, trees & animals take time to grow in before they're useful",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "Done",
+      "pr": "67",
+      "release": null,
+      "detail": "Producers aren't useful the moment they're built: farms/fields/orchards and planted trees GROW IN over time (config.growTime/buildingMaturity), ramping yield from ~nothing to full after construction. Trees grow slowest and visibly enlarge from sapling to full canopy; a 🌱 sprout + maturity ring marks any producer still growing, and the Build card flags 'grows in'. Animals already mature for breeding — now a juvenile also WORKS at reduced effort (entities.workMaturity), only becoming fully useful once grown. Log announces 'grown in — now at full yield'.",
+      "timeline": [
+        {
+          "at": "2026-06-27T02:55:00+00:00",
+          "status": "In Progress",
+          "note": "Added growTime/buildingMaturity (config); production ramps with maturity + builtAt stamp on construction; tree size scales with growth; 🌱 grow badge + Build-card hint; workMaturity gates juvenile work. npm test 188 checks + verify:browser green."
+        },
+        {
+          "at": "2026-06-27T02:54:36+00:00",
+          "status": "Done",
+          "note": "Opened PR #67 (draft). npm test 188 + verify:browser green; awaiting CI."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-27T02:55:00+00:00",
+          "path": "docs/screenshots/growth-maturation.png",
+          "caption": "Producers grow in: Build cards show '🌱 grows in', young trees render small, and maturing farms/fields carry a sprout + maturity ring."
+        }
+      ],
+      "updated": "2026-06-27T02:54:36+00:00"
     }
   ]
 }

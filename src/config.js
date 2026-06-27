@@ -833,6 +833,33 @@ export const BREEDING = {
   foodFloor: 5,     // colony needs at least this much food to breed
 };
 
+// ---- Growth / maturation ---------------------------------------------------
+// Living producers — farms, fields, orchards and planted trees — aren't useful
+// the moment construction ends: the crop or tree has to GROW IN first. After it
+// finishes building, a producer matures over `growTime` in-game seconds, ramping
+// its yield from ~nothing up to full (economy.js production loop). Trees take the
+// longest. Buildings with no `builtAt` stamp (the founding buildings, legacy
+// saves, test fixtures) are treated as already grown so nothing regresses.
+export const GROWTH = {
+  cropGrow: 55,   // a built food producer takes this long to reach full yield
+  treeGrow: 110,  // trees grow in slower than crops
+};
+// Seconds a building must mature after construction before it yields fully (0 =
+// instant; only food producers & planted trees grow in). Per-def `grow` overrides.
+export function growTime(def) {
+  if (!def) return 0;
+  if (def.grow != null) return def.grow;
+  if (def.tree) return GROWTH.treeGrow;
+  if (def.category === 'Food') return GROWTH.cropGrow;
+  return 0;
+}
+// Maturity 0..1 of a building at colony clock `lived` (in-game seconds).
+export function buildingMaturity(b, lived) {
+  const g = growTime(BUILDINGS[b.type]);
+  if (g <= 0 || b == null || b.builtAt == null) return 1;
+  return Math.max(0, Math.min(1, ((lived || 0) - b.builtAt) / g));
+}
+
 // ---- Morale ----------------------------------------------------------------
 // The colony has a conscience. Unburied dead and untreated injuries crush
 // morale; so does violent killing of other animals by lethal defenses. Low

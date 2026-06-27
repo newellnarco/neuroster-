@@ -6,7 +6,7 @@ import { protectionAgainst, totalOffense } from './events.js';
 import { dayNumber, clockString, currentWeather, isNight, currentSeason } from './environment.js';
 import { MILESTONES } from './milestones.js';
 import { computeAlerts } from './alerts.js';
-import { MEGAPROJECTS, DECREES } from './config.js';
+import { MEGAPROJECTS, DECREES, growTime } from './config.js';
 import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount, costText as megaCostText } from './megaprojects.js';
 import { resolveDecree, choiceAllowed, dismissDecree } from './decrees.js';
 import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
@@ -95,7 +95,7 @@ export function createUI(state, ctx) {
         return `<button class="card ${active ? 'sel' : ''} ${afford && !lvlLocked ? '' : 'poor'} ${lvlLocked ? 'locked' : ''}" data-build="${id}" ${lvlLocked ? 'disabled' : ''}
           title="${active ? 'Placing — click the map to build, or click here again / right-click / Esc to cancel' : def.name}">
           <div class="ico">${def.icon}</div><div class="nm">${active ? '✕ ' : ''}${def.name}${lvlLocked ? ' 🔒' : ''}</div>
-          <div class="cost">${active ? 'Placing… (click to cancel)' : costStr(def.cost) + (def.reqLevel ? ` · Lv.${def.reqLevel}` : '')}</div><div class="ds">${def.desc}</div>
+          <div class="cost">${active ? 'Placing… (click to cancel)' : costStr(def.cost) + (def.reqLevel ? ` · Lv.${def.reqLevel}` : '') + (growTime(def) ? ' · 🌱 grows in' : '')}</div><div class="ds">${def.desc}</div>
         </button>`;
       }).join('')}</div>`).join('');
     bind('[data-build]', (btn) => {

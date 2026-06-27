@@ -10,7 +10,7 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathB
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES, buildingMaturity, growTime } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt, riverNear } from './world.js';
@@ -82,6 +82,11 @@ export function stepEconomy(state, dt) {
     if (def.belt) { continue; } // belts run as connected networks — see runBeltNetworks below
 
     let rate = dt * wb * powerMul * diffY * (1 + (state._leadership || 0) + (mega.leadership || 0)) * (state._laborFactor ?? 1) * (1 - (state._distract || 0)) * (state.quarantine ? (1 - DISEASE.quarantineOutput) : 1); // difficulty yield; leader inspires; builders divert labour; play distracts; a quarantine confines the colony
+    // Crops & trees GROW IN: a young producer ramps its yield from ~nothing up to
+    // full as it matures (eased so it starts slow). It announces its first harvest.
+    const mat = buildingMaturity(b, state.env.lived);
+    if (mat < 1) rate *= mat * mat;
+    else if (!b._grown && growTime(def) > 0) { b._grown = true; logMsg(state, `${def.icon} ${def.name} has grown in — now at full yield.`); }
     if (def.category === 'Food') {
       // Fertile ground (this tile or recent-flood silt) + stored fertilizer boost crops.
       let bonus = state.mods.foodMul + env.foodMul + (mega.foodMul || 0) + (doc.foodMul || 0);
@@ -232,8 +237,10 @@ function updateConstruction(state, dt) {
       b.progress = (b.progress || 0) + inc;
       if (b.progress >= b.buildTime) {
         b.underConstruction = false; b.progress = b.buildTime;
+        b.builtAt = state.env.lived || 0; // start the grow-in clock for crops & trees
         addFx(state, b.x, b.y, '✅', 1.8);
-        logMsg(state, `${BUILDINGS[b.type].icon} ${BUILDINGS[b.type].name} construction complete!`);
+        const grow = growTime(BUILDINGS[b.type]);
+        logMsg(state, `${BUILDINGS[b.type].icon} ${BUILDINGS[b.type].name} construction complete!${grow ? ' 🌱 Now growing in…' : ''}`);
       }
     } else if (b.upgrading) {
       b.upgrading.progress += inc;
