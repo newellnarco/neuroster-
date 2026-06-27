@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T02:54:36Z",
+  "updated": "2026-06-27T02:57:22Z",
   "items": [
     {
       "key": "econ:1",
@@ -2231,9 +2231,9 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "67",
-      "release": null,
+      "release": "d0b8892",
       "detail": "Producers aren't useful the moment they're built: farms/fields/orchards and planted trees GROW IN over time (config.growTime/buildingMaturity), ramping yield from ~nothing to full after construction. Trees grow slowest and visibly enlarge from sapling to full canopy; a 🌱 sprout + maturity ring marks any producer still growing, and the Build card flags 'grows in'. Animals already mature for breeding — now a juvenile also WORKS at reduced effort (entities.workMaturity), only becoming fully useful once grown. Log announces 'grown in — now at full yield'.",
       "timeline": [
         {
@@ -2245,6 +2245,11 @@
           "at": "2026-06-27T02:54:36+00:00",
           "status": "Done",
           "note": "Opened PR #67 (draft). npm test 188 + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-27T02:57:22+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #67 (squash d0b8892). Crop/tree/animal grow-in shipped."
         }
       ],
       "screenshots": [
@@ -2254,7 +2259,7 @@
           "caption": "Producers grow in: Build cards show '🌱 grows in', young trees render small, and maturing farms/fields carry a sprout + maturity ring."
         }
       ],
-      "updated": "2026-06-27T02:54:36+00:00"
+      "updated": "2026-06-27T02:57:22+00:00"
     }
   ]
 }
