@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T04:04:18Z",
+  "updated": "2026-06-27T04:04:43Z",
   "items": [
     {
       "key": "econ:1",
@@ -2309,8 +2309,8 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "In Progress",
-      "pr": null,
+      "status": "Done",
+      "pr": "70",
       "release": null,
       "detail": "New Grain Silo (Storage) adds dedicated grain capacity (state.grainCap) that is OFF the general books — totalStored() excludes silo-held grain up to capacity, so grain no longer crowds out wood/stone/etc. in storehouses. The Mill now also produces a trickle of Seeds (seed grain) alongside grain, closing the seed loop. Resbar shows a 🛢️ grain-silo chip.",
       "timeline": [
@@ -2318,6 +2318,11 @@
           "at": "2026-06-27T04:05:00+00:00",
           "status": "In Progress",
           "note": "Added grainsilo (grainCap) + grainCap aggregation; totalStored excludes silo grain; mill produces seeds byproduct; 🛢️ resbar chip. npm test 194 + verify:browser green."
+        },
+        {
+          "at": "2026-06-27T04:04:43+00:00",
+          "status": "Done",
+          "note": "Opened PR #70 (draft). npm test 194 + verify:browser green; awaiting CI."
         }
       ],
       "screenshots": [
@@ -2327,7 +2332,7 @@
           "caption": "Grain Silo build card + the 🛢️ off-book grain chip (1.8k/2500) while general storage stays at 521/700."
         }
       ],
-      "updated": null
+      "updated": "2026-06-27T04:04:43+00:00"
     }
   ]
 }
