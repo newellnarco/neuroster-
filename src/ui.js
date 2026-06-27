@@ -7,6 +7,7 @@ import { dayNumber, clockString, currentWeather, isNight, currentSeason } from '
 import { MILESTONES } from './milestones.js';
 import { computeAlerts } from './alerts.js';
 import { MEGAPROJECTS, DECREES, growTime, RABBIT } from './config.js';
+import { getRelation, RELATIONS } from './factions.js';
 import { contributeMega, remainingCost, megaProgress, isMegaUnlocked, megaCount, costText as megaCostText } from './megaprojects.js';
 import { resolveDecree, choiceAllowed, dismissDecree } from './decrees.js';
 import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
@@ -404,16 +405,29 @@ export function createUI(state, ctx) {
       el('tab-trade').innerHTML = `<div class="hint">Build a 🏪 <b>Trading Hut</b> (Production) to trade, gift and request aid from neighbouring animal groups — and shape alliances. Beware: hoarding what they covet invites raids!</div>`;
       return;
     }
-    el('tab-trade').innerHTML = `<div class="hint">Gift or trade what they covet to build alliances. Allies (≥${TRADE.aidStanding}) will send aid. Hoarding their coveted goods (>${TRADE.hoardThreshold}) breeds envy and raids.</div>` +
+    // Inter-faction summary: who's at war / allied with whom right now.
+    const fids = Object.keys(FACTIONS);
+    const wars = [], pacts = [];
+    for (let i = 0; i < fids.length; i++) for (let j = i + 1; j < fids.length; j++) {
+      const r = getRelation(state, fids[i], fids[j]); const pair = `${FACTIONS[fids[i]].icon}${FACTIONS[fids[j]].icon}`;
+      if (r <= RELATIONS.warAt) wars.push(pair); else if (r >= RELATIONS.allyAt) pacts.push(pair);
+    }
+    const relSummary = `<div class="ds" style="margin:2px 0 6px">🌐 Neighbours have their own affairs: ${wars.length ? `⚔️ wars ${wars.join(' ')}` : 'no wars'}${pacts.length ? ` · 🤝 pacts ${pacts.join(' ')}` : ''}. Rivals covet the same goods; partners want each other's offer.</div>`;
+    el('tab-trade').innerHTML = `<div class="hint">Gift or trade what they covet to build alliances. Allies (≥${TRADE.aidStanding}) will send aid. Hoarding their coveted goods (>${TRADE.hoardThreshold}) breeds envy and raids.</div>` + relSummary +
       Object.entries(FACTIONS).map(([id, f]) => {
-        const st = Math.round(state.factions[id]?.standing || 0);
-        const hoard = Math.round(state.factions[id]?.hoard || 0);
+        const fs = state.factions[id] || {};
+        const st = Math.round(fs.standing || 0);
+        const hoard = Math.round(fs.hoard || 0);
+        const prosperity = Math.round(fs.prosperity || 0);
         const cls = st >= TRADE.aidStanding ? 'gd' : st <= -30 ? 'bd' : '';
         const mood = st >= TRADE.aidStanding ? 'Allied' : st <= -30 ? 'Hostile' : st <= -1 ? 'Wary' : 'Neutral';
         const pct = (st + 100) / 2;
+        const rels = fids.filter(o => o !== id).map(o => { const r = getRelation(state, id, o); return r <= RELATIONS.warAt ? `⚔️${FACTIONS[o].icon}` : r >= RELATIONS.allyAt ? `🤝${FACTIONS[o].icon}` : ''; }).filter(Boolean).join(' ');
+        const badge = fs._atWar ? ' <span class="bd">⚔️ at war</span>' : fs._allied ? ' <span class="gd">🤝 allied</span>' : '';
         return `<div class="threat">
-          <div class="trow"><span>${f.icon} <b>${f.name}</b></span><span class="${cls}">${mood} ${st > 0 ? '+' : ''}${st}</span></div>
+          <div class="trow"><span>${f.icon} <b>${f.name}</b>${badge}</span><span class="${cls}">${mood} ${st > 0 ? '+' : ''}${st}</span></div>
           <div class="need ${st >= 40 ? 'ok' : st <= -30 ? 'low' : 'mid'}"><span class="bar" style="width:100%"><span style="width:${pct}%"></span></span></div>
+          <div class="ds">🏘️ Community prosperity ${prosperity}%${rels ? ` · neighbours: ${rels}` : ' · neutral with its neighbours'}</div>
           <div class="ds">Covets ${f.covets.map(r => RESOURCES[r]?.icon || r).join(' ')} · offers ${RESOURCES[f.offers]?.icon || f.offers}${hoard > 0 ? ` · <span class="bd">envious of your hoard!</span>` : ''}</div>
           <div class="care">
             <button class="carebtn" data-tf="gift" data-fid="${id}" title="Gift ${TRADE.giftAmount} coveted → +standing">🎁 Gift</button>

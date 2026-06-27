@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T04:04:43Z",
+  "updated": "2026-06-27T04:15:23Z",
   "items": [
     {
       "key": "econ:1",
@@ -2309,9 +2309,9 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "70",
-      "release": null,
+      "release": "c7d0209",
       "detail": "New Grain Silo (Storage) adds dedicated grain capacity (state.grainCap) that is OFF the general books — totalStored() excludes silo-held grain up to capacity, so grain no longer crowds out wood/stone/etc. in storehouses. The Mill now also produces a trickle of Seeds (seed grain) alongside grain, closing the seed loop. Resbar shows a 🛢️ grain-silo chip.",
       "timeline": [
         {
@@ -2323,6 +2323,11 @@
           "at": "2026-06-27T04:04:43+00:00",
           "status": "Done",
           "note": "Opened PR #70 (draft). npm test 194 + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-27T04:08:26+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #70 (squash c7d0209). Grain silo + mill seed shipped."
         }
       ],
       "screenshots": [
@@ -2332,7 +2337,36 @@
           "caption": "Grain Silo build card + the 🛢️ off-book grain chip (1.8k/2500) while general storage stays at 521/700."
         }
       ],
-      "updated": "2026-06-27T04:04:43+00:00"
+      "updated": "2026-06-27T04:08:26+00:00"
+    },
+    {
+      "key": "gameplay:inter-faction-communities",
+      "issue": null,
+      "title": "NPC animal communities: factions trade, war & form pacts with each other",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "In Progress",
+      "pr": null,
+      "release": null,
+      "detail": "The 4 wild factions (squirrels/chipmunks/fieldmice/packrats) now relate to EACH OTHER, not just the player. factions.stepInterFactions gives each its own community prosperity (0..100) and a relation with every other neighbour, pulled by resource interests: shared covets → rivalry → WAR; wanting each other's offer / no competition → symbiosis → ALLIANCE. Wars bleed both communities and distract them from raiding you; alliances let both prosper and, if hostile to you, embolden their raids. Surfaced in the Trade panel (prosperity + ⚔️/🤝 relations + a neighbours-affairs header) and the event log (war/pact/peace declarations). Emergent + deterministic.",
+      "timeline": [
+        {
+          "at": "2026-06-27T04:20:00+00:00",
+          "status": "In Progress",
+          "note": "Added factionAffinity/getRelation/stepInterFactions + RELATIONS; prosperity & pairwise war/alliance; spillover in events.stepFactions (war distracts, alliance emboldens); Trade-panel community view. npm test 195 + verify:browser green."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-27T04:20:00+00:00",
+          "path": "docs/screenshots/faction-communities.png",
+          "caption": "Trade panel: neighbours' own affairs — Chipmunks ⚔️ Field Mice at war over grain, Squirrels 🤝 allied (100% prosperity); log announces the war."
+        }
+      ],
+      "updated": null
     }
   ]
 }
