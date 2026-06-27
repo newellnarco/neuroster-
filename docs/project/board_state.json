@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T03:49:49Z",
+  "updated": "2026-06-27T04:04:43Z",
   "items": [
     {
       "key": "econ:1",
@@ -2270,9 +2270,9 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "69",
-      "release": null,
+      "release": "cb00689",
       "detail": "New Rabbit Hutch + Carrot Garden + Cabbage Garden. A managed warren (state.rabbits, economy.updateRabbits) fed on carrots AND cabbage grows to hutch capacity and produces LOTS of manure → more fertilizer → bigger crops; starved, it dwindles. Only the oak-style niche resources carrot/cabbage feed them. When the warren is abundant (≥RABBIT.baitAbundance), predators take rabbits instead of rodents (events.removeUnits). Env-bar 🐇 chip shows herd/cap + feed; gardens grow in like other crops.",
       "timeline": [
         {
@@ -2284,6 +2284,11 @@
           "at": "2026-06-27T03:49:49+00:00",
           "status": "Done",
           "note": "Opened PR #69 (draft). npm test 192 + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-27T04:00:06+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #69 (squash cb00689). Rabbit warren + veg gardens + predator bait shipped."
         }
       ],
       "screenshots": [
@@ -2293,7 +2298,41 @@
           "caption": "Rabbit warren: Carrot + Cabbage gardens feed a Rabbit Hutch; 🐇 herd chip in the env bar; gardens grow in."
         }
       ],
-      "updated": "2026-06-27T03:49:49+00:00"
+      "updated": "2026-06-27T04:00:06+00:00"
+    },
+    {
+      "key": "gameplay:grain-silo-mill-seed",
+      "issue": null,
+      "title": "Grain Silo (off-book grain storage) + Mill saves back seed grain",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P3",
+      "status": "Done",
+      "pr": "70",
+      "release": null,
+      "detail": "New Grain Silo (Storage) adds dedicated grain capacity (state.grainCap) that is OFF the general books — totalStored() excludes silo-held grain up to capacity, so grain no longer crowds out wood/stone/etc. in storehouses. The Mill now also produces a trickle of Seeds (seed grain) alongside grain, closing the seed loop. Resbar shows a 🛢️ grain-silo chip.",
+      "timeline": [
+        {
+          "at": "2026-06-27T04:05:00+00:00",
+          "status": "In Progress",
+          "note": "Added grainsilo (grainCap) + grainCap aggregation; totalStored excludes silo grain; mill produces seeds byproduct; 🛢️ resbar chip. npm test 194 + verify:browser green."
+        },
+        {
+          "at": "2026-06-27T04:04:43+00:00",
+          "status": "Done",
+          "note": "Opened PR #70 (draft). npm test 194 + verify:browser green; awaiting CI."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-27T04:05:00+00:00",
+          "path": "docs/screenshots/grain-silo.png",
+          "caption": "Grain Silo build card + the 🛢️ off-book grain chip (1.8k/2500) while general storage stays at 521/700."
+        }
+      ],
+      "updated": "2026-06-27T04:04:43+00:00"
     }
   ]
 }

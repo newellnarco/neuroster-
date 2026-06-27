@@ -81,7 +81,10 @@ export function totalStored(state) {
     if (RESOURCES[k].kind === 'abstract') continue;
     t += state.res[k] || 0;
   }
-  return t;
+  // Grain kept in Grain Silos is off-book — up to the silo capacity it doesn't
+  // compete for general storehouse space (so grain stops crowding out everything).
+  t -= Math.min(state.res.grain || 0, state.grainCap || 0);
+  return Math.max(0, t);
 }
 export function addRes(state, key, amt) {
   const def = RESOURCES[key];

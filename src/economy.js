@@ -269,13 +269,14 @@ function updateConstruction(state, dt) {
 }
 
 function recomputeBuildings(state) {
-  let popCap = 0, storage = 700, defense = 0, /* base cap matches STARTING.storageCap */ fun = 0, health = 0, feeders = 0, waterers = 0, feederN = 0, watererN = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0, statues = 0;
+  let popCap = 0, storage = 700, defense = 0, /* base cap matches STARTING.storageCap */ fun = 0, health = 0, feeders = 0, waterers = 0, feederN = 0, watererN = 0, caretakers = 0, vets = 0, hygiene = 0, distract = 0, defendTowers = 0, watchTowers = 0, sanctuaries = 0, courts = 0, alms = 0, memorials = 0, statues = 0, grainCap = 0;
   for (const b of state.buildings) {
     const def = BUILDINGS[b.type];
     if (!def || b.underConstruction) continue;
     popCap += (b.degraded ? 0 : def.popCap || 0); // degraded burrows house no one
     hygiene += def.hygiene || 0;
     storage += def.storage || 0;
+    grainCap += def.grainCap || 0; // Grain Silos: dedicated grain space, off the general books
     // Towers: WATCH stance is gentler (×0.6 defense, wide vision); DEFEND is full + offense.
     if (def.tower) { const defend = b.mode === 'defend'; defense += Math.round((def.defense || 0) * (defend ? 1 : 0.6)); if (defend) defendTowers++; else watchTowers++; }
     else if (fortTiers(b.type)) { // tiered forts (walls/bridges): defense from tier, scaled by HP
@@ -310,7 +311,7 @@ function recomputeBuildings(state) {
   // Forged Armour in store hardens the colony's defense (capped — a steady edge).
   defense += Math.round(Math.min(ARMOUR.defCap, (state.res?.armour || 0) * ARMOUR.defPerSet));
   storage += state._mega?.storage || 0; // Great Granary expands the vaults
-  state.popCap = popCap; state.storageCap = storage; state.defense = defense;
+  state.popCap = popCap; state.storageCap = storage; state.defense = defense; state.grainCap = grainCap;
   state._funBld = fun; state._healthBld = health; state._feeders = feeders;
   state._waterers = waterers; state._feederN = feederN; state._watererN = watererN;
   state._caretakers = caretakers; state._hygiene = hygiene;
