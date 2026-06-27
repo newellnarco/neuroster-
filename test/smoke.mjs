@@ -2260,15 +2260,17 @@ console.log('Tool modes, marquee multi-select & group actions:');
   {
     const g = newGame(9101, 'prairie', 'syrian', 'Box', {});
     const sp = g.world.spawn;
-    // Place three rodents inside a 4×4 box and one well outside it.
+    // Make the test independent of STARTING.hamsters: ensure at least 4 rodents.
+    while (g.units.length < 4) g.units.push({ id: g.nextId++, species: 'hamster', x: sp.x, y: sp.y, traits: {}, needs: { food: 80, water: 80, energy: 80, fun: 80, health: 100 } });
+    // Three rodents inside a 4×4 box; every other rodent moved well outside it.
+    g.units.forEach(u => { u.x = sp.x + 20; u.y = sp.y + 20; u._rx = undefined; u._ry = undefined; });
     g.units[0].x = sp.x; g.units[0].y = sp.y;
-    g.units[1] && (g.units[1].x = sp.x + 1, g.units[1].y = sp.y + 1);
-    g.units[2] && (g.units[2].x = sp.x + 2, g.units[2].y = sp.y + 2);
-    const outsider = g.units[g.units.length - 1];
-    outsider.x = sp.x + 20; outsider.y = sp.y + 20;
+    g.units[1].x = sp.x + 1; g.units[1].y = sp.y + 1;
+    g.units[2].x = sp.x + 2; g.units[2].y = sp.y + 2;
+    const outsider = g.units[3];
     const rect = normRect(sp.x - 0.2, sp.y - 0.2, sp.x + 3, sp.y + 3);
     const inside = unitsInRect(g, rect);
-    assert(inside.length >= 3, `marquee captures the rodents in the box (got ${inside.length})`);
+    assert(inside.length === 3, `marquee captures exactly the 3 rodents in the box (got ${inside.length})`);
     assert(!inside.includes(outsider), 'a rodent far outside the box is NOT selected');
     const view = { selUnit: null, selUnits: [], selBuildings: [] };
     selectUnits(view, inside);

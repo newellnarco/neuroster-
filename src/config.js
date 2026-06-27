@@ -1023,7 +1023,7 @@ export const STARTING = {
   // the Sawmill ramps; FOOD trimmed slightly so the Farm pulls its weight sooner.
   // Total (521) stays comfortably under the 700 cap so nothing spills on day one.
   resources: { wood: 160, stone: 75, food: 110, seeds: 60, water: 100, planks: 16 },
-  hamsters: 5,
+  hamsters: 3,   // a small founding trio — grows via burrow breeding (mature M+F pair)
   storageCap: 700,
 };
 
