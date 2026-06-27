@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T02:57:22Z",
+  "updated": "2026-06-27T03:49:49Z",
   "items": [
     {
       "key": "econ:1",
@@ -2260,6 +2260,40 @@
         }
       ],
       "updated": "2026-06-27T02:57:22+00:00"
+    },
+    {
+      "key": "gameplay:rabbits-warren",
+      "issue": null,
+      "title": "Rabbits: carrot/cabbage gardens → manure → fertilizer, and predator bait",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "Done",
+      "pr": "69",
+      "release": null,
+      "detail": "New Rabbit Hutch + Carrot Garden + Cabbage Garden. A managed warren (state.rabbits, economy.updateRabbits) fed on carrots AND cabbage grows to hutch capacity and produces LOTS of manure → more fertilizer → bigger crops; starved, it dwindles. Only the oak-style niche resources carrot/cabbage feed them. When the warren is abundant (≥RABBIT.baitAbundance), predators take rabbits instead of rodents (events.removeUnits). Env-bar 🐇 chip shows herd/cap + feed; gardens grow in like other crops.",
+      "timeline": [
+        {
+          "at": "2026-06-27T03:50:00+00:00",
+          "status": "In Progress",
+          "note": "Added carrot/cabbage resources + gardens + Rabbit Hutch; updateRabbits (feed→grow→manure, starve→dwindle); predator bait in removeUnits; 🐇 env chip. npm test 192 checks + verify:browser green."
+        },
+        {
+          "at": "2026-06-27T03:49:49+00:00",
+          "status": "Done",
+          "note": "Opened PR #69 (draft). npm test 192 + verify:browser green; awaiting CI."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-27T03:50:00+00:00",
+          "path": "docs/screenshots/rabbits-warren.png",
+          "caption": "Rabbit warren: Carrot + Cabbage gardens feed a Rabbit Hutch; 🐇 herd chip in the env bar; gardens grow in."
+        }
+      ],
+      "updated": "2026-06-27T03:49:49+00:00"
     }
   ]
 }

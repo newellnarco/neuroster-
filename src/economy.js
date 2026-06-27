@@ -10,7 +10,7 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathB
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES, buildingMaturity, growTime } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, RABBIT, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES, buildingMaturity, growTime } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
 import { reveal, isFertile, addWaste, wasteAt, riverNear } from './world.js';
@@ -145,6 +145,7 @@ export function stepEconomy(state, dt) {
   stepEvents(state, dt);
   stepFactions(state, dt);
   updateSquirrels(state, dt); // oak → nut economy: squirrels trade or raid
+  updateRabbits(state, dt);   // rabbit warren: veg-fed herd → manure + predator bait
   updateBeavers(state, dt);   // beaver wood store + take-too-much sabotage
   updateBalls(state, dt);     // hamster balls: joy → anxiety → pop out / heat death
   stepRescues(state, dt);
@@ -560,6 +561,30 @@ function updateSquirrels(state, dt) {
     else
       logMsg(state, `🐿️ Squirrels raided your nut hoard — ${steal} nuts, ${foodLoot} food & ${waterLoot} water gone! Guard it (defense) or share it (Compassion) to keep the peace.`);
   }
+}
+
+// Rabbits: a managed warren (state.rabbits) fed by Carrot + Cabbage gardens. Well
+// fed, the herd grows to its hutch capacity and produces LOTS of manure (→ more
+// fertilizer → bigger crops); starved, it dwindles. A plentiful warren also draws
+// predators away from the colony's rodents (events.removeUnits). Self-contained.
+function updateRabbits(state, dt) {
+  const cap = state.buildings.reduce((a, b) =>
+    a + ((BUILDINGS[b.type]?.rabbithutch && !b.underConstruction) ? RABBIT.perHutch : 0), 0);
+  state.rabbitCap = cap;
+  if (cap <= 0) { state.rabbits = Math.max(0, (state.rabbits || 0) - RABBIT.starve * dt); return; }
+  let herd = Math.min(state.rabbits || 0, cap);
+  const carrot = state.res.carrot || 0, cabbage = state.res.cabbage || 0;
+  if (herd < 1 && carrot > 0 && cabbage > 0) herd = 1; // a first breeding pair moves into a stocked hutch
+  // Rabbits need BOTH carrots and cabbage — feed is limited by the scarcer of the two.
+  const need = herd * RABBIT.feedPerRabbit * dt;
+  const fed = Math.min(need, carrot, cabbage);
+  state.res.carrot = Math.max(0, carrot - fed);
+  state.res.cabbage = Math.max(0, cabbage - fed);
+  const ratio = need > 0 ? fed / need : 1; // 1 = well fed, 0 = starving
+  if (ratio >= 0.99) herd = Math.min(cap, herd + RABBIT.growth * dt * Math.max(1, herd) * (1 - herd / cap));
+  else herd = Math.max(0, herd - RABBIT.starve * dt * (1 - ratio) * Math.max(1, herd));
+  if (herd > 0) addRes(state, 'manure', herd * RABBIT.manurePerRabbit * ratio * dt); // the payoff: poop → fertilizer
+  state.rabbits = herd;
 }
 
 // Beavers harvest wood for the colony's water works and keep their own wood

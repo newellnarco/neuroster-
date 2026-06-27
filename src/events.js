@@ -1,5 +1,5 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS, RABBIT } from './config.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST } from './factions.js';
@@ -410,9 +410,12 @@ function hurtHealth(state, amt) {
   for (const u of state.units) u.needs.health = Math.max(0, u.needs.health - amt);
 }
 
-function removeUnits(state, n) {
-  let lost = 0;
+export function removeUnits(state, n) {
+  let lost = 0, rabbitsEaten = 0;
   for (let i = 0; i < n; i++) {
+    // A plentiful rabbit warren is the predator's easier meal — it takes a rabbit
+    // instead of a rodent while the herd stays abundant.
+    if ((state.rabbits || 0) >= RABBIT.baitAbundance) { state.rabbits -= 1; rabbitsEaten++; continue; }
     // A rodent rolling in a hamster ball is SAFE — predators can't snatch it.
     const exposed = state.units.filter(u => !u.inBall);
     if (exposed.length <= 1) break; // keep at least one rodent; the rest are protected
@@ -420,6 +423,7 @@ function removeUnits(state, n) {
     const idx = state.units.indexOf(victim);
     if (idx >= 0) { state.units.splice(idx, 1); lost++; }
   }
+  if (rabbitsEaten > 0) logMsg(state, `🐇 The predator took ${rabbitsEaten} rabbit(s) from the warren — your rodents were spared.`);
   return lost;
 }
 

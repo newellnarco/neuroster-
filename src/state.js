@@ -32,6 +32,7 @@ export function newGame(seed = (Math.floor(Date.now() % 2147483647) || 12345), b
     fx: [],
     factions: {},
     morale: 100,
+    rabbits: 0,     // managed rabbit warren — fed by carrot/cabbage gardens (see economy.updateRabbits)
     compassion: 50, // colony virtue: kindness, generosity & care raise it
     justice: 50,    // colony virtue: fair, firm order — the moral counterweight
     valor: 20,      // martial pride — morally neutral; rises by winning fights, breeds a proud, fierce colony

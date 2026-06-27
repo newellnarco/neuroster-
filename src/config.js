@@ -31,6 +31,8 @@ export const RESOURCES = {
   grain:    { name: 'Grain',    icon: '🟡', kind: 'refined', color: '#e0c060', nourish: 1.5 },
   pellets:  { name: 'Pellets',  icon: '🟤', kind: 'refined', color: '#b9853f', nourish: 2.4 },
   nuts:     { name: 'Nuts',     icon: '🌰', kind: 'refined', color: '#9c6b3f' },
+  carrot:   { name: 'Carrots',  icon: '🥕', kind: 'raw',     color: '#e8821e' },
+  cabbage:  { name: 'Cabbage',  icon: '🥬', kind: 'raw',     color: '#7bb661' },
   manure:   { name: 'Manure',   icon: '💩', kind: 'raw',     color: '#6b4a2b' },
   fertilizer:{ name: 'Fertilizer', icon: '🪴', kind: 'refined', color: '#7a5a36' },
   planks:   { name: 'Planks',   icon: '🟫', kind: 'refined', color: '#caa05a' },
@@ -101,6 +103,18 @@ export const BUILDINGS = {
   composter: {
     name: 'Composter', icon: '♻️', desc: 'Gathers nearby droppings into stored Manure (poop). A powered Fertilizer Mill turns Manure → Fertilizer, which boosts farm yield.',
     cost: { wood: 30, planks: 10 }, category: 'Food', composter: 1, radius: 5,
+  },
+  carrotgarden: {
+    name: 'Carrot Garden', icon: '🥕', desc: 'Grows Carrots from seeds & water — the staple feed for a Rabbit Hutch. Loves fertile soil.',
+    cost: { wood: 20, seeds: 8 }, category: 'Food', produces: { carrot: 0.5 }, consumes: { seeds: 0.2, water: 0.15 }, fertileBonus: true,
+  },
+  cabbagegarden: {
+    name: 'Cabbage Garden', icon: '🥬', desc: 'Grows Cabbage from seeds & water — the other half of a rabbit’s diet. Keep one beside a Carrot Garden so the warren eats well. Loves fertile soil.',
+    cost: { wood: 20, seeds: 8 }, category: 'Food', produces: { cabbage: 0.5 }, consumes: { seeds: 0.2, water: 0.15 }, fertileBonus: true,
+  },
+  rabbithutch: {
+    name: 'Rabbit Hutch', icon: '🐇', desc: 'Houses a rabbit warren. Fed on Carrots & Cabbage, the warren grows and produces lots of MANURE — far more fertilizer for bigger crops. And when rabbits are plentiful, predators take THEM instead of your rodents. Starve them and the warren dwindles.',
+    cost: { wood: 25, planks: 8 }, category: 'Food', rabbithutch: 1,
   },
   vet: {
     name: 'Vet Clinic', icon: '💉', desc: 'Treats wet tail & sickness; prevents deaths. Keep rodents healthy.',
@@ -831,6 +845,20 @@ export const BREEDING = {
   baseRate: 0.012,  // base breed accumulator per second per breeding burrow (was 0.04)
   foodCost: 5,      // food spent per newborn
   foodFloor: 5,     // colony needs at least this much food to breed
+};
+
+// ---- Rabbits ---------------------------------------------------------------
+// Rabbits are a managed warren (state.rabbits), NOT a worker species: you keep
+// them fed with Carrot + Cabbage gardens and they pay you back in MANURE (lots of
+// it → more fertilizer → bigger crops). Kept plentiful, they're also a buffer —
+// predators take rabbits before they take your rodents (events.removeUnits).
+export const RABBIT = {
+  perHutch: 6,         // warren capacity added per Rabbit Hutch
+  growth: 0.18,        // herd grows toward capacity per second when well fed
+  starve: 0.12,        // herd shrinks per second when carrots/cabbage run out
+  feedPerRabbit: 0.02, // carrot AND cabbage eaten per rabbit per second (varied diet)
+  manurePerRabbit: 0.05, // manure produced per rabbit per second (the payoff)
+  baitAbundance: 3,    // at/above this many rabbits, predators eat rabbits first
 };
 
 // ---- Growth / maturation ---------------------------------------------------
