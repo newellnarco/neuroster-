@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-27T00:38:23Z",
+  "updated": "2026-06-27T02:29:49Z",
   "items": [
     {
       "key": "econ:1",
@@ -225,8 +225,14 @@
           "note": "PR #43 merged to main (release 1546f53); reconciled at session-start sweep"
         }
       ],
-      "screenshots": [],
-      "updated": "2026-06-26T06:42:48+00:00"
+      "screenshots": [
+        {
+          "at": "2026-06-27T02:29:44+00:00",
+          "path": "docs/screenshots/map-zoom.png",
+          "caption": "Map contain-fits the landscape board, starts zoomed/centered on the colony; wheel + +/−/reset zoom work."
+        }
+      ],
+      "updated": "2026-06-27T02:29:44+00:00"
     },
     {
       "key": "creatures:3",
@@ -293,8 +299,14 @@
       "release": null,
       "detail": "Given name + family surname; breedChild inherits line, coat colour (blended), traits (averaged) & a best-skill head-start; rename in Rodents panel.",
       "timeline": [],
-      "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "screenshots": [
+        {
+          "at": "2026-06-27T02:29:44+00:00",
+          "path": "docs/screenshots/family-lineage.png",
+          "caption": "Rodents panel: given name + family surname (Biscuit Cobblewick, Peanut Cheekfull); rename via the ✏️ button."
+        }
+      ],
+      "updated": "2026-06-27T02:29:44+00:00"
     },
     {
       "key": "world:6",
@@ -667,8 +679,14 @@
       "release": null,
       "detail": "Live alert bar (src/alerts.js): prioritized colour-coded banner surfacing needs, sickness, dead, flooded mines, imminent raids/disasters; click to jump to the right panel.",
       "timeline": [],
-      "screenshots": [],
-      "updated": "2026-06-25T00:00:00Z"
+      "screenshots": [
+        {
+          "at": "2026-06-27T02:29:44+00:00",
+          "path": "docs/screenshots/alert-bar.png",
+          "caption": "Live alert bar surfacing prioritized colour-coded banners (starving, parched, no housing); click to jump to the panel."
+        }
+      ],
+      "updated": "2026-06-27T02:29:44+00:00"
     },
     {
       "key": "engage:17b",
@@ -780,8 +798,14 @@
           "note": "wall-kit installed; PR #42 merged to main"
         }
       ],
-      "screenshots": [],
-      "updated": "2026-06-26T01:07:08+00:00"
+      "screenshots": [
+        {
+          "at": "2026-06-27T02:29:44+00:00",
+          "path": "docs/screenshots/project-wall.png",
+          "caption": "Zero-API git-native wall (wall.html): status filters + section columns rendered from board_state.json."
+        }
+      ],
+      "updated": "2026-06-27T02:29:44+00:00"
     },
     {
       "key": "gameplay:oak-squirrel",
@@ -1366,8 +1390,14 @@
           "note": "PR #50 merged (release b4293ba)"
         }
       ],
-      "screenshots": [],
-      "updated": "2026-06-26T16:47:49+00:00"
+      "screenshots": [
+        {
+          "at": "2026-06-27T02:29:44+00:00",
+          "path": "docs/screenshots/job-assignment.png",
+          "caption": "🎯 Job row on a selected rodent — Auto plus per-resource pins as a soft preference over the auto-sim."
+        }
+      ],
+      "updated": "2026-06-27T02:29:44+00:00"
     },
     {
       "key": "add:true-pathfinding",
@@ -1987,8 +2017,14 @@
           "note": "PR #55 merged (release e5945f1)"
         }
       ],
-      "screenshots": [],
-      "updated": "2026-06-26T17:53:34+00:00"
+      "screenshots": [
+        {
+          "at": "2026-06-27T02:29:44+00:00",
+          "path": "docs/screenshots/settings-restyled.png",
+          "caption": "Themed Settings window matching the start/hamster screens (import/export dropped)."
+        }
+      ],
+      "updated": "2026-06-27T02:29:44+00:00"
     },
     {
       "key": "fix:map-labels",
