@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-27T04:15:57Z · 96 items_
+_board_state.json updated: 2026-06-27T04:19:27Z · 96 items_
 
 ## Summary
 
@@ -13,8 +13,8 @@ _board_state.json updated: 2026-06-27T04:15:57Z · 96 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 1 |
-| Shipped | 89 |
+| Done | 0 |
+| Shipped | 90 |
 | Deferred | 2 |
 | Closed-No-Op | 1 |
 | **TOTAL** | **96** |
@@ -80,7 +80,7 @@ _board_state.json updated: 2026-06-27T04:15:57Z · 96 items_
 | None | Crops, trees & animals take time to grow in before they're useful | [#67](https://github.com/newellnarco/neuroster-/pull/67) | `d0b8892` |
 | None | Rabbits: carrot/cabbage gardens → manure → fertilizer, and predator bait | [#69](https://github.com/newellnarco/neuroster-/pull/69) | `cb00689` |
 | None | Grain Silo (off-book grain storage) + Mill saves back seed grain | [#70](https://github.com/newellnarco/neuroster-/pull/70) | `c7d0209` |
-| None | NPC animal communities: factions trade, war & form pacts with each other | [#71](https://github.com/newellnarco/neuroster-/pull/71) | `—` |
+| None | NPC animal communities: factions trade, war & form pacts with each other | [#71](https://github.com/newellnarco/neuroster-/pull/71) | `dd87333` |
 
 ### CREATURES (5)
 
