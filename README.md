@@ -137,7 +137,13 @@ becomes live on the next browser refresh.
   repo root). *(Alternatively you can share the parent `C:\github` and point at the
   `neuroster-` subfolder — same result.)*
 
-**3. Run it as a container.** Two paths depending on your DSM:
+**3. Run it as a container.** Two paths depending on your DSM.
+
+> **Why not just `docker compose up`?** The legacy **Docker** package on older DSM
+> (≤ 7.1, e.g. the DS1517+ this runs on) has **no Compose support** — its *Container → Add →
+> File* imports a Synology *settings export*, not a `docker-compose.yml`. So on that box the
+> canonical path is the **hand-built single container (3a)**; the bundled `docker-compose.nas.yml`
+> is for **Container Manager (DSM 7.2+) only (3b)**. Both produce the same result — pick by your DSM.
 
 **3a. Legacy "Docker" package (DSM ≤ 7.1, e.g. DS1517+) — no compose support.**
 This is the **verified** setup for the current deployment. The package's
@@ -177,10 +183,17 @@ with `Cache-Control: no-cache`). No rebuild, no restart.
   rebuild manually).
 
 ### Controls
-- **Click** a building in the Build panel, then **click the map** to place it.
-- **Right-click** cancels placement. **Click an existing structure** to demolish it (50% refund).
+- **Build:** click a building in the Build panel, then **click the map** to place it (it reverts
+  to the select cursor after; hold **Shift** to place several). **Right-click** or **Esc** cancels.
+- **Tools (top bar):** **🐹 Animals**, **🏠 Buildings**, **🎩 Demolish**. Demolition only happens in
+  **Demolish** mode — click a building, or **drag a box** to bulldoze several at once (no pop-up).
+- **Direct a rodent:** select it, then **click a resource node** to send it gathering, a **Feeder/Well**
+  to eat/drink, or any tile (even fogged) to go there. **Left-drag a box** to multi-select a group and
+  order them all at once.
+- **Camera:** **right-drag** pans · **mouse-wheel** zooms · **🏷️ Labels** shows names on the map.
 - **Space** = pause/resume · **1 / 2 / 3** = game speed.
-- The game **autosaves** to your browser and simulates **offline progress** when you return.
+- The game **autosaves** per browser. **Time only passes while you play** — there's **no offline
+  progress** (the world is exactly as you left it).
 
 ## Features
 

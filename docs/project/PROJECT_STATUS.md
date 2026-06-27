@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-26T22:59:24Z · 91 items_
+_board_state.json updated: 2026-06-27T00:38:23Z · 91 items_
 
 ## Summary
 
@@ -15,8 +15,8 @@ _board_state.json updated: 2026-06-26T22:59:24Z · 91 items_
 | Backlog | 3 |
 | Done | 0 |
 | Shipped | 85 |
-| Deferred | 3 |
-| Closed-No-Op | 0 |
+| Deferred | 2 |
+| Closed-No-Op | 1 |
 | **TOTAL** | **91** |
 
 **85 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
@@ -35,7 +35,6 @@ _board_state.json updated: 2026-06-26T22:59:24Z · 91 items_
 |---|---|---|---|---|
 | None | Selectable map size (world-dims refactor) | — | — | GRID_W×GRID_H are module constants; a per-world dimensions refactor is risky — deferred |
 | None | Multiplayer / server-side state | — | — | No multiplayer; saves are per-browser localStorage (export/import to move machines) |
-| None | Legacy Synology Docker can't import compose | — | — | Deploy is a hand-made container (see README |
 
 ## Shipped / Done — by arch
 
