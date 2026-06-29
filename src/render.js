@@ -1,7 +1,7 @@
 // render.js — smooth, top-angle rendering: soft-blurred terrain, 2.5D receding
 // trees/rocks/bushes, mine entrances, animated rodents/wheels/conveyors, weather.
 import { TILE, GRID_W, GRID_H, NODE_TYPES, BUILDINGS, SPECIES, RESOURCES, TUNNEL_TIERS, BRIDGE_TIERS, WALL_TIERS, FACTIONS, TRADE, COAT_COLORS, buildingTex, buildingMaturity, growTime } from './config.js';
-import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt } from './world.js';
+import { terrainColor, idx, isSeen, getTile, TERRAIN, isFertile, wasteAt, isRagingTile } from './world.js';
 import { dayFraction, currentWeather, seasonKey, seasonTint } from './environment.js';
 import { buildTextures } from './textures.js';
 
@@ -39,7 +39,7 @@ export function createRenderer(canvas, state, getView) {
   const TERRAIN_TEX = {
     [TERRAIN.grass]: ['grass', 0.30], [TERRAIN.dirt]: ['dirt', 0.34], [TERRAIN.sand]: ['sand', 0.34],
     [TERRAIN.rock]: ['stone', 0.40], [TERRAIN.mountain]: ['stone', 0.34], [TERRAIN.marsh]: ['marsh', 0.30],
-    [TERRAIN.water]: ['water', 0.22],
+    [TERRAIN.water]: ['water', 0.22], [TERRAIN.hill]: ['grass', 0.26],
   };
   let g = ctx;            // current drawing target for helpers
   let bakedSeen = -1;
@@ -181,6 +181,19 @@ export function createRenderer(canvas, state, getView) {
 
     if (water) {
       g.fillStyle = 'rgba(0,0,0,0.15)'; g.fillRect(px, py, TILE, 3);
+      // A raging river churns with white-water foam (vs a calm channel).
+      if (isRagingTile(state.world, x, y)) {
+        g.fillStyle = 'rgba(255,255,255,0.5)';
+        for (let i = 0; i < 4; i++) { const fx = px + rnd(h, 70 + i) * TILE, fy = py + rnd(h, 80 + i) * TILE; g.beginPath(); g.ellipse(fx, fy, 2.4, 1.2, 0, 0, 7); g.fill(); }
+        g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1.2;
+        g.beginPath(); g.moveTo(px + 2, py + TILE * 0.4); g.lineTo(px + TILE - 2, py + TILE * 0.55); g.stroke();
+      }
+    } else if (type === TERRAIN.hill) {
+      // Raised high ground: a rounded crown highlight + contour shading.
+      g.fillStyle = shade(base, 0.10); g.beginPath(); g.ellipse(px + TILE / 2, py + TILE * 0.42, TILE * 0.34, TILE * 0.24, 0, 0, 7); g.fill();
+      g.strokeStyle = shade(base, -0.20); g.lineWidth = 1.2;
+      g.beginPath(); g.ellipse(px + TILE / 2, py + TILE * 0.6, TILE * 0.40, TILE * 0.18, 0, Math.PI, 0); g.stroke(); // contour line
+      g.fillStyle = 'rgba(255,255,255,0.12)'; g.beginPath(); g.ellipse(px + TILE * 0.42, py + TILE * 0.34, TILE * 0.14, TILE * 0.09, 0, 0, 7); g.fill(); // sun crown
     } else if (type === TERRAIN.grass) {
       g.strokeStyle = shade(base, -0.22); g.lineWidth = 1.5;
       for (let i = 0; i < 3; i++) {
@@ -198,6 +211,10 @@ export function createRenderer(canvas, state, getView) {
       g.fillStyle = shade(base, -0.16); blob(px + TILE - 10, py + 9, 6, h, 2);
     } else if (type === TERRAIN.mountain) {
       g.fillStyle = shade(base, -0.1); poly(px + 4, py + TILE - 4, [[0, 0], [TILE / 2 - 4, -(TILE - 8)], [TILE - 8, 0]]);
+      // Rocky cliff face: vertical striations + a shadowed side for a craggy look.
+      g.strokeStyle = shade(base, -0.28); g.lineWidth = 1.1;
+      for (let i = 0; i < 3; i++) { const sx = px + 7 + i * 6; g.beginPath(); g.moveTo(sx, py + TILE - 6); g.lineTo(sx + (rnd(h, 30 + i) - 0.5) * 4, py + 8 + i * 2); g.stroke(); }
+      g.fillStyle = 'rgba(0,0,0,0.18)'; poly(px + TILE / 2, py + TILE - 4, [[0, 0], [TILE / 2 - 4, 0], [TILE / 2 - 4 - (TILE / 2 - 4), -(TILE - 8)]]); // shaded right face
       g.fillStyle = '#eef3fb'; poly(px + TILE / 2 - 5, py + 5, [[0, 0], [5, -1], [9, 6], [-4, 6]]);
     } else if (type === TERRAIN.marsh) {
       g.strokeStyle = shade('#3f78b0', 0.1); g.lineWidth = 1.5;

@@ -981,6 +981,51 @@ console.log('Varied wild flora (pinewood / berry bushes / wildflowers):');
   ok(`wild flora is finite — depletes & needs replanting (${f.kind} held at ${f.amount})`);
 }
 
+// 21i) Richer terrain: hills (costly but passable) & raging rivers (more power).
+console.log('Richer terrain (hills slow movers; raging rivers boost waterworks):');
+{
+  const { HILL, RIVER, GRID_W, GRID_H } = await import('../src/config.js');
+  const { TERRAIN, isBuildable, isBlockedTile, tileMoveCost, hasRagingRivers, setTile, generateWorld, idx } = await import('../src/world.js');
+  const { findPath } = await import('../src/pathfinding.js');
+
+  // Hills: buildable high ground, passable but costly to cross.
+  assert(TERRAIN.hill != null && isBuildable(TERRAIN.hill), 'hills are buildable terrain');
+  const w = generateWorld(7, 'prairie', 1);
+  for (let i = 0; i < w.terrain.length; i++) w.terrain[i] = TERRAIN.grass; // flatten
+  const midY = Math.floor(GRID_H / 2);
+  for (let x = 0; x < GRID_W; x++) setTile(w.terrain, x, midY, TERRAIN.hill); // a hill ridge
+  assert(!isBlockedTile(w, 5, midY) && tileMoveCost(w, 5, midY) === HILL.moveCost && tileMoveCost(w, 5, 0) === 1,
+    `a hill is passable but costs ${HILL.moveCost}× to cross (flat = 1)`);
+  const overHill = findPath(w, 5, midY - 3, 5, midY + 3, { budget: 3000 });
+  assert(overHill && overHill.length > 0, 'rodents can still cross a hill ridge (just slower)');
+  for (let x = 0; x < GRID_W; x++) setTile(w.terrain, x, midY, TERRAIN.mountain); // contrast: a mountain wall
+  assert(findPath(w, 5, midY - 3, 5, midY + 3, { budget: 3000 }) === null, 'a mountain wall blocks the path — hills do not');
+  ok(`hills slow movers (${HILL.moveCost}×) yet stay passable; mountains block`);
+
+  // Generation actually seeds hills on hilly biomes.
+  const mtn = generateWorld(3, 'mountains', 1);
+  let hills = 0; for (const t of mtn.terrain) if (t === TERRAIN.hill) hills++;
+  assert(hills > 0, `mountainous maps grow hills (got ${hills})`);
+  ok(`world generates hill terrain (${hills} hill tiles on a mountains map)`);
+
+  // Raging rivers: a water mill on a turbulent channel out-produces a calm one.
+  const millWater = (raging) => {
+    const g = newGame(50, 'prairie', 'syrian', 'Mill', {});
+    g.units = []; // isolate the mill
+    const sp = g.world.spawn;
+    setTile(g.world.terrain, sp.x + 1, sp.y, TERRAIN.water);
+    if (raging) g.world.raging[idx(sp.x + 1, sp.y)] = 1;
+    g.buildings.push({ id: g.nextId++, type: 'watermill', x: sp.x, y: sp.y, active: true });
+    g.res.water = 0;
+    for (let i = 0; i < 20; i++) stepEconomy(g, 0.2);
+    return g.res.water || 0;
+  };
+  const calm = millWater(false), raged = millWater(true);
+  assert(hasRagingRivers((() => { const g = newGame(50, 'prairie', 'syrian', 'R', {}); g.world.raging[0] = 1; return g.world; })()), 'hasRagingRivers detects a raging tile');
+  assert(raged > calm * 1.3, `a water mill on a raging river yields more (calm ${calm.toFixed(1)} → raging ${raged.toFixed(1)})`);
+  ok(`raging rivers boost waterworks: water mill ${calm.toFixed(1)} → ${raged.toFixed(1)} (×${(raged / calm).toFixed(2)})`);
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');

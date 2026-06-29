@@ -1,6 +1,6 @@
 // world.js — tile grid + procedural, biome-driven terrain & resource nodes,
 // plus a persistent "seen" fog-of-war layer.
-import { GRID_W, GRID_H, NODE_TYPES, BIOMES } from './config.js';
+import { GRID_W, GRID_H, NODE_TYPES, BIOMES, HILL, RIVER } from './config.js';
 
 // A tiny seeded RNG so worlds are reproducible from a seed.
 export function makeRng(seed) {
@@ -11,8 +11,8 @@ export function makeRng(seed) {
   };
 }
 
-export const TERRAIN = { grass: 0, dirt: 1, rock: 2, water: 3, sand: 4, mountain: 5, marsh: 6 };
-const TERRAIN_COLORS = ['#6f9e4b', '#9c8158', '#7d7d82', '#3f78b0', '#d8c98a', '#5d5a57', '#5f7355'];
+export const TERRAIN = { grass: 0, dirt: 1, rock: 2, water: 3, sand: 4, mountain: 5, marsh: 6, hill: 7 };
+const TERRAIN_COLORS = ['#6f9e4b', '#9c8158', '#7d7d82', '#3f78b0', '#d8c98a', '#5d5a57', '#5f7355', '#7e8a4a'];
 export const terrainColor = (t) => TERRAIN_COLORS[t] ?? TERRAIN_COLORS[0];
 export const isWater = (t) => t === TERRAIN.water;
 export const isBuildable = (t) => t !== TERRAIN.water;
@@ -22,6 +22,20 @@ export function isBlockedTile(world, x, y) {
   const t = getTile(world.terrain, Math.round(x), Math.round(y));
   return t === TERRAIN.water || t === TERRAIN.mountain;
 }
+// Movement / pathfinding cost of a tile (1 = flat ground). Hills are passable but
+// COSTLY, so movers slow over them and A* routes around them when it can.
+export function tileMoveCost(world, x, y) {
+  return getTile(world.terrain, Math.round(x), Math.round(y)) === TERRAIN.hill ? HILL.moveCost : 1;
+}
+// A "raging" river tile — a turbulent channel (set at generation). Dams/mills on
+// one tap a stronger current; floods near them hit harder.
+export const isRagingTile = (world, x, y) => inBounds(x, y) && world.raging && world.raging[idx(x, y)] === 1;
+export function ragingNear(world, x, y, r = 1) {
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++)
+    if (isRagingTile(world, x + dx, y + dy)) return true;
+  return false;
+}
+export const hasRagingRivers = (world) => !!(world.raging && world.raging.some(v => v === 1));
 
 // Pick a terrain type from a biome's weighted distribution.
 function weightedTerrain(rng, weights) {
@@ -57,9 +71,11 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
   // Deterministic from the seed (carved alongside the channel below).
   const river = new Uint8Array(GRID_W * GRID_H);
   const flow = new Int8Array(GRID_W * GRID_H); // downstream Δy per river tile
+  const raging = new Uint8Array(GRID_W * GRID_H); // 1 = turbulent ("raging") river tile
   // Rivers: snaking water channels for river biomes.
   if (biome.rivers) {
     let rx = Math.floor(rng() * GRID_W);
+    const isRaging = rng() < RIVER.ragingChance; // the whole channel runs calm or raging
     for (let y = 0; y < GRID_H; y++) {
       setTile(terrain, rx, y, TERRAIN.water);
       setTile(terrain, rx + 1, y, TERRAIN.water);
@@ -67,6 +83,7 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
       for (const cx of [rx, rx + 1]) if (inBounds(cx, y)) {
         river[idx(cx, y)] = 1;
         flow[idx(cx, y)] = (y < GRID_H - 1) ? 1 : 0; // +1 south; 0 at the mouth
+        if (isRaging) raging[idx(cx, y)] = 1;
       }
       rx += Math.floor(rng() * 3) - 1;
       rx = clamp(rx, 1, GRID_W - 3);
@@ -107,7 +124,7 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
   for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++)
     if (getTile(terrain, cx + x, cy + y) === TERRAIN.water) {
       setTile(terrain, cx + x, cy + y, TERRAIN.grass);
-      if (inBounds(cx + x, cy + y)) { river[idx(cx + x, cy + y)] = 0; flow[idx(cx + x, cy + y)] = 0; }
+      if (inBounds(cx + x, cy + y)) { river[idx(cx + x, cy + y)] = 0; flow[idx(cx + x, cy + y)] = 0; raging[idx(cx + x, cy + y)] = 0; }
     }
 
   // Fertility: richest growing soil sits next to water (lakes/rivers), plus a
@@ -124,7 +141,7 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
   const seen = new Uint8Array(GRID_W * GRID_H);   // fog of war
   const waste = new Float32Array(GRID_W * GRID_H); // droppings per tile
 
-  return { terrain, seen, fertile, waste, river, flow, nodes, spawn: { x: cx, y: cy }, seed, biome: biomeKey };
+  return { terrain, seen, fertile, waste, river, flow, raging, nodes, spawn: { x: cx, y: cy }, seed, biome: biomeKey };
 }
 
 // ---- River flow geography (for dams) ---------------------------------------

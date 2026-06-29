@@ -10,10 +10,10 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathB
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, RABBIT, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES, buildingMaturity, growTime } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, RABBIT, RIVER, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES, buildingMaturity, growTime } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
-import { reveal, isFertile, addWaste, wasteAt, riverNear } from './world.js';
+import { reveal, isFertile, addWaste, wasteAt, riverNear, ragingNear } from './world.js';
 
 // A dam on a REAL river tile (true flowing watercourse, not a still pond) taps
 // the current and yields more water — and reads the flow geography to know it.
@@ -98,6 +98,9 @@ export function stepEconomy(state, dt) {
     }
     if (def.category === 'Production') rate *= (1 + state.mods.prodMul + (mega.prodMul || 0) + (doc.prodMul || 0));
     if (def.solar) rate *= sun; // solar panels follow the sun (and clear skies)
+    // A water building (mill/turbine/dam) on a RAGING river taps a stronger
+    // current — more power & water than a calm channel.
+    if (def.needsWater && ragingNear(state.world, b.x, b.y, def.radius || 1)) rate *= RIVER.ragingWaterMul;
     if (def.produces?.power) rate *= (1 + env.powerGain);
     if (def.produces?.research) rate *= (1 + (state.mods.researchMul || 0) + evoBonus(state, 'all', 'research'));
 

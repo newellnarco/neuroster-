@@ -871,6 +871,20 @@ export const RABBIT = {
   baitAbundance: 3,    // at/above this many rabbits, predators eat rabbits first
 };
 
+// ---- Terrain: hills & raging rivers ----------------------------------------
+// Hills are buildable high ground that SLOW crossing (movement + pathfinding cost
+// > 1, so rodents route around them when they can). Raging rivers are turbulent
+// channels: a dam/water mill on one taps a stronger current (more water & power),
+// but the churn also makes FLOODS hit harder.
+export const HILL = {
+  moveCost: 1.8, // movement/pathfinding cost of a hill tile (1 = flat ground)
+};
+export const RIVER = {
+  ragingChance: 0.5,   // chance a generated river channel runs "raging"
+  ragingWaterMul: 1.6, // dam/mill water & power multiplier beside a raging river
+  ragingFloodMul: 1.4, // flood severity multiplier when raging rivers thread the map
+};
+
 // ---- Growth / maturation ---------------------------------------------------
 // Living producers — farms, fields, orchards and planted trees — aren't useful
 // the moment construction ends: the crop or tree has to GROW IN first. After it
@@ -979,21 +993,21 @@ export const DENSITIES = {
 export const BIOMES = {
   woodland: {
     name: 'Woodland', icon: '🌳', desc: 'Balanced forests — plentiful wood, gentle hazards. Great first colony.',
-    terrain: { grass: 0.70, dirt: 0.25, rock: 0.05 }, water: 0.03,
+    terrain: { grass: 0.62, dirt: 0.25, rock: 0.05, hill: 0.08 }, water: 0.03,
     nodeMul: { trees: 1.8, pinewood: 1.6, berrybush: 1.2, wildflowers: 0.8, rock: 0.9, orevein: 0.8, coalseam: 0.8, bush: 1.0 },
     hazardMul: { wolf: 1.2, hawk: 1.0, raid: 1.0, flood: 1.0, quake: 1.0 },
     weathers: ['clear', 'rain', 'fog', 'wind'],
   },
   prairie: {
     name: 'Prairie', icon: '🌾', desc: 'Open grassland — rich food & seeds, but stone & ore are scarce.',
-    terrain: { grass: 0.82, dirt: 0.16, rock: 0.02 }, water: 0.01,
+    terrain: { grass: 0.78, dirt: 0.16, rock: 0.02, hill: 0.04 }, water: 0.01,
     nodeMul: { trees: 0.6, pinewood: 0.2, berrybush: 1.2, wildflowers: 2.0, rock: 0.4, orevein: 0.3, coalseam: 0.3, bush: 2.0 },
     hazardMul: { wolf: 1.1, hawk: 1.4, raid: 1.0, flood: 0.7, quake: 0.6 },
     weathers: ['clear', 'rain', 'drought', 'wind'],
   },
   mountains: {
     name: 'Mountains', icon: '⛰️', desc: 'Rocky highlands — ore, coal & stone galore; little food, frequent quakes.',
-    terrain: { grass: 0.22, dirt: 0.2, rock: 0.43, mountain: 0.15 }, water: 0.01,
+    terrain: { grass: 0.22, dirt: 0.2, rock: 0.30, mountain: 0.15, hill: 0.13 }, water: 0.01,
     nodeMul: { trees: 0.5, pinewood: 1.8, berrybush: 0.3, wildflowers: 0.4, rock: 1.8, orevein: 2.0, coalseam: 2.0, gemseam: 2.0, bush: 0.3 },
     hazardMul: { wolf: 1.3, hawk: 1.4, raid: 0.9, flood: 0.4, quake: 1.9 },
     weathers: ['clear', 'snow', 'storm', 'wind'],
@@ -1007,7 +1021,7 @@ export const BIOMES = {
   },
   rivers: {
     name: 'Rivers', icon: '🌊', desc: 'River valleys — fertile & well-watered, but prone to floods.',
-    terrain: { grass: 0.62, dirt: 0.2, rock: 0.05 }, water: 0.08, rivers: true,
+    terrain: { grass: 0.56, dirt: 0.2, rock: 0.05, hill: 0.06 }, water: 0.08, rivers: true,
     nodeMul: { trees: 1.2, rock: 0.8, orevein: 0.7, coalseam: 0.7, bush: 1.3 },
     hazardMul: { wolf: 1.0, hawk: 1.0, raid: 1.0, flood: 2.0, quake: 0.7 },
     weathers: ['clear', 'rain', 'storm', 'fog'],

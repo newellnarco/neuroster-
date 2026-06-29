@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T15:18:33Z",
+  "updated": "2026-06-29T15:33:25Z",
   "items": [
     {
       "key": "econ:1",
@@ -2387,9 +2387,9 @@
       "type": "New Feature",
       "area": "Graphics",
       "priority": "P3",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "73",
-      "release": null,
+      "release": "43b6a3c",
       "detail": "The wild world had one tree + one bush type. Adds new surface node kinds — pinewood (🌲→wood), berrybush (🫐→food), wildflowers (🌼→seeds) — seeded per-biome (pines in woodland/mountains, flowers in prairie, berries in marsh). They yield existing staples (no orphan resources) and are gathered by the normal AI fallback. Like all wild nodes they DEPLETE and do NOT regrow — replant via the Tree buildings / gardens to restore. Renderer draws each distinctly (conifer tiers, berry dots, flower blooms) and varies broadleaf 'trees' nodes (oak/berry variants) for richer-looking forests.",
       "timeline": [
         {
@@ -2401,6 +2401,11 @@
           "at": "2026-06-29T15:18:33+00:00",
           "status": "Done",
           "note": "Opened PR #73 (draft). npm test 197 + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-29T15:20:45+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #73 (squash 43b6a3c). Varied wild flora shipped."
         }
       ],
       "screenshots": [
@@ -2410,7 +2415,36 @@
           "caption": "Varied wild flora on a revealed woodland: pine stands, berry bushes, wildflower patches & mixed broadleaf trees."
         }
       ],
-      "updated": "2026-06-29T15:18:33+00:00"
+      "updated": "2026-06-29T15:20:45+00:00"
+    },
+    {
+      "key": "gameplay:hills-and-raging-rivers",
+      "issue": null,
+      "title": "Richer terrain — hills (slow but passable), rocky cliff faces & raging rivers",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Engine",
+      "priority": "P2",
+      "status": "In Progress",
+      "pr": null,
+      "release": null,
+      "detail": "Adds a HILL terrain type: buildable high ground that is passable but COSTS more to cross (tileMoveCost in pathfinding + movement), so rodents route around it when they can; generated on woodland/prairie/mountains/rivers biomes. Mountains now render as rocky CLIFF FACES (striations + shaded side). Rivers can run RAGING (world.raging, ~50% of channels): a dam/water-mill/turbine on a raging river taps a stronger current (×RIVER.ragingWaterMul power & water), but raging rivers also swell FLOODS (×ragingFloodMul severity). Foamy white-water render for raging tiles; raging persists in saves.",
+      "timeline": [
+        {
+          "at": "2026-06-29T15:40:00+00:00",
+          "status": "In Progress",
+          "note": "Added TERRAIN.hill + HILL/RIVER config + biome weights; tileMoveCost wired into A* and movement; raging-river gen/helpers; economy waterworks bonus + flood severity; cliff-face & foam render; save persistence. npm test 200 + verify:browser green."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-29T15:40:00+00:00",
+          "path": "docs/screenshots/terrain-hills.png",
+          "caption": "Mountains map: rounded HILLS (raised, contoured) and rocky CLIFF FACES among the peaks."
+        }
+      ],
+      "updated": null
     }
   ]
 }
