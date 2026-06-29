@@ -972,13 +972,13 @@ console.log('Varied wild flora (pinewood / berry bushes / wildflowers):');
   assert(variety.length >= 2, `the wild world grows varied flora (${variety.join(', ') || 'none'})`);
   ok(`world seeds varied wild flora: ${['trees', 'pinewood', 'berrybush', 'wildflowers', 'bush'].filter(k => kinds.has(k)).join(', ')}`);
 
-  // Wild flora deplete and do NOT regrow on their own — replant (Trees/gardens) to restore.
+  // In strict "replant-only" nature mode, wild flora is finite — it doesn't regrow.
   const f = g.world.nodes.find(n => ['pinewood', 'berrybush', 'wildflowers'].includes(n.kind));
-  g.units = []; // no gatherers, so the only change would be regrowth (there is none)
+  g.units = []; g.regrow = false; // strict mode → no regrowth
   f.amount = 7;
   for (let i = 0; i < 40; i++) stepEconomy(g, 0.25);
-  assert(f.amount <= 7, `wild flora doesn't regrow by itself (held at ${f.amount})`);
-  ok(`wild flora is finite — depletes & needs replanting (${f.kind} held at ${f.amount})`);
+  assert(f.amount <= 7, `replant-only flora doesn't regrow (held at ${f.amount})`);
+  ok(`replant-only mode keeps wild flora finite (${f.kind} held at ${f.amount})`);
 }
 
 // 21i) Richer terrain: hills (costly but passable) & raging rivers (more power).
@@ -1024,6 +1024,48 @@ console.log('Richer terrain (hills slow movers; raging rivers boost waterworks):
   assert(hasRagingRivers((() => { const g = newGame(50, 'prairie', 'syrian', 'R', {}); g.world.raging[0] = 1; return g.world; })()), 'hasRagingRivers detects a raging tile');
   assert(raged > calm * 1.3, `a water mill on a raging river yields more (calm ${calm.toFixed(1)} → raging ${raged.toFixed(1)})`);
   ok(`raging rivers boost waterworks: water mill ${calm.toFixed(1)} → ${raged.toFixed(1)} (×${(raged / calm).toFixed(2)})`);
+}
+
+// 21j) Living ecology: wild flora regrows & spreads (toggle keeps it finite).
+console.log('Living ecology (wild flora regrows & spreads; replant-only toggle):');
+{
+  const { REGROWTH, NODE_TYPES } = await import('../src/config.js');
+  const { isFertile, setTile, TERRAIN, idx } = await import('../src/world.js');
+
+  // A surviving flora node regrows toward its max over time (Living mode default).
+  const g = newGame(440, 'woodland', 'syrian', 'Eco', {});
+  g.units = []; // isolate from gathering
+  assert(g.regrow !== false, 'Living ecology is the default (regrow on)');
+  const n = g.world.nodes.find(x => x.kind === 'trees' || x.kind === 'bush');
+  n.amount = Math.round(n.max * 0.2); // heavily depleted but alive
+  const before = n.amount;
+  for (let i = 0; i < 80; i++) stepEconomy(g, 0.25); // ~20s
+  assert(n.amount > before, `living flora regrows toward its max (${before} → ${n.amount.toFixed(0)} / ${n.max})`);
+  ok(`wild flora regrows when alive (${before} → ${n.amount.toFixed(0)}/${n.max})`);
+
+  // Strict replant-only mode freezes it (finite nature).
+  const s = newGame(440, 'woodland', 'syrian', 'Strict', {});
+  s.units = []; s.regrow = false;
+  const sn = s.world.nodes.find(x => x.kind === 'trees' || x.kind === 'bush');
+  sn.amount = Math.round(sn.max * 0.2);
+  const sb = sn.amount;
+  for (let i = 0; i < 80; i++) stepEconomy(s, 0.25);
+  assert(sn.amount === sb, `replant-only mode freezes regrowth (held at ${sn.amount})`);
+  ok(`the replant-only toggle keeps nature finite (held at ${sn.amount})`);
+
+  // Spread: a mature flora node seeds a new patch on nearby fertile soil. Isolate
+  // by removing every other wild plant so the one mature bush is the only seeder.
+  const p = newGame(441, 'prairie', 'syrian', 'Spread', {});
+  p.units = [];
+  p.world.nodes = p.world.nodes.filter(nd => !['trees', 'pinewood', 'bush', 'berrybush', 'wildflowers'].includes(nd.kind));
+  const sp = p.world.spawn;
+  const bx = sp.x + 5, by = sp.y;
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { setTile(p.world.terrain, bx + dx, by + dy, TERRAIN.grass); p.world.fertile[idx(bx + dx, by + dy)] = 1; }
+  p.world.nodes.push({ id: 9999, kind: 'bush', x: bx, y: by, amount: NODE_TYPES.bush.amount, max: NODE_TYPES.bush.amount });
+  for (let i = 0; i < Math.ceil(REGROWTH.spreadInterval / 0.25) + 4; i++) stepEconomy(p, 0.25);
+  const bushes = p.world.nodes.filter(nd => nd.kind === 'bush');
+  assert(bushes.length > 1, `the mature bush spread a new bush patch (${bushes.length} bushes now)`);
+  ok(`wild flora spreads into fertile ground (1 → ${bushes.length} bushes)`);
 }
 
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
