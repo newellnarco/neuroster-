@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T15:33:25Z",
+  "updated": "2026-06-29T15:34:03Z",
   "items": [
     {
       "key": "econ:1",
@@ -2426,8 +2426,8 @@
       "type": "New Feature",
       "area": "Engine",
       "priority": "P2",
-      "status": "In Progress",
-      "pr": null,
+      "status": "Done",
+      "pr": "74",
       "release": null,
       "detail": "Adds a HILL terrain type: buildable high ground that is passable but COSTS more to cross (tileMoveCost in pathfinding + movement), so rodents route around it when they can; generated on woodland/prairie/mountains/rivers biomes. Mountains now render as rocky CLIFF FACES (striations + shaded side). Rivers can run RAGING (world.raging, ~50% of channels): a dam/water-mill/turbine on a raging river taps a stronger current (×RIVER.ragingWaterMul power & water), but raging rivers also swell FLOODS (×ragingFloodMul severity). Foamy white-water render for raging tiles; raging persists in saves.",
       "timeline": [
@@ -2435,6 +2435,11 @@
           "at": "2026-06-29T15:40:00+00:00",
           "status": "In Progress",
           "note": "Added TERRAIN.hill + HILL/RIVER config + biome weights; tileMoveCost wired into A* and movement; raging-river gen/helpers; economy waterworks bonus + flood severity; cliff-face & foam render; save persistence. npm test 200 + verify:browser green."
+        },
+        {
+          "at": "2026-06-29T15:34:03+00:00",
+          "status": "Done",
+          "note": "Opened PR #74 (draft). npm test 200 + verify:browser green; awaiting CI."
         }
       ],
       "screenshots": [
@@ -2444,7 +2449,7 @@
           "caption": "Mountains map: rounded HILLS (raised, contoured) and rocky CLIFF FACES among the peaks."
         }
       ],
-      "updated": null
+      "updated": "2026-06-29T15:34:03+00:00"
     }
   ]
 }
