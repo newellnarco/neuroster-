@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T19:37:02Z",
+  "updated": "2026-06-29T19:37:35Z",
   "items": [
     {
       "key": "econ:1",
@@ -2543,8 +2543,8 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "In Progress",
-      "pr": null,
+      "status": "Done",
+      "pr": "78",
       "release": null,
       "detail": "DISASTERS.tsunami now has its own effect ('tsunami'). events.handleTsunami: the sea recedes then SURGES inland a distance ≈ leftover severity × TSUNAMI.inlandRatio (clamped minReach..maxReach), computed by a BFS surge zone from open water. Within that zone it splinters wild flora (amount→0), smashes structures (spares the last breeding burrow) and drowns animals (a ball floats; ≥1 survives) — on top of the usual flood seeds + fertile silt. A coastal Earthquake (effect 'destroy' on a beach/lakes biome or any map with ≥ waterTilesCoastal water) has a TSUNAMI.quakeChance (10%) of also unleashing one. Render shows a recede-then-surge wash + foam crest (state._tsunami).",
       "timeline": [
@@ -2552,6 +2552,11 @@
           "at": "2026-06-29T19:45:00+00:00",
           "status": "In Progress",
           "note": "Added TSUNAMI config + handleTsunami (BFS surge zone, flora/structure/animal destruction by inland reach) + isCoastal; 10% quake trigger; recede-then-surge render. npm test 206 + verify:browser green."
+        },
+        {
+          "at": "2026-06-29T19:37:34+00:00",
+          "status": "Done",
+          "note": "Opened PR #78 (draft). npm test 206 + verify:browser green; awaiting CI."
         }
       ],
       "screenshots": [
@@ -2561,7 +2566,7 @@
           "caption": "Tsunami mid-surge: blue water wash + white foam crest sweeping inland across the map."
         }
       ],
-      "updated": null
+      "updated": "2026-06-29T19:37:34+00:00"
     }
   ]
 }

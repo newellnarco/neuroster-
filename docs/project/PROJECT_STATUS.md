@@ -2,30 +2,29 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-29T19:37:02Z · 101 items_
+_board_state.json updated: 2026-06-29T19:37:35Z · 101 items_
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| In Progress | 1 |
+| In Progress | 0 |
 | in CI | 0 |
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 0 |
+| Done | 1 |
 | Shipped | 94 |
 | Deferred | 2 |
 | Closed-No-Op | 1 |
 | **TOTAL** | **101** |
 
-**94 landed on `main`** · **4 open** (in-CI / todo / planned / backlog).
+**95 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
-| In Progress | P2 | None | Ocean earthquakes → tsunami: sea recedes, then surges inland destroying all it reaches | — | — |
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
 | Backlog | P3 | RENDER | Full multi-level underground world view (descend/ascend, separate grid + render) | — | — |
@@ -39,7 +38,7 @@ _board_state.json updated: 2026-06-29T19:37:02Z · 101 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (43)
+### (misc) (44)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -86,6 +85,7 @@ _board_state.json updated: 2026-06-29T19:37:02Z · 101 items_
 | None | Richer terrain — hills (slow but passable), rocky cliff faces & raging rivers | [#74](https://github.com/newellnarco/neuroster-/pull/74) | `e184e76` |
 | None | Living ecology — wild flora regrows & spreads (with a replant-only toggle) | [#75](https://github.com/newellnarco/neuroster-/pull/75) | `fedf110` |
 | None | Beaver fishery — dams thin the downstream river, starving the beavers' fish | [#77](https://github.com/newellnarco/neuroster-/pull/77) | `a437308` |
+| None | Ocean earthquakes → tsunami: sea recedes, then surges inland destroying all it reaches | [#78](https://github.com/newellnarco/neuroster-/pull/78) | `—` |
 
 ### CREATURES (5)
 
