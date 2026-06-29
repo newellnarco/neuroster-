@@ -1068,6 +1068,33 @@ console.log('Living ecology (wild flora regrows & spreads; replant-only toggle):
   ok(`wild flora spreads into fertile ground (1 → ${bushes.length} bushes)`);
 }
 
+// 21k) Beaver fishery: dams thin the downstream river → hungry, unhappier beavers.
+console.log('Beaver fishery (too many dams starve the downstream fish):');
+{
+  const { BEAVER, BUILDINGS } = await import('../src/config.js');
+
+  const withDams = (nDams) => {
+    const g = newGame(520, 'rivers', 'syrian', 'Beavers', {});
+    // ensure a beaver is present so the fishery matters
+    g.units.push({ ...g.units[0], id: g.nextId++, species: 'beaver', needs: { food: 90, water: 90, energy: 90, fun: 80, health: 100 } });
+    g.beaverMood = 80;
+    const sp = g.world.spawn;
+    for (let i = 0; i < nDams; i++) g.buildings.push({ id: g.nextId++, type: 'dam', x: sp.x + 3 + i, y: sp.y, active: true });
+    const beaver = g.units.find(u => u.species === 'beaver');
+    const f0 = beaver.needs.food, m0 = g.beaverMood;
+    for (let i = 0; i < 60; i++) stepEconomy(g, 0.25);
+    return { fish: g.beaverFish, foodDrop: f0 - beaver.needs.food, mood: g.beaverMood, m0 };
+  };
+
+  const none = withDams(0);
+  const many = withDams(3);
+  assert(BUILDINGS.dam?.upstreamPenalty, 'dams hold back the river (upstreamPenalty)');
+  assert(many.fish < none.fish && many.fish < BEAVER.hungryAt, `dams shrink the beaver fishery (${(none.fish).toFixed(2)} → ${(many.fish).toFixed(2)})`);
+  assert(many.foodDrop > none.foodDrop, `a poor fishery leaves beavers hungry (food drop ${none.foodDrop.toFixed(1)} → ${many.foodDrop.toFixed(1)})`);
+  assert(many.mood < none.mood, `a starved fishery sours the beavers (mood ${none.mood.toFixed(0)} → ${many.mood.toFixed(0)})`);
+  ok(`dams thin the fishery (${Math.round(many.fish * 100)}%) → hungrier, unhappier beavers`);
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');

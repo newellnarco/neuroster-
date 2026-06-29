@@ -797,6 +797,13 @@ export const BEAVER = {
   grumpyAt: 35,        // below this mood, the beavers sabotage the water works
   sabotageWater: 0.4,  // −40% water flow while grumpy
   spillChance: 0.04,   // per-sec chance a grumpy lodge spills some hoarded wood
+  // Beavers fish the river DOWNSTREAM of your dams. Every dam holds back the
+  // current, shrinking that downstream fishery — too many and the fish (and the
+  // beavers) go hungry: mood falls and the beavers' own food need drains.
+  fishPerDam: 0.22,    // each dam cuts the downstream fishery by this fraction
+  hungryAt: 0.6,       // fishery below this leaves the beavers hungry
+  hungerMood: 0.9,     // mood lost/sec (×shortfall) when the fishery is starved
+  hungerDrain: 1.1,    // beaver food-need drained/sec while the fishery is poor
 };
 
 // Guard / soldier skill + equipment tiers. Any loyal rodent can be trained as a
