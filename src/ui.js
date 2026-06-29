@@ -13,6 +13,7 @@ import { resolveDecree, choiceAllowed, dismissDecree } from './decrees.js';
 import { DOCTRINES, DOCTRINE_BRANCHES } from './config.js';
 import { learnDoctrine, doctrineStatus, hasDoctrine, doctrineCount } from './doctrines.js';
 import { enterBall, exitBall, hasBallWorkshop } from './economy.js';
+import { rescueDrowning } from './entities.js';
 import { isMature } from './entities.js';
 import { isDrag, normRect, unitsInRect, buildingsInRect, selectUnits, selectBuildings,
   clearSelection, selectedUnits, groupGather, groupService, groupGoto, groupJob,
@@ -1113,6 +1114,8 @@ export function createUI(state, ctx) {
         const d = Math.hypot((u._rx ?? u.x) - px, (u._ry ?? u.y) - py);
         if (d < bestD) { bestD = d; best = u; }
       }
+      // A drowning animal under the cursor: clicking PULLS IT FREE of the undertow.
+      if (best && best.drowning) { rescueDrowning(state, best); sfx('care'); flash('🤝 Pulled free of the undertow!'); renderRodents(); return; }
       if (best) { selectUnits(view, [best]); view.selBuildings = []; sfx('click'); document.querySelector('[data-tab="rodents"]').click(); renderRodents(); renderTools(); return; }
 
       // No rodent under the cursor. A single selected rodent + a world click: send

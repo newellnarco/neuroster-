@@ -1137,6 +1137,49 @@ console.log('Tsunami (coastal detection; recede-then-surge inland destruction):'
   ok(`reach scales with severity (${small._tsunami?.reach}→${big._tsunami?.reach}); a weak one is held to silt`);
 }
 
+// 21m) Coastal wading, salt water (undrinkable) & the undertow (drown/rescue).
+console.log('Coastal wading, salt water & the undertow:');
+{
+  const { WADE } = await import('../src/config.js');
+  const { drownUnit, rescueDrowning, stepRodent } = await import('../src/entities.js');
+
+  assert(WADE.undertow === 0.20, 'the undertow seizes a deep wader 20% of the time');
+
+  // A wading animal CANNOT drink the salt water — wading never slakes thirst.
+  const g = newGame(70, 'beach', 'syrian', 'Wade', {});
+  g._coastal = true;
+  const u = g.units[0];
+  u.wading = true; u._wadeDepth = 1; u.needs.water = 20;
+  for (let i = 0; i < 8; i++) stepRodent(g, u, 0.25);
+  assert(u.needs.water === 20, `wading doesn't slake thirst — salt water is undrinkable (held at ${u.needs.water})`);
+  ok('wading animals can’t drink salt water (thirst unchanged)');
+
+  // Undertow → drowning → drowns if its struggle runs out unrescued.
+  const d = newGame(71, 'beach', 'syrian', 'Drown', {});
+  d._coastal = true; d.env.lived = 100;
+  while (d.units.length < 3) d.units.push({ ...d.units[0], id: d.nextId++ });
+  const victim = d.units[1];
+  victim.wading = true; victim.drowning = { until: 99 }; // already overdue
+  const n0 = d.units.length;
+  stepRodent(d, victim, 0.25);
+  assert(d.units.length === n0 - 1 && !d.units.includes(victim), `an unrescued animal drowns when its struggle runs out (${n0} → ${d.units.length})`);
+  ok('the undertow drowns an animal left unrescued');
+
+  // Clicking (rescueDrowning) pulls a caught animal free onto dry land.
+  const r = newGame(72, 'beach', 'syrian', 'Save', {});
+  const su = r.units[0]; su.wading = true; su.drowning = { until: (r.env?.lived || 0) + 5 };
+  assert(rescueDrowning(r, su) && !su.drowning && !su.wading, 'clicking a drowning animal pulls it free of the undertow');
+  ok('click-to-rescue clears the drowning state');
+
+  // The colony always keeps its last rodent — it washes ashore rather than drown.
+  const last = newGame(73, 'beach', 'syrian', 'Last', {});
+  last.units = [last.units[0]];
+  const survivor = last.units[0]; survivor.drowning = { until: 0 };
+  drownUnit(last, survivor);
+  assert(last.units.length === 1 && !survivor.drowning, 'the last rodent washes ashore instead of drowning');
+  ok('a colony never loses its final rodent to the undertow');
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');

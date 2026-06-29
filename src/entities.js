@@ -1,9 +1,9 @@
 // entities.js — rodent units: stats, per-creature needs, sleep, levels, AI,
 // and trait combination (breeding).
-import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H, HAMSTER_NAMES, FAMILY_NAMES, COAT_COLORS, COAT_PATTERNS, BREEDING } from './config.js';
+import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H, HAMSTER_NAMES, FAMILY_NAMES, COAT_COLORS, COAT_PATTERNS, BREEDING, WADE } from './config.js';
 import { traitMul, wellbeingMul, addRes, evoBonus, addFx, logMsg } from './state.js';
 import { isNight } from './environment.js';
-import { isSeen, nearestUnseen, isBlockedTile, tileMoveCost } from './world.js';
+import { isSeen, nearestUnseen, isBlockedTile, tileMoveCost, getTile, inBounds, TERRAIN } from './world.js';
 import { findPath } from './pathfinding.js';
 import { nodeContestFactor } from './factions.js';
 
@@ -125,6 +125,89 @@ export function gainXp(state, u, amt) {
   }
 }
 
+// ---- Coastal wading & the undertow -----------------------------------------
+const _isWater = (w, x, y) => getTile(w.terrain, x, y) === TERRAIN.water;
+function adjacentWater(w, u) {
+  const x = Math.round(u.x), y = Math.round(u.y);
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]])
+    if (inBounds(x + dx, y + dy) && _isWater(w, x + dx, y + dy)) return { x: x + dx, y: y + dy };
+  return null;
+}
+// The adjacent water tile farthest from land (most water around it) — "deeper".
+function deeperWater(w, u) {
+  const x = Math.round(u.x), y = Math.round(u.y); let best = null, bestW = -1;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const nx = x + dx, ny = y + dy;
+    if (!inBounds(nx, ny) || !_isWater(w, nx, ny)) continue;
+    let wc = 0; for (const [ex, ey] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (inBounds(nx + ex, ny + ey) && _isWater(w, nx + ex, ny + ey)) wc++;
+    if (wc > bestW) { bestW = wc; best = { x: nx, y: ny }; }
+  }
+  return best;
+}
+function nearestLandTile(w, u) {
+  const x = Math.round(u.x), y = Math.round(u.y);
+  for (let r = 1; r <= 5; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const nx = x + dx, ny = y + dy; if (!inBounds(nx, ny)) continue;
+    const t = getTile(w.terrain, nx, ny);
+    if (t !== TERRAIN.water && t !== TERRAIN.mountain) return { x: nx, y: ny };
+  }
+  return { x: w.spawn.x, y: w.spawn.y };
+}
+function washAshore(state, u) { const l = nearestLandTile(state.world, u); u.x = l.x; u.y = l.y; u.wading = false; u._wadeDepth = 0; }
+
+// Remove a drowned animal (the colony always keeps at least one — the last
+// rodent washes ashore instead). Exported for the undertow path + tests.
+export function drownUnit(state, u) {
+  if (state.units.length <= 1) { u.drowning = null; washAshore(state, u); return false; }
+  const i = state.units.indexOf(u); if (i < 0) return false;
+  state.units.splice(i, 1);
+  state.morale = Math.max(0, (state.morale ?? 100) - 5);
+  addFx(state, u.x, u.y, '🌊', 2);
+  logMsg(state, `🌊 ${u.name || 'A rodent'} was dragged under by the undertow and drowned. Mind the shallows!`);
+  return true;
+}
+// Pull a drowning animal free (called when the player clicks it). Exported for ui.
+export function rescueDrowning(state, u) {
+  if (!u || !u.drowning) return false;
+  u.drowning = null; washAshore(state, u);
+  addFx(state, u.x, u.y, '🆘', 1.8);
+  logMsg(state, `🤝 You pulled ${u.name || 'a rodent'} free from the undertow just in time!`);
+  return true;
+}
+
+// One tick of coastal water behaviour. Returns true when the unit is in the
+// water (wading or caught by the undertow) and the normal AI should skip.
+function stepWade(state, u, dt) {
+  const w = state.world; if (!w || !state._coastal) return false;
+  const lived = state.env?.lived || 0;
+  if (u.drowning) { if (lived >= u.drowning.until) drownUnit(state, u); return true; }
+  if (u.wading) {
+    // Salt water — wading NEVER slakes thirst (its only "drink" is undrinkable).
+    if (Math.random() < WADE.deepenChance * dt) {
+      const deep = deeperWater(w, u);
+      if (deep) {
+        u.x = deep.x; u.y = deep.y; u._wadeDepth = (u._wadeDepth || 1) + 1;
+        if (u._wadeDepth >= WADE.deepAt && Math.random() < WADE.undertow) {
+          u.drowning = { until: lived + WADE.drownAfter };
+          logMsg(state, `🆘 An undertow has pulled ${u.name || 'a rodent'} under — CLICK it to pull it free before it drowns!`);
+        }
+      } else washAshore(state, u); // nowhere deeper → wade back out
+    } else if (Math.random() < WADE.returnChance * dt) {
+      washAshore(state, u); // wandered back to shore
+    }
+    return true;
+  }
+  // Idle shore-side animal may wade in (not while ordered, balled, or hauling).
+  if (u.order || u.inBall || u.carrying) return false;
+  const shore = adjacentWater(w, u);
+  if (shore && Math.random() < WADE.chance * dt) {
+    u.wading = true; u._wadeDepth = 1; u.x = shore.x; u.y = shore.y;
+    return true;
+  }
+  return false;
+}
+
 // ---- AI step ---------------------------------------------------------------
 export function stepRodent(state, u, dt) {
   // Sleep takes priority: nap when exhausted, or during the species' rest phase.
@@ -134,6 +217,10 @@ export function stepRodent(state, u, dt) {
   if (u.needs.energy <= sleepAt || (restTime && u.needs.energy < 55)) {
     u.phase = 'sleep'; u.carrying && deliverCarry(state, u); return;
   }
+
+  // Coastal wading / undertow — a shore-side animal in (or wading into) the water
+  // is occupied; skip the normal work/movement AI this tick.
+  if (stepWade(state, u, dt)) return;
 
   // Crossing a hill is slower — divide the step speed by the tile's move-cost.
   const spd = speedOf(state, u) * 2.2 / (state.world ? tileMoveCost(state.world, Math.round(u.x), Math.round(u.y)) : 1);

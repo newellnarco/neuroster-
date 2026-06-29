@@ -1,6 +1,6 @@
 // world.js — tile grid + procedural, biome-driven terrain & resource nodes,
 // plus a persistent "seen" fog-of-war layer.
-import { GRID_W, GRID_H, NODE_TYPES, BIOMES, HILL, RIVER } from './config.js';
+import { GRID_W, GRID_H, NODE_TYPES, BIOMES, HILL, RIVER, TSUNAMI } from './config.js';
 
 // A tiny seeded RNG so worlds are reproducible from a seed.
 export function makeRng(seed) {
@@ -36,6 +36,17 @@ export function ragingNear(world, x, y, r = 1) {
   return false;
 }
 export const hasRagingRivers = (world) => !!(world.raging && world.raging.some(v => v === 1));
+
+// A "coastal" world: a beach/lakeshore biome, or simply enough open water to host
+// tides — wading & tsunamis only happen here.
+export function isCoastalWorld(world) {
+  if (!world) return false;
+  if (world.biome === 'beach' || world.biome === 'lakes') return true;
+  const t = world.terrain; if (!t) return false;
+  let w = 0;
+  for (let i = 0; i < t.length; i++) if (t[i] === TERRAIN.water && ++w >= TSUNAMI.waterTilesCoastal) return true;
+  return false;
+}
 
 // Pick a terrain type from a biome's weighted distribution.
 function weightedTerrain(rng, weights) {

@@ -1,6 +1,6 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
 import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS, RABBIT, RIVER, TSUNAMI, GRID_W, GRID_H } from './config.js';
-import { hasRagingRivers, getTile, inBounds, TERRAIN } from './world.js';
+import { hasRagingRivers, getTile, inBounds, TERRAIN, isCoastalWorld } from './world.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST, stepInterFactions } from './factions.js';
@@ -393,14 +393,7 @@ function destroyTargeted(state, n) {
 // when it overwhelms your protection (levees, irrigation, beavers).
 // A map is "coastal" if it's a beach/lakeshore biome or simply carries enough
 // open water to host a tsunami.
-export function isCoastal(state) {
-  const b = state.world?.biome;
-  if (b === 'beach' || b === 'lakes') return true;
-  const t = state.world?.terrain; if (!t) return false;
-  let w = 0;
-  for (let i = 0; i < t.length; i++) if (t[i] === TERRAIN.water && ++w >= TSUNAMI.waterTilesCoastal) return true;
-  return false;
-}
+export function isCoastal(state) { return isCoastalWorld(state.world); }
 
 // BFS the distance (in tiles) from open water across the land, capped at `reach`.
 // dist[i] = 0 on water, 1..reach on land the surge reaches, -1 beyond it.
