@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-29T15:46:40Z · 99 items_
+_board_state.json updated: 2026-06-29T15:50:38Z · 99 items_
 
 ## Summary
 
@@ -13,8 +13,8 @@ _board_state.json updated: 2026-06-29T15:46:40Z · 99 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 1 |
-| Shipped | 92 |
+| Done | 0 |
+| Shipped | 93 |
 | Deferred | 2 |
 | Closed-No-Op | 1 |
 | **TOTAL** | **99** |
@@ -83,7 +83,7 @@ _board_state.json updated: 2026-06-29T15:46:40Z · 99 items_
 | None | NPC animal communities: factions trade, war & form pacts with each other | [#71](https://github.com/newellnarco/neuroster-/pull/71) | `dd87333` |
 | None | Varied wild flora — pine stands, berry bushes & wildflower meadows | [#73](https://github.com/newellnarco/neuroster-/pull/73) | `43b6a3c` |
 | None | Richer terrain — hills (slow but passable), rocky cliff faces & raging rivers | [#74](https://github.com/newellnarco/neuroster-/pull/74) | `e184e76` |
-| None | Living ecology — wild flora regrows & spreads (with a replant-only toggle) | [#75](https://github.com/newellnarco/neuroster-/pull/75) | `—` |
+| None | Living ecology — wild flora regrows & spreads (with a replant-only toggle) | [#75](https://github.com/newellnarco/neuroster-/pull/75) | `fedf110` |
 
 ### CREATURES (5)
 
