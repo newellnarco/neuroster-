@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T19:53:29Z",
+  "updated": "2026-06-29T19:56:38Z",
   "items": [
     {
       "key": "econ:1",
@@ -2582,9 +2582,9 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "79",
-      "release": null,
+      "release": "5afed84",
       "detail": "On a coastal map (state._coastal via world.isCoastalWorld) an idle, shore-side animal may WADE into the shallows (entities.stepWade — an ambient water behaviour that does NOT touch pathfinding/travel). Wading never slakes thirst: salt water is undrinkable. A wader that strays a step or two deeper (WADE.deepAt) has a 20% chance (WADE.undertow) the UNDERTOW seizes it → u.drowning={until}. A drowning animal shows 🆘 + bubbles (and a wader shows a ripple); CLICKING it (ui unit-pick → rescueDrowning) pulls it free onto dry land; if its struggle (WADE.drownAfter) runs out unrescued it DROWNS (drownUnit — morale hit, log; the colony always keeps its last rodent, washing it ashore).",
       "timeline": [
         {
@@ -2596,6 +2596,11 @@
           "at": "2026-06-29T19:53:29+00:00",
           "status": "Done",
           "note": "Opened PR #79 (draft). npm test 210 + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-29T19:56:38+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #79 (squash 5afed84). Coastal wading + saltwater + undertow shipped."
         }
       ],
       "screenshots": [
@@ -2605,7 +2610,7 @@
           "caption": "Beach colony: a rodent wading in the coastal shallows (click a 🆘 drowning one to pull it free of the undertow)."
         }
       ],
-      "updated": "2026-06-29T19:53:29+00:00"
+      "updated": "2026-06-29T19:56:38+00:00"
     }
   ]
 }
