@@ -271,8 +271,11 @@ export function createRenderer(canvas, state, getView) {
       }
       if (n.amount <= 0) continue;
       const frac = n.amount / n.max;
-      if (n.kind === 'trees') drawCluster(cx, cy, n, frac, 3, drawTree);
+      if (n.kind === 'trees') { const v = ['', 'oak', '', 'berry'][n.id % 4]; drawCluster(cx, cy, n, frac, 3, (x, y, sc) => drawTree(x, y, sc, v)); } // mixed broadleaf wood
+      else if (n.kind === 'pinewood') drawCluster(cx, cy, n, frac, 3, (x, y, sc) => drawTree(x, y, sc, 'pine')); // coniferous stand
       else if (n.kind === 'rock') drawCluster(cx, cy, n, frac, 3, drawBoulder);
+      else if (n.kind === 'berrybush') drawCluster(cx, cy, n, frac, 3, drawBerryBush);
+      else if (n.kind === 'wildflowers') drawCluster(cx, cy, n, frac, 4, drawFlowers);
       else drawCluster(cx, cy, n, frac, 3, drawBush);
       depletionBar(n);
     }
@@ -346,6 +349,22 @@ export function createRenderer(canvas, state, getView) {
     ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, 7); texClip('leaf', x - r * 1.5, y - r * 1.5, r * 3, r * 3, 0.45, 'soft-light'); // foliage texture
     ctx.fillStyle = 'rgba(180,220,120,0.5)'; ball(x - r * 0.2, y - r * 0.4, r * 0.4);
     ctx.fillStyle = '#caa33a'; dot(x + 1, y + 1, 1.4, '#caa33a'); // seeds
+  }
+  // A wild forage bush heavy with dark berries (a food node).
+  function drawBerryBush(x, y, sc) {
+    const sway = Math.sin(animT * 1.4 + x * 0.2) * 0.8 * sc;
+    const r = 6 * sc; x += sway;
+    ctx.fillStyle = '#3f6f34'; ball(x, y, r); ball(x - r * 0.6, y + 1, r * 0.7); ball(x + r * 0.6, y + 1, r * 0.7);
+    ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, 7); texClip('leaf', x - r * 1.5, y - r * 1.5, r * 3, r * 3, 0.45, 'soft-light');
+    for (const [dx, dy] of [[-0.5, -0.1], [0.3, 0.2], [-0.1, 0.4], [0.5, -0.3], [0, -0.4]]) dot(x + dx * r, y + dy * r, 1.5 * sc, '#5b3a8a'); // berries
+  }
+  // A patch of wildflowers (a seeds node) — small bright blooms over greenery.
+  function drawFlowers(x, y, sc) {
+    const sway = Math.sin(animT * 1.6 + x * 0.25) * 0.6 * sc; x += sway;
+    ctx.fillStyle = '#4e7d3a'; ball(x, y + 1 * sc, 3.4 * sc); ball(x - 2.4 * sc, y + 2 * sc, 2.6 * sc); ball(x + 2.4 * sc, y + 2 * sc, 2.6 * sc); // foliage
+    const cols = ['#e6c34d', '#d96a8a', '#7e9cff', '#f0f0f0'];
+    const slots = [[-2.2, -1.6], [2.0, -1.2], [0, -2.6], [-0.6, 0.2], [1.2, 0.6]];
+    slots.forEach((s, i) => { dot(x + s[0] * sc, y + s[1] * sc, 1.7 * sc, cols[i % cols.length]); dot(x + s[0] * sc, y + s[1] * sc, 0.7 * sc, '#fff7c0'); });
   }
   function drawOreHint(cx, cy, n) {
     ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(cx, cy + 6, 9, 4, 0, 0, 7); ctx.fill();
