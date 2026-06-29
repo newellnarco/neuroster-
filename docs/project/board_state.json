@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T15:45:56Z",
+  "updated": "2026-06-29T15:46:40Z",
   "items": [
     {
       "key": "econ:1",
@@ -2465,8 +2465,8 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "In Progress",
-      "pr": null,
+      "status": "Done",
+      "pr": "75",
       "release": null,
       "detail": "economy.stepEcology: with the default 'Living' nature setting (state.regrow), surviving wild flora (trees/pinewood/bush/berrybush/wildflowers) slowly REGROW toward their max — faster on fertile soil (REGROWTH.fertileMul) and in spring, slowed in winter — and a mature node occasionally SPREADS a fresh patch onto nearby fertile, empty soil (deterministic; capped at REGROWTH.nodeCap). Minerals never regrow. A new 'Wild nature' Settings toggle flips state.regrow to false for strict REPLANT-ONLY (finite nature, the original model). state.regrow persists with the save.",
       "timeline": [
@@ -2474,6 +2474,11 @@
           "at": "2026-06-29T16:00:00+00:00",
           "status": "In Progress",
           "note": "Added REGROWTH config + stepEcology (season/fertility regrowth + spread); state.regrow default true; Settings 'Wild nature' Living/Replant-only toggle. npm test 203 + verify:browser green."
+        },
+        {
+          "at": "2026-06-29T15:46:40+00:00",
+          "status": "Done",
+          "note": "Opened PR #75 (draft). npm test 203 + verify:browser green; awaiting CI."
         }
       ],
       "screenshots": [
@@ -2483,7 +2488,7 @@
           "caption": "Settings → Wild nature: 🌱 Living (flora regrows & spreads) vs 🍂 Replant-only (finite nature)."
         }
       ],
-      "updated": null
+      "updated": "2026-06-29T15:46:40+00:00"
     }
   ]
 }
