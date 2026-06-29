@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T15:17:49Z",
+  "updated": "2026-06-29T15:18:33Z",
   "items": [
     {
       "key": "econ:1",
@@ -2387,8 +2387,8 @@
       "type": "New Feature",
       "area": "Graphics",
       "priority": "P3",
-      "status": "In Progress",
-      "pr": null,
+      "status": "Done",
+      "pr": "73",
       "release": null,
       "detail": "The wild world had one tree + one bush type. Adds new surface node kinds — pinewood (🌲→wood), berrybush (🫐→food), wildflowers (🌼→seeds) — seeded per-biome (pines in woodland/mountains, flowers in prairie, berries in marsh). They yield existing staples (no orphan resources) and are gathered by the normal AI fallback. Like all wild nodes they DEPLETE and do NOT regrow — replant via the Tree buildings / gardens to restore. Renderer draws each distinctly (conifer tiers, berry dots, flower blooms) and varies broadleaf 'trees' nodes (oak/berry variants) for richer-looking forests.",
       "timeline": [
@@ -2396,6 +2396,11 @@
           "at": "2026-06-29T15:20:00+00:00",
           "status": "In Progress",
           "note": "Added pinewood/berrybush/wildflowers NODE_TYPES + baseClusters + per-biome nodeMul; render mappings (drawBerryBush/drawFlowers, pine + mixed broadleaf variants). npm test 197 + verify:browser green."
+        },
+        {
+          "at": "2026-06-29T15:18:33+00:00",
+          "status": "Done",
+          "note": "Opened PR #73 (draft). npm test 197 + verify:browser green; awaiting CI."
         }
       ],
       "screenshots": [
@@ -2405,7 +2410,7 @@
           "caption": "Varied wild flora on a revealed woodland: pine stands, berry bushes, wildflower patches & mixed broadleaf trees."
         }
       ],
-      "updated": null
+      "updated": "2026-06-29T15:18:33+00:00"
     }
   ]
 }
