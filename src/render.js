@@ -72,7 +72,31 @@ export function createRenderer(canvas, state, getView) {
     drawDayNight();
     drawWeather(t);
     drawSeason(t);
+    drawTsunami();
     drawAmbient(t);
+  }
+
+  // Tsunami: a full-screen recede-then-surge wash while state._tsunami is live —
+  // the sea drains (cool tint), then a blue wall sweeps down the view with foam.
+  function drawTsunami() {
+    const ts = state._tsunami; if (!ts) return;
+    const lived = state.env?.lived || 0;
+    const p = (lived - ts.born) / Math.max(0.1, ts.until - ts.born);
+    if (p < 0 || p > 1) { if (p > 1) state._tsunami = null; return; }
+    ctx.save();
+    if (p < 0.4) {
+      ctx.fillStyle = `rgba(36,54,74,${0.12 * (1 - p / 0.4)})`; ctx.fillRect(0, 0, VW, VH); // recede: drained tint
+    } else {
+      const s = (p - 0.4) / 0.6;                         // 0..1 surge sweep
+      const a = 0.5 * (1 - Math.abs(s - 0.5) * 1.4);     // peaks mid-surge
+      const grad = ctx.createLinearGradient(0, 0, 0, VH);
+      grad.addColorStop(0, `rgba(56,118,178,${Math.max(0, a)})`);
+      grad.addColorStop(Math.min(0.999, s), `rgba(120,190,230,${Math.max(0, a * 0.8)})`);
+      grad.addColorStop(1, 'rgba(56,118,178,0)');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, VW, VH);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(0, VH * s - 3, VW, 4); // foam crest
+    }
+    ctx.restore();
   }
 
   // Seasonal atmosphere: a gentle full-screen tint + signature drifting motes

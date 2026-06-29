@@ -1,6 +1,6 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS, RABBIT, RIVER } from './config.js';
-import { hasRagingRivers } from './world.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS, RABBIT, RIVER, TSUNAMI, GRID_W, GRID_H } from './config.js';
+import { hasRagingRivers, getTile, inBounds, TERRAIN } from './world.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST, stepInterFactions } from './factions.js';
@@ -199,6 +199,7 @@ function fireDisaster(state, key, d, elapsed) {
   // Floods are double-edged: they always bring seeds & fertile soil, and only
   // damage/drown things when protection (levees/irrigation) can't hold them back.
   if (d.effect === 'flood') { handleFlood(state, d, net); return; }
+  if (d.effect === 'tsunami') { handleTsunami(state, net); return; }
 
   if (net <= 2) {
     logMsg(state, `${d.icon} ${d.name} approached but your defenses held! (def ${Math.round(protect)} ≥ ${Math.round(severity)})`);
@@ -232,6 +233,11 @@ function fireDisaster(state, key, d, elapsed) {
       damageTunnels(state, sev);
       logMsg(state, `${d.icon} ${d.name}! ${gone} structure(s) collapsed. Build Quake Shelters.`);
       hurtHealth(state, 6);
+      // A quake on the coast can rip a TSUNAMI loose — the sea recedes & surges.
+      if (isCoastal(state) && Math.random() < TSUNAMI.quakeChance) {
+        logMsg(state, '🌊 The quake jolted the seabed — the water is drawing back…');
+        handleTsunami(state, sev * 1.4);
+      }
       break;
     }
     case 'burn': {
@@ -385,6 +391,81 @@ function destroyTargeted(state, n) {
 
 // Flood: always deposits seeds + leaves fertile soil; damages & drowns mines only
 // when it overwhelms your protection (levees, irrigation, beavers).
+// A map is "coastal" if it's a beach/lakeshore biome or simply carries enough
+// open water to host a tsunami.
+export function isCoastal(state) {
+  const b = state.world?.biome;
+  if (b === 'beach' || b === 'lakes') return true;
+  const t = state.world?.terrain; if (!t) return false;
+  let w = 0;
+  for (let i = 0; i < t.length; i++) if (t[i] === TERRAIN.water && ++w >= TSUNAMI.waterTilesCoastal) return true;
+  return false;
+}
+
+// BFS the distance (in tiles) from open water across the land, capped at `reach`.
+// dist[i] = 0 on water, 1..reach on land the surge reaches, -1 beyond it.
+function tsunamiSurgeZone(world, reach) {
+  const dist = new Int16Array(GRID_W * GRID_H).fill(-1);
+  const q = [];
+  for (let y = 0; y < GRID_H; y++) for (let x = 0; x < GRID_W; x++)
+    if (getTile(world.terrain, x, y) === TERRAIN.water) { dist[y * GRID_W + x] = 0; q.push(x, y); }
+  for (let head = 0; head < q.length; head += 2) {
+    const x = q[head], y = q[head + 1], d0 = dist[y * GRID_W + x];
+    if (d0 >= reach) continue;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy;
+      if (!inBounds(nx, ny)) continue;
+      const ni = ny * GRID_W + nx;
+      if (dist[ni] !== -1) continue;
+      dist[ni] = d0 + 1; q.push(nx, ny);
+    }
+  }
+  return dist;
+}
+
+const TSUNAMI_FLORA = new Set(['trees', 'pinewood', 'bush', 'berrybush', 'wildflowers']);
+
+// The sea recedes, then SURGES inland `reach` tiles (set by leftover severity),
+// splintering trees, smashing structures and drowning animals it reaches. Always
+// leaves fertile silt + seeds. `net` ≤ 2 means levees/high ground held it off.
+export function handleTsunami(state, net) {
+  const d = DISASTERS.tsunami;
+  const lived = state.env?.lived || 0;
+  addRes(state, 'seeds', d.seeds || 50);
+  state.fertileUntil = lived + (d.fertileSeconds || 160);
+  if (net <= 2) {
+    logMsg(state, `🌊 The sea drew back and surged — but your levees / high ground held it off. Fertile silt remained (+${d.seeds || 50} seeds).`);
+    return;
+  }
+  const reach = Math.max(TSUNAMI.minReach, Math.min(TSUNAMI.maxReach, Math.round(net * TSUNAMI.inlandRatio)));
+  state._tsunami = { reach, born: lived, until: lived + TSUNAMI.duration }; // recede-then-surge visual
+  const dist = tsunamiSurgeZone(state.world, reach);
+  const inSurge = (x, y) => { if (!inBounds(x, y)) return false; const dd = dist[y * GRID_W + x]; return dd > 0 && dd <= reach; };
+  // Splinter trees & other wild flora the wave reaches.
+  let trees = 0;
+  for (const n of state.world.nodes)
+    if (TSUNAMI_FLORA.has(n.kind) && n.amount > 0 && inSurge(Math.round(n.x), Math.round(n.y))) { n.amount = 0; trees++; }
+  // Smash structures it reaches (spare the last breeding burrow to avoid a softlock).
+  let wrecked = 0;
+  for (const b of [...state.buildings]) {
+    if (!inSurge(b.x, b.y)) continue;
+    if (BUILDINGS[b.type]?.breed && state.buildings.filter(x => BUILDINGS[x.type]?.breed).length <= 1) continue;
+    if (b.nodeId != null) { const node = state.world.nodes.find(o => o.id === b.nodeId); if (node) node.claimedBy = null; }
+    const i = state.buildings.indexOf(b); if (i >= 0) { state.buildings.splice(i, 1); wrecked++; }
+  }
+  // Drown animals caught in the surge — a ball floats, and at least one survives.
+  let drowned = 0;
+  for (const u of [...state.units]) {
+    if (state.units.length <= 1) break;
+    if (u.inBall) continue;
+    if (inSurge(Math.round(u.x), Math.round(u.y))) { const i = state.units.indexOf(u); if (i >= 0) { state.units.splice(i, 1); drowned++; } }
+  }
+  hurtHealth(state, 10);
+  state.morale = Math.max(0, (state.morale ?? 100) - (drowned * 4 + 6));
+  addFx(state, state.world.spawn.x, state.world.spawn.y, '🌊', 2.6);
+  logMsg(state, `🌊 TSUNAMI! The wave surged ${reach} tiles inland — ${trees} grove(s) splintered, ${wrecked} structure(s) smashed, ${drowned} animal(s) drowned. Levees & high ground are your shield.`);
+}
+
 function handleFlood(state, d, net) {
   addRes(state, 'seeds', d.seeds || 40);
   state.fertileUntil = (state.env?.lived || 0) + (d.fertileSeconds || 120);

@@ -591,8 +591,8 @@ export const DISASTERS = {
   // ---- Biome-specific disasters (only fire in their listed biomes) ----
   tsunami: {
     name: 'Tsunami', icon: '🌊', kind: 'disaster', baseSeverity: 20, interval: 200,
-    desc: 'A giant wave floods the coast — fertile silt, but devastating unchecked.',
-    effect: 'flood', seeds: 60, fertileSeconds: 180, biomes: ['beach', 'lakes'],
+    desc: 'The sea recedes, then a giant wave SURGES inland — splintering trees, drowning animals & smashing structures it reaches. Levees & high ground are your only hope.',
+    effect: 'tsunami', seeds: 60, fertileSeconds: 180, biomes: ['beach', 'lakes'],
   },
   avalanche: {
     name: 'Avalanche', icon: '🏔️', kind: 'disaster', baseSeverity: 19, interval: 220,
@@ -890,6 +890,20 @@ export const RIVER = {
   ragingChance: 0.5,   // chance a generated river channel runs "raging"
   ragingWaterMul: 1.6, // dam/mill water & power multiplier beside a raging river
   ragingFloodMul: 1.4, // flood severity multiplier when raging rivers thread the map
+};
+
+// ---- Tsunami ---------------------------------------------------------------
+// A coastal earthquake can rip a TSUNAMI loose: the sea recedes, then a wall of
+// water surges INLAND a distance set by its leftover severity, splintering trees,
+// drowning animals and smashing any structure it reaches. Levees & high ground
+// blunt it. Lakeshore & beach maps are at risk.
+export const TSUNAMI = {
+  quakeChance: 0.10,  // chance a quake on a coastal map also unleashes a tsunami
+  inlandRatio: 0.45,  // surge reach (tiles) ≈ leftover severity × this
+  minReach: 2,        // …clamped to at least this many tiles inland
+  maxReach: 9,        // …and at most this many
+  duration: 6,        // seconds of recede-then-surge animation
+  waterTilesCoastal: 12, // a map with ≥ this many water tiles counts as "coastal"
 };
 
 // ---- Living ecology: regrowth & spread -------------------------------------

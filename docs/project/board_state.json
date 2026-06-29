@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T19:25:32Z",
+  "updated": "2026-06-29T19:37:02Z",
   "items": [
     {
       "key": "econ:1",
@@ -2504,9 +2504,9 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P3",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "77",
-      "release": null,
+      "release": "a437308",
       "detail": "Beavers fish the river DOWNSTREAM of your dams. economy.updateBeavers now computes state.beaverFish = 1 − dams×BEAVER.fishPerDam: every dam (upstreamPenalty building) holds back the current, shrinking that fishery. Below BEAVER.hungryAt the beavers go hungry — their own food need drains (hungerDrain) and their mood falls (hungerMood × shortfall), with a one-time warning log. Env-bar beaver chip now shows the fishery 🐟% and turns to an alert tint when it's poor. Fewer dams (or a well-fed colony) eases it.",
       "timeline": [
         {
@@ -2518,6 +2518,11 @@
           "at": "2026-06-29T19:25:32+00:00",
           "status": "Done",
           "note": "Opened PR #77 (draft). npm test 204 + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-29T19:29:47+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #77 (squash a437308). Beaver fishery shipped."
         }
       ],
       "screenshots": [
@@ -2527,7 +2532,36 @@
           "caption": "Beaver env chip with 3 dams: 🦫 30w·48%·🐟34% — a thinned fishery leaves the beavers hungry & unhappier (alert tint)."
         }
       ],
-      "updated": "2026-06-29T19:25:32+00:00"
+      "updated": "2026-06-29T19:29:47+00:00"
+    },
+    {
+      "key": "gameplay:ocean-quake-tsunami",
+      "issue": null,
+      "title": "Ocean earthquakes → tsunami: sea recedes, then surges inland destroying all it reaches",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "In Progress",
+      "pr": null,
+      "release": null,
+      "detail": "DISASTERS.tsunami now has its own effect ('tsunami'). events.handleTsunami: the sea recedes then SURGES inland a distance ≈ leftover severity × TSUNAMI.inlandRatio (clamped minReach..maxReach), computed by a BFS surge zone from open water. Within that zone it splinters wild flora (amount→0), smashes structures (spares the last breeding burrow) and drowns animals (a ball floats; ≥1 survives) — on top of the usual flood seeds + fertile silt. A coastal Earthquake (effect 'destroy' on a beach/lakes biome or any map with ≥ waterTilesCoastal water) has a TSUNAMI.quakeChance (10%) of also unleashing one. Render shows a recede-then-surge wash + foam crest (state._tsunami).",
+      "timeline": [
+        {
+          "at": "2026-06-29T19:45:00+00:00",
+          "status": "In Progress",
+          "note": "Added TSUNAMI config + handleTsunami (BFS surge zone, flora/structure/animal destruction by inland reach) + isCoastal; 10% quake trigger; recede-then-surge render. npm test 206 + verify:browser green."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-29T19:45:00+00:00",
+          "path": "docs/screenshots/tsunami-surge.png",
+          "caption": "Tsunami mid-surge: blue water wash + white foam crest sweeping inland across the map."
+        }
+      ],
+      "updated": null
     }
   ]
 }

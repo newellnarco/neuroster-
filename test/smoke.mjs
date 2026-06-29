@@ -1095,6 +1095,48 @@ console.log('Beaver fishery (too many dams starve the downstream fish):');
   ok(`dams thin the fishery (${Math.round(many.fish * 100)}%) → hungrier, unhappier beavers`);
 }
 
+// 21l) Tsunami: coastal quakes can spawn one; it surges inland & destroys.
+console.log('Tsunami (coastal detection; recede-then-surge inland destruction):');
+{
+  const { TSUNAMI, GRID_H } = await import('../src/config.js');
+  const { TERRAIN, setTile } = await import('../src/world.js');
+  const { handleTsunami, isCoastal } = await import('../src/events.js');
+
+  // Coastal detection.
+  assert(isCoastal(newGame(61, 'beach', 'syrian', 'Coast', {})), 'a beach map is coastal');
+  const dry = newGame(61, 'prairie', 'syrian', 'Dry', {});
+  for (let i = 0; i < dry.world.terrain.length; i++) if (dry.world.terrain[i] === TERRAIN.water) dry.world.terrain[i] = TERRAIN.grass;
+  assert(!isCoastal(dry), 'an inland map with no real water is not coastal');
+
+  // Controlled surge: a coastline at x=2; things near it die, things far inland live.
+  const g = newGame(62, 'prairie', 'syrian', 'Wave', {});
+  for (let i = 0; i < g.world.terrain.length; i++) g.world.terrain[i] = TERRAIN.grass;
+  for (let y = 0; y < GRID_H; y++) setTile(g.world.terrain, 2, y, TERRAIN.water);
+  const yy = g.world.spawn.y;
+  g.world.nodes = [
+    { id: 1, kind: 'trees', x: 4, y: yy, amount: 300, max: 400 },  // near (2 tiles inland)
+    { id: 2, kind: 'trees', x: 24, y: yy, amount: 300, max: 400 }, // far inland
+  ];
+  g.buildings = [{ id: 1, type: 'storage', x: 5, y: yy, active: true }]; // near (3 inland)
+  g.units = [{ ...g.units[0], id: 1, x: 4, y: yy, inBall: false }, { ...g.units[0], id: 2, x: 24, y: yy, inBall: false }];
+  handleTsunami(g, 12); // reach = clamp(round(12×0.45)=5, 2, 9) = 5
+  assert(g.world.nodes.find(n => n.id === 1).amount === 0 && g.world.nodes.find(n => n.id === 2).amount > 0, 'the surge splinters a coastal grove but spares one far inland');
+  assert(!g.buildings.some(b => b.id === 1), 'the surge smashes a coastal structure');
+  assert(!g.units.some(u => u.id === 1) && g.units.some(u => u.id === 2), 'the surge drowns a coastal animal, sparing the inland one');
+  assert(g._tsunami && g._tsunami.reach === 5, `the wave's inland reach follows severity (reach ${g._tsunami?.reach})`);
+  ok(`tsunami surges ${g._tsunami.reach} tiles inland — wrecks coastal grove/structure/animal, spares inland`);
+
+  // Reach scales with severity; a held tsunami (net ≤ 2) leaves only fertile silt.
+  const big = newGame(63, 'prairie', 'syrian', 'Big', {}), small = newGame(63, 'prairie', 'syrian', 'Small', {});
+  for (const s of [big, small]) for (let y = 0; y < GRID_H; y++) setTile(s.world.terrain, 2, y, TERRAIN.water);
+  handleTsunami(big, 20); handleTsunami(small, 6);
+  assert((big._tsunami?.reach || 0) > (small._tsunami?.reach || 0), `inland reach scales with severity (${small._tsunami?.reach} < ${big._tsunami?.reach})`);
+  const held = newGame(64, 'beach', 'syrian', 'Held', {}); const sd = held.res.seeds || 0;
+  handleTsunami(held, 1);
+  assert(!held._tsunami && (held.res.seeds || 0) > sd, 'a held tsunami leaves only fertile silt — no destruction');
+  ok(`reach scales with severity (${small._tsunami?.reach}→${big._tsunami?.reach}); a weak one is held to silt`);
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');
