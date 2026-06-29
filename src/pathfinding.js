@@ -11,7 +11,7 @@
 // cap guarantees a single call can never stall a frame — over budget just means
 // "fall back to local steering", which the caller already handles.
 import { GRID_W, GRID_H } from './config.js';
-import { inBounds, isBlockedTile } from './world.js';
+import { inBounds, isBlockedTile, tileMoveCost } from './world.js';
 
 // 8-connected neighbour offsets. The first four are orthogonal (cost 1), the
 // last four diagonal (cost √2). Diagonals are only allowed when BOTH orthogonal
@@ -111,9 +111,10 @@ export function findPath(world, sx, sy, tx, ty, opts = {}) {
 
     const cx = cell % GRID_W, cy = (cell - (cell % GRID_W)) / GRID_W;
 
-    // Orthogonal neighbours.
+    // Orthogonal neighbours. Entering a tile costs its terrain move-cost (hills
+    // cost more), so A* prefers flat routes but still climbs when it must.
     for (const [dx, dy] of ORTHO) {
-      relax(cx + dx, cy + dy, cell, g[cell] + 1);
+      relax(cx + dx, cy + dy, cell, g[cell] + tileMoveCost(world, cx + dx, cy + dy));
     }
     // Diagonal neighbours, corner-cutting disallowed.
     if (diagonal) {
@@ -122,7 +123,7 @@ export function findPath(world, sx, sy, tx, ty, opts = {}) {
         // Both shared orthogonal tiles must be open, else the diagonal would
         // clip through a blocked corner.
         if (isBlockedTile(world, cx + dx, cy) || isBlockedTile(world, cx, cy + dy)) continue;
-        relax(nx, ny, cell, g[cell] + SQRT2);
+        relax(nx, ny, cell, g[cell] + SQRT2 * tileMoveCost(world, nx, ny));
       }
     }
   }

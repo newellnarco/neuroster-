@@ -3,7 +3,7 @@
 import { SPECIES, TRAITS, NODE_TYPES, NEEDS, SLEEP, MAX_LEVEL, xpForLevel, GRID_W, GRID_H, HAMSTER_NAMES, FAMILY_NAMES, COAT_COLORS, COAT_PATTERNS, BREEDING } from './config.js';
 import { traitMul, wellbeingMul, addRes, evoBonus, addFx, logMsg } from './state.js';
 import { isNight } from './environment.js';
-import { isSeen, nearestUnseen, isBlockedTile } from './world.js';
+import { isSeen, nearestUnseen, isBlockedTile, tileMoveCost } from './world.js';
 import { findPath } from './pathfinding.js';
 import { nodeContestFactor } from './factions.js';
 
@@ -135,7 +135,8 @@ export function stepRodent(state, u, dt) {
     u.phase = 'sleep'; u.carrying && deliverCarry(state, u); return;
   }
 
-  const spd = speedOf(state, u) * 2.2;
+  // Crossing a hill is slower — divide the step speed by the tile's move-cost.
+  const spd = speedOf(state, u) * 2.2 / (state.world ? tileMoveCost(state.world, Math.round(u.x), Math.round(u.y)) : 1);
 
   // A rodent in a hamster ball doesn't work or haul — it just rolls around for
   // travel & fun. Player orders (goto/explore) below steer it; with no order it

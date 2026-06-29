@@ -1,5 +1,6 @@
 // events.js — disasters & predators: scheduling, protection, and consequences.
-import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS, RABBIT } from './config.js';
+import { DISASTERS, BUILDINGS, SPECIES, BIOMES, BREEDS, FACTIONS, TRADE, MORALE, TUNNEL_TIERS, BRIDGE_TIERS, fortTiers, DIFFICULTIES, TICKS_PER_SEC, DAY_SECONDS, JUSTICE, GUARD_GEAR, ARMOUR, DISEASE, EVOLUTIONS, RABBIT, RIVER } from './config.js';
+import { hasRagingRivers } from './world.js';
 import { logMsg, population, addRes, addFx, addCompassion, addValor } from './state.js';
 import { makeRodent } from './entities.js';
 import { spawnCaravan, contestNode, resolveContest, expireContests, hasContest, CONTEST, stepInterFactions } from './factions.js';
@@ -187,6 +188,7 @@ function fireDisaster(state, key, d, elapsed) {
   const gameDiff = DIFFICULTIES[state.difficulty]?.disasterMul ?? 1; // chosen difficulty
   let severity = d.baseSeverity * grow * biomeMul * Math.max(0.2, envMul) * breedDiff * gameDiff;
   if (d.kind === 'predator') severity *= (1 - Math.min(0.2, Math.max(0, (state.compassion ?? 50) - 50) / 250)); // a gentle, kind colony unsettles predators less
+  if (d.effect === 'flood' && hasRagingRivers(state.world)) severity *= RIVER.ragingFloodMul; // turbulent rivers swell the floods
   const offenseBonus = (d.kind === 'predator') ? totalOffense(state) : 0;
   let protect = protectionAgainst(state, key) + offenseBonus;
   // Firm, fair Order deters raiders; a raised predator cub guards against beasts.

@@ -124,7 +124,7 @@ export function importSaveString(raw) {
 // flow (Int8, signed) & waste (Float32).
 function reattachTyped(state) {
   if (!state.world) return;
-  for (const field of ['terrain', 'seen', 'fertile', 'river']) {
+  for (const field of ['terrain', 'seen', 'fertile', 'river', 'raging']) {
     const v = state.world[field]; if (!v) continue;
     state.world[field] = Array.isArray(v) ? Uint8Array.from(v) : Uint8Array.from(Object.values(v));
   }
