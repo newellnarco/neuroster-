@@ -956,6 +956,31 @@ console.log('Inter-faction communities (rivalry → war, symbiosis → alliance)
   ok(`neighbours run their own lives: chipmunks↔fieldmice war (${warRel.toFixed(0)}), packrats pacts (${allyRel.toFixed(0)}); prosperity diverges`);
 }
 
+// 21h) Varied wild flora: different forests & plants, finite (no auto-regrow).
+console.log('Varied wild flora (pinewood / berry bushes / wildflowers):');
+{
+  const { NODE_TYPES } = await import('../src/config.js');
+  for (const k of ['pinewood', 'berrybush', 'wildflowers'])
+    assert(NODE_TYPES[k]?.surface === true && NODE_TYPES[k].resource, `${k} is a surface flora node yielding ${NODE_TYPES[k]?.resource || '??'}`);
+  assert(NODE_TYPES.pinewood.resource === 'wood' && NODE_TYPES.berrybush.resource === 'food' && NODE_TYPES.wildflowers.resource === 'seeds',
+    'wild flora yield existing staples (wood/food/seeds) — no orphan resources');
+
+  // A generated woodland seeds VARIED flora, not just the one tree type.
+  const g = newGame(321, 'woodland', 'syrian', 'Flora', {});
+  const kinds = new Set(g.world.nodes.map(n => n.kind));
+  const variety = ['pinewood', 'berrybush', 'wildflowers'].filter(k => kinds.has(k));
+  assert(variety.length >= 2, `the wild world grows varied flora (${variety.join(', ') || 'none'})`);
+  ok(`world seeds varied wild flora: ${['trees', 'pinewood', 'berrybush', 'wildflowers', 'bush'].filter(k => kinds.has(k)).join(', ')}`);
+
+  // Wild flora deplete and do NOT regrow on their own — replant (Trees/gardens) to restore.
+  const f = g.world.nodes.find(n => ['pinewood', 'berrybush', 'wildflowers'].includes(n.kind));
+  g.units = []; // no gatherers, so the only change would be regrowth (there is none)
+  f.amount = 7;
+  for (let i = 0; i < 40; i++) stepEconomy(g, 0.25);
+  assert(f.amount <= 7, `wild flora doesn't regrow by itself (held at ${f.amount})`);
+  ok(`wild flora is finite — depletes & needs replanting (${f.kind} held at ${f.amount})`);
+}
+
 // 22) Wood economy: more trees, sunflower seeds, wooden power & mills, cistern,
 //     fence, and friendly squirrels speeding timber builds.
 console.log('Wood economy (trees, mills, power, storage):');

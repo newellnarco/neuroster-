@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-27T04:19:27Z · 96 items_
+_board_state.json updated: 2026-06-29T15:18:33Z · 97 items_
 
 ## Summary
 
@@ -13,13 +13,13 @@ _board_state.json updated: 2026-06-27T04:19:27Z · 96 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 0 |
+| Done | 1 |
 | Shipped | 90 |
 | Deferred | 2 |
 | Closed-No-Op | 1 |
-| **TOTAL** | **96** |
+| **TOTAL** | **97** |
 
-**90 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**91 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -38,7 +38,7 @@ _board_state.json updated: 2026-06-27T04:19:27Z · 96 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (39)
+### (misc) (40)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -81,6 +81,7 @@ _board_state.json updated: 2026-06-27T04:19:27Z · 96 items_
 | None | Rabbits: carrot/cabbage gardens → manure → fertilizer, and predator bait | [#69](https://github.com/newellnarco/neuroster-/pull/69) | `cb00689` |
 | None | Grain Silo (off-book grain storage) + Mill saves back seed grain | [#70](https://github.com/newellnarco/neuroster-/pull/70) | `c7d0209` |
 | None | NPC animal communities: factions trade, war & form pacts with each other | [#71](https://github.com/newellnarco/neuroster-/pull/71) | `dd87333` |
+| None | Varied wild flora — pine stands, berry bushes & wildflower meadows | [#73](https://github.com/newellnarco/neuroster-/pull/73) | `—` |
 
 ### CREATURES (5)
 

@@ -80,7 +80,7 @@ export function generateWorld(seed = 12345, biomeKey = 'woodland', densityMul = 
   // wooden power/mills/lifts, fences, bridges, conveyances) leans on timber.
   // gemseam is the DEEP layer (Mine Shaft only) — kept sparse: a premium seam,
   // not a staple. Clusters are small so deep gems stay a sought-after find.
-  const baseClusters = { trees: 13, rock: 3, orevein: 2, coalseam: 2, oilseep: 1, gemseam: 1, bush: 3 };
+  const baseClusters = { trees: 13, pinewood: 4, berrybush: 3, wildflowers: 4, rock: 3, orevein: 2, coalseam: 2, oilseep: 1, gemseam: 1, bush: 3 };
 
   for (const kind of Object.keys(NODE_TYPES)) {
     const mul = ((biome.nodeMul && biome.nodeMul[kind]) || 1) * densityMul;
