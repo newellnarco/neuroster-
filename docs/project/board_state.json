@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T19:37:35Z",
+  "updated": "2026-06-29T19:53:29Z",
   "items": [
     {
       "key": "econ:1",
@@ -2543,9 +2543,9 @@
       "type": "New Feature",
       "area": "Gameplay",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "78",
-      "release": null,
+      "release": "9f70935",
       "detail": "DISASTERS.tsunami now has its own effect ('tsunami'). events.handleTsunami: the sea recedes then SURGES inland a distance ≈ leftover severity × TSUNAMI.inlandRatio (clamped minReach..maxReach), computed by a BFS surge zone from open water. Within that zone it splinters wild flora (amount→0), smashes structures (spares the last breeding burrow) and drowns animals (a ball floats; ≥1 survives) — on top of the usual flood seeds + fertile silt. A coastal Earthquake (effect 'destroy' on a beach/lakes biome or any map with ≥ waterTilesCoastal water) has a TSUNAMI.quakeChance (10%) of also unleashing one. Render shows a recede-then-surge wash + foam crest (state._tsunami).",
       "timeline": [
         {
@@ -2557,6 +2557,11 @@
           "at": "2026-06-29T19:37:34+00:00",
           "status": "Done",
           "note": "Opened PR #78 (draft). npm test 206 + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-29T19:41:39+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #78 (squash 9f70935). Ocean quake → tsunami shipped."
         }
       ],
       "screenshots": [
@@ -2566,7 +2571,41 @@
           "caption": "Tsunami mid-surge: blue water wash + white foam crest sweeping inland across the map."
         }
       ],
-      "updated": "2026-06-29T19:37:34+00:00"
+      "updated": "2026-06-29T19:41:39+00:00"
+    },
+    {
+      "key": "gameplay:coastal-wading-undertow",
+      "issue": null,
+      "title": "Coastal wading, salt water (undrinkable) & the undertow (click to rescue)",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "Done",
+      "pr": "79",
+      "release": null,
+      "detail": "On a coastal map (state._coastal via world.isCoastalWorld) an idle, shore-side animal may WADE into the shallows (entities.stepWade — an ambient water behaviour that does NOT touch pathfinding/travel). Wading never slakes thirst: salt water is undrinkable. A wader that strays a step or two deeper (WADE.deepAt) has a 20% chance (WADE.undertow) the UNDERTOW seizes it → u.drowning={until}. A drowning animal shows 🆘 + bubbles (and a wader shows a ripple); CLICKING it (ui unit-pick → rescueDrowning) pulls it free onto dry land; if its struggle (WADE.drownAfter) runs out unrescued it DROWNS (drownUnit — morale hit, log; the colony always keeps its last rodent, washing it ashore).",
+      "timeline": [
+        {
+          "at": "2026-06-29T20:05:00+00:00",
+          "status": "In Progress",
+          "note": "Added WADE config + world.isCoastalWorld + state._coastal cache; entities.stepWade (wade/deepen/undertow) + drownUnit/rescueDrowning; ui click-to-rescue; render wading ripple + drowning 🆘/bubbles. npm test 210 + verify:browser green."
+        },
+        {
+          "at": "2026-06-29T19:53:29+00:00",
+          "status": "Done",
+          "note": "Opened PR #79 (draft). npm test 210 + verify:browser green; awaiting CI."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-29T20:05:00+00:00",
+          "path": "docs/screenshots/undertow.png",
+          "caption": "Beach colony: a rodent wading in the coastal shallows (click a 🆘 drowning one to pull it free of the undertow)."
+        }
+      ],
+      "updated": "2026-06-29T19:53:29+00:00"
     }
   ]
 }

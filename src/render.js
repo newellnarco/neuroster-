@@ -800,6 +800,20 @@ export function createRenderer(canvas, state, getView) {
         ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fill(); // glossy highlight
         ctx.restore();
       }
+      // Wading in the shallows: a little ripple ring around the legs.
+      if (u.wading && !u.drowning) {
+        ctx.save(); ctx.strokeStyle = 'rgba(200,235,255,0.75)'; ctx.lineWidth = 1.4;
+        const rr = 6 + Math.sin(t * 4 + u.id) * 1.2;
+        ctx.beginPath(); ctx.ellipse(cx, cy + 5, rr, rr * 0.45, 0, 0, 7); ctx.stroke(); ctx.restore();
+      }
+      // Caught by the undertow: bubbles + an SOS — CLICK to pull it free.
+      if (u.drowning) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        for (let i = 0; i < 4; i++) { const a = t * 3 + i * 1.7; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * 7, cy - 3 + Math.sin(a * 1.3) * 5, 1.4, 0, 7); ctx.fill(); }
+        ctx.restore();
+        glyph('🆘', cx, cy - 14, 14 + Math.sin(t * 6) * 1.5);
+      }
       if (u.sick) glyph('🤢', cx + 9, cy - 11, 12); // wet tail
       // Selection ring: every multi-selected rodent gets a ring; the primary
       // (selUnit) gets a brighter, slightly larger one.

@@ -906,6 +906,20 @@ export const TSUNAMI = {
   waterTilesCoastal: 12, // a map with ≥ this many water tiles counts as "coastal"
 };
 
+// ---- Coastal wading & the undertow -----------------------------------------
+// On a coastal map an idle animal beside the shallows may WADE into the water.
+// It CANNOT drink the salt water (wading never slakes thirst). Stray too far and
+// there's a 20% chance the UNDERTOW seizes it — click the drowning animal to pull
+// it free, otherwise it drowns.
+export const WADE = {
+  chance: 0.02,      // per-sec chance an idle shore-side animal wades in
+  deepenChance: 0.5, // per-sec chance a wader strays a step deeper
+  returnChance: 0.4, // per-sec chance a wader wanders back to shore instead
+  deepAt: 2,         // wade-depth at/after which the undertow can strike
+  undertow: 0.20,    // 20% chance the undertow seizes a wader that's gone deep
+  drownAfter: 7,     // seconds a caught animal struggles before it drowns
+};
+
 // ---- Living ecology: regrowth & spread -------------------------------------
 // With the "Living" nature setting (state.regrow !== false, the default), wild
 // FLORA (trees/pines/bushes/berries/wildflowers) slowly REGROW toward their max

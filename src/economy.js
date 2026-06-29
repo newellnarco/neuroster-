@@ -13,7 +13,7 @@ import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, curren
 import { SEASONS, POLLUTION, SQUIRREL, RABBIT, RIVER, REGROWTH, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES, buildingMaturity, growTime } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
-import { reveal, isFertile, addWaste, wasteAt, riverNear, ragingNear, getTile, inBounds, TERRAIN } from './world.js';
+import { reveal, isFertile, addWaste, wasteAt, riverNear, ragingNear, getTile, inBounds, TERRAIN, isCoastalWorld } from './world.js';
 
 // A dam on a REAL river tile (true flowing watercourse, not a still pond) taps
 // the current and yields more water — and reads the flow geography to know it.
@@ -39,6 +39,7 @@ export function stepEconomy(state, dt) {
   const mega = state._mega = megaBonuses(state);
   const doc = state._doc = doctrineBonuses(state); // learned skill-tree perks
   if (mega.power) addRes(state, 'power', mega.power * dt);
+  if (state._coastal == null) state._coastal = isCoastalWorld(state.world); // cache: drives wading & tsunamis
   ensureCamps(state); // idempotent — also back-fills camps for pre-camp saves
 
   // 1) Rodent AI (gather/haul/sleep). Reset the per-tick A* recompute budget and
