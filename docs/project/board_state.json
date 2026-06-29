@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T15:50:38Z",
+  "updated": "2026-06-29T19:25:32Z",
   "items": [
     {
       "key": "econ:1",
@@ -2494,6 +2494,40 @@
         }
       ],
       "updated": "2026-06-29T15:50:38+00:00"
+    },
+    {
+      "key": "gameplay:beaver-fishery",
+      "issue": null,
+      "title": "Beaver fishery — dams thin the downstream river, starving the beavers' fish",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P3",
+      "status": "Done",
+      "pr": "77",
+      "release": null,
+      "detail": "Beavers fish the river DOWNSTREAM of your dams. economy.updateBeavers now computes state.beaverFish = 1 − dams×BEAVER.fishPerDam: every dam (upstreamPenalty building) holds back the current, shrinking that fishery. Below BEAVER.hungryAt the beavers go hungry — their own food need drains (hungerDrain) and their mood falls (hungerMood × shortfall), with a one-time warning log. Env-bar beaver chip now shows the fishery 🐟% and turns to an alert tint when it's poor. Fewer dams (or a well-fed colony) eases it.",
+      "timeline": [
+        {
+          "at": "2026-06-29T19:25:00+00:00",
+          "status": "In Progress",
+          "note": "Added BEAVER.fishPerDam/hungryAt/hungerMood/hungerDrain + downstream fishery in updateBeavers (food drain + mood penalty + log); 🐟% in the beaver env chip. npm test 204 + verify:browser green."
+        },
+        {
+          "at": "2026-06-29T19:25:32+00:00",
+          "status": "Done",
+          "note": "Opened PR #77 (draft). npm test 204 + verify:browser green; awaiting CI."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-29T19:25:00+00:00",
+          "path": "docs/screenshots/beaver-fishery.png",
+          "caption": "Beaver env chip with 3 dams: 🦫 30w·48%·🐟34% — a thinned fishery leaves the beavers hungry & unhappier (alert tint)."
+        }
+      ],
+      "updated": "2026-06-29T19:25:32+00:00"
     }
   ]
 }

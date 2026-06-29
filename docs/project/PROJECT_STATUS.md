@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-29T15:50:38Z · 99 items_
+_board_state.json updated: 2026-06-29T19:25:32Z · 100 items_
 
 ## Summary
 
@@ -13,13 +13,13 @@ _board_state.json updated: 2026-06-29T15:50:38Z · 99 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 0 |
+| Done | 1 |
 | Shipped | 93 |
 | Deferred | 2 |
 | Closed-No-Op | 1 |
-| **TOTAL** | **99** |
+| **TOTAL** | **100** |
 
-**93 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**94 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -38,7 +38,7 @@ _board_state.json updated: 2026-06-29T15:50:38Z · 99 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (42)
+### (misc) (43)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -84,6 +84,7 @@ _board_state.json updated: 2026-06-29T15:50:38Z · 99 items_
 | None | Varied wild flora — pine stands, berry bushes & wildflower meadows | [#73](https://github.com/newellnarco/neuroster-/pull/73) | `43b6a3c` |
 | None | Richer terrain — hills (slow but passable), rocky cliff faces & raging rivers | [#74](https://github.com/newellnarco/neuroster-/pull/74) | `e184e76` |
 | None | Living ecology — wild flora regrows & spreads (with a replant-only toggle) | [#75](https://github.com/newellnarco/neuroster-/pull/75) | `fedf110` |
+| None | Beaver fishery — dams thin the downstream river, starving the beavers' fish | [#77](https://github.com/newellnarco/neuroster-/pull/77) | `—` |
 
 ### CREATURES (5)
 

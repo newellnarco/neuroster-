@@ -659,13 +659,25 @@ function updateBeavers(state, dt) {
     state.beaverWood -= took;
     addRes(state, 'wood', took);
   }
+  // Downstream fishery: every dam holds back the current, shrinking the river
+  // below it where the beavers fish. Too many dams → a poor fishery → hungry
+  // beavers (their mood falls and their own food need drains).
+  const dams = state.buildings.filter(b => BUILDINGS[b.type]?.upstreamPenalty && !b.underConstruction).length;
+  const fish = Math.max(0, 1 - dams * BEAVER.fishPerDam);
+  const wasHungry = (state.beaverFish ?? 1) < BEAVER.hungryAt;
+  state.beaverFish = fish;
+  const shortfall = Math.max(0, BEAVER.hungryAt - fish);
+  if (shortfall > 0) for (const u of state.units) if (u.species === 'beaver') u.needs.food = Math.max(0, u.needs.food - BEAVER.hungerDrain * dt);
+
   // Any sustained tapping wears on them; left alone (colony wood stocked, so the
   // store rebuilds) their mood recovers. Chronically leaning on them sours them.
   const wasGrumpy = (state.beaverMood ?? 70) < BEAVER.grumpyAt; // state BEFORE this tick
   let mood = state.beaverMood ?? 70;
   if (took > 0) mood -= took * BEAVER.upsetPerTake;
   else mood += BEAVER.calm * dt;
+  mood -= shortfall * BEAVER.hungerMood * dt; // a starved fishery saps their mood
   state.beaverMood = Math.max(0, Math.min(100, mood));
+  if (shortfall > 0 && !wasHungry) logMsg(state, `🦫 Your dams have thinned the river below them — the beavers' fishery is poor and they're going hungry. Fewer dams (or feed the colony) eases it.`);
   // Grumpy lodge → sabotage the water works, and occasionally spill wood.
   if (state.beaverMood < BEAVER.grumpyAt) {
     state._beaverSabotage = BEAVER.sabotageWater;
