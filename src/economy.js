@@ -10,10 +10,10 @@ import { makeRodent, stepRodent, breedChild, gainXp, randomGivenName, resetPathB
 import { stepEvents, stepFactions, evoProtect } from './events.js';
 import { checkMilestones } from './milestones.js';
 import { stepEnvironment, envMods, seasonKey, currentSeason, dayFraction, currentWeather } from './environment.js';
-import { SEASONS, POLLUTION, SQUIRREL, RABBIT, RIVER, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES, buildingMaturity, growTime } from './config.js';
+import { SEASONS, POLLUTION, SQUIRREL, RABBIT, RIVER, REGROWTH, BEAVER, BALL, ARMOUR, DISEASE, DIFFICULTIES, buildingMaturity, growTime } from './config.js';
 import { megaBonuses } from './megaprojects.js';
 import { ensureCamps, stepCaravans, nodeContestFactor } from './factions.js';
-import { reveal, isFertile, addWaste, wasteAt, riverNear, ragingNear } from './world.js';
+import { reveal, isFertile, addWaste, wasteAt, riverNear, ragingNear, getTile, inBounds, TERRAIN } from './world.js';
 
 // A dam on a REAL river tile (true flowing watercourse, not a still pond) taps
 // the current and yields more water — and reads the flow geography to know it.
@@ -149,6 +149,7 @@ export function stepEconomy(state, dt) {
   stepFactions(state, dt);
   updateSquirrels(state, dt); // oak → nut economy: squirrels trade or raid
   updateRabbits(state, dt);   // rabbit warren: veg-fed herd → manure + predator bait
+  stepEcology(state, dt);     // living ecology: wild flora regrows & spreads (toggle: state.regrow)
   updateBeavers(state, dt);   // beaver wood store + take-too-much sabotage
   updateBalls(state, dt);     // hamster balls: joy → anxiety → pop out / heat death
   stepRescues(state, dt);
@@ -564,6 +565,55 @@ function updateSquirrels(state, dt) {
       logMsg(state, `🐿️💢 Your overcrowded oak grove drew a swarm of squirrels — they raided ${steal} nuts, ${foodLoot} food & ${waterLoot} water! Thin the oaks, guard them (defense), or share (Compassion).`);
     else
       logMsg(state, `🐿️ Squirrels raided your nut hoard — ${steal} nuts, ${foodLoot} food & ${waterLoot} water gone! Guard it (defense) or share it (Compassion) to keep the peace.`);
+  }
+}
+
+// Living ecology: with the "Living" nature setting, surviving wild FLORA slowly
+// regrow toward their max and occasionally seed a new patch onto nearby fertile
+// soil — faster in spring, slowed in winter. Minerals never regrow. The
+// "Replant-only" setting (state.regrow === false) switches the whole thing off,
+// keeping nature finite. Deterministic so it stays smoke-testable.
+const ECO_FLORA = new Set(['trees', 'pinewood', 'bush', 'berrybush', 'wildflowers']);
+const ECO_SEASON_GROW = { spring: 1.3, summer: 1.0, autumn: 0.8, winter: 0.35 };
+function ecoEmptyFertileNeighbor(world, n) {
+  for (let r = 1; r <= 2; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const x = n.x + dx, y = n.y + dy;
+    if (!inBounds(x, y) || !isFertile(world, x, y)) continue;
+    const t = getTile(world.terrain, x, y);
+    if (t === TERRAIN.water || t === TERRAIN.mountain || t === TERRAIN.rock) continue;
+    if (Math.abs(x - world.spawn.x) < 2 && Math.abs(y - world.spawn.y) < 2) continue;
+    if (world.nodes.some(o => o.x === x && o.y === y && o.amount > 0)) continue;
+    return { x, y };
+  }
+  return null;
+}
+function stepEcology(state, dt) {
+  if (state.regrow === false) return; // strict replant-only mode
+  const world = state.world; if (!world?.nodes) return;
+  const sm = ECO_SEASON_GROW[seasonKey(state)] ?? 1;
+  const mature = [];
+  for (const n of world.nodes) {
+    if (!ECO_FLORA.has(n.kind) || n.amount <= 0) continue; // only living plants regrow
+    if (n.amount < n.max) {
+      const fert = isFertile(world, n.x, n.y) ? REGROWTH.fertileMul : 1;
+      n.amount = Math.min(n.max, n.amount + REGROWTH.rate * fert * sm * dt);
+    }
+    if (n.amount >= n.max * REGROWTH.matureFrac) mature.push(n);
+  }
+  // Spread: a mature flora node seeds a fresh patch on nearby fertile soil.
+  state._spreadT = (state._spreadT || 0) + dt;
+  if (state._spreadT >= REGROWTH.spreadInterval && mature.length && world.nodes.length < REGROWTH.nodeCap) {
+    state._spreadT = 0;
+    for (const n of mature) {
+      const spot = ecoEmptyFertileNeighbor(world, n);
+      if (!spot) continue;
+      const def = NODE_TYPES[n.kind];
+      const id = world.nodes.reduce((m, o) => Math.max(m, o.id), 0) + 1;
+      world.nodes.push({ id, kind: n.kind, x: spot.x, y: spot.y, amount: Math.round(def.amount * REGROWTH.seedFrac), max: def.amount });
+      addFx(state, spot.x, spot.y, NODE_TYPES[n.kind].icon, 1.6);
+      break;
+    }
   }
 }
 

@@ -885,6 +885,21 @@ export const RIVER = {
   ragingFloodMul: 1.4, // flood severity multiplier when raging rivers thread the map
 };
 
+// ---- Living ecology: regrowth & spread -------------------------------------
+// With the "Living" nature setting (state.regrow !== false, the default), wild
+// FLORA (trees/pines/bushes/berries/wildflowers) slowly REGROW toward their max
+// and occasionally SPREAD a new patch onto nearby fertile soil — faster in
+// spring, slowed in winter. The "Replant-only" setting (state.regrow === false)
+// switches this off, keeping nature finite. Minerals never regrow.
+export const REGROWTH = {
+  rate: 0.2,          // amount a surviving flora node regrows per second
+  fertileMul: 2.4,    // ×rate on fertile soil (best growing ground)
+  matureFrac: 0.6,    // a node ≥ this fraction of max can seed a new patch
+  spreadInterval: 16, // seconds between spread attempts (one new patch each)
+  seedFrac: 0.3,      // a freshly-spread patch starts at this fraction of max
+  nodeCap: 360,       // total node cap — spread stops here (no runaway growth)
+};
+
 // ---- Growth / maturation ---------------------------------------------------
 // Living producers — farms, fields, orchards and planted trees — aren't useful
 // the moment construction ends: the crop or tree has to GROW IN first. After it

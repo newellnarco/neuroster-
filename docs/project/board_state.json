@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T15:34:03Z",
+  "updated": "2026-06-29T15:45:56Z",
   "items": [
     {
       "key": "econ:1",
@@ -2426,9 +2426,9 @@
       "type": "New Feature",
       "area": "Engine",
       "priority": "P2",
-      "status": "Done",
+      "status": "Shipped",
       "pr": "74",
-      "release": null,
+      "release": "e184e76",
       "detail": "Adds a HILL terrain type: buildable high ground that is passable but COSTS more to cross (tileMoveCost in pathfinding + movement), so rodents route around it when they can; generated on woodland/prairie/mountains/rivers biomes. Mountains now render as rocky CLIFF FACES (striations + shaded side). Rivers can run RAGING (world.raging, ~50% of channels): a dam/water-mill/turbine on a raging river taps a stronger current (×RIVER.ragingWaterMul power & water), but raging rivers also swell FLOODS (×ragingFloodMul severity). Foamy white-water render for raging tiles; raging persists in saves.",
       "timeline": [
         {
@@ -2440,6 +2440,11 @@
           "at": "2026-06-29T15:34:03+00:00",
           "status": "Done",
           "note": "Opened PR #74 (draft). npm test 200 + verify:browser green; awaiting CI."
+        },
+        {
+          "at": "2026-06-29T15:37:42+00:00",
+          "status": "Shipped",
+          "note": "Merged PR #74 (squash e184e76). Hills + cliff faces + raging rivers shipped."
         }
       ],
       "screenshots": [
@@ -2449,7 +2454,36 @@
           "caption": "Mountains map: rounded HILLS (raised, contoured) and rocky CLIFF FACES among the peaks."
         }
       ],
-      "updated": "2026-06-29T15:34:03+00:00"
+      "updated": "2026-06-29T15:37:42+00:00"
+    },
+    {
+      "key": "gameplay:living-ecology-regrowth",
+      "issue": null,
+      "title": "Living ecology — wild flora regrows & spreads (with a replant-only toggle)",
+      "arch": null,
+      "phase": null,
+      "type": "New Feature",
+      "area": "Gameplay",
+      "priority": "P2",
+      "status": "In Progress",
+      "pr": null,
+      "release": null,
+      "detail": "economy.stepEcology: with the default 'Living' nature setting (state.regrow), surviving wild flora (trees/pinewood/bush/berrybush/wildflowers) slowly REGROW toward their max — faster on fertile soil (REGROWTH.fertileMul) and in spring, slowed in winter — and a mature node occasionally SPREADS a fresh patch onto nearby fertile, empty soil (deterministic; capped at REGROWTH.nodeCap). Minerals never regrow. A new 'Wild nature' Settings toggle flips state.regrow to false for strict REPLANT-ONLY (finite nature, the original model). state.regrow persists with the save.",
+      "timeline": [
+        {
+          "at": "2026-06-29T16:00:00+00:00",
+          "status": "In Progress",
+          "note": "Added REGROWTH config + stepEcology (season/fertility regrowth + spread); state.regrow default true; Settings 'Wild nature' Living/Replant-only toggle. npm test 203 + verify:browser green."
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-06-29T16:00:00+00:00",
+          "path": "docs/screenshots/ecology-settings.png",
+          "caption": "Settings → Wild nature: 🌱 Living (flora regrows & spreads) vs 🍂 Replant-only (finite nature)."
+        }
+      ],
+      "updated": null
     }
   ]
 }

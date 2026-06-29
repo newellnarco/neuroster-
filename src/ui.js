@@ -722,6 +722,10 @@ export function createUI(state, ctx) {
       on:  { icon: '⚡', name: 'On',  desc: 'Predators, disasters & raids strike.' },
       off: { icon: '🕊️', name: 'Off', desc: 'Peaceful — none of the above.' },
     };
+    const NAT = {
+      living: { icon: '🌱', name: 'Living', desc: 'Wild plants slowly regrow & spread over time.' },
+      strict: { icon: '🍂', name: 'Replant-only', desc: 'Wild plants are finite — replant to restore them.' },
+    };
     const row = (group, data, current) => `<div class="grid" id="set-${group}">${Object.entries(data).map(([k, v]) =>
       `<button class="card opt ${k === current ? 'sel' : ''}" data-set${group}="${k}"><div class="ico">${v.icon}</div><div class="nm">${v.name}</div><div class="ds">${v.desc}</div></button>`).join('')}</div>`;
     const crestIcon = BREEDS[f.breed]?.icon || '🐹';
@@ -732,6 +736,7 @@ export function createUI(state, ctx) {
       </div>
       <div class="cat">Difficulty</div>${row('difficulty', DIFFICULTIES, state.difficulty)}
       <div class="cat">Predators &amp; disasters</div>${row('disasters', DIS, state.disasters === false ? 'off' : 'on')}
+      <div class="cat">Wild nature</div>${row('nature', NAT, state.regrow === false ? 'strict' : 'living')}
       <div class="cat">This colony — set at founding</div>
       <div class="colony-banner">
         <span class="crest">${crestIcon}</span>
@@ -744,6 +749,7 @@ export function createUI(state, ctx) {
       group === 'disasters' ? (x.dataset['set' + group] === (state.disasters === false ? 'off' : 'on')) : (x.dataset['set' + group] === state.difficulty)));
     card.querySelectorAll('[data-setdifficulty]').forEach(b => b.onclick = () => { state.difficulty = b.dataset.setdifficulty; ctx.onSave?.(); flash('Difficulty: ' + (DIFFICULTIES[state.difficulty]?.name || state.difficulty)); remark('difficulty'); });
     card.querySelectorAll('[data-setdisasters]').forEach(b => b.onclick = () => { state.disasters = b.dataset.setdisasters === 'on'; ctx.onSave?.(); flash(state.disasters ? '⚡ Disasters ON' : '🕊️ Peaceful mode'); remark('disasters'); });
+    card.querySelectorAll('[data-setnature]').forEach(b => b.onclick = () => { state.regrow = b.dataset.setnature === 'living'; ctx.onSave?.(); flash(state.regrow ? '🌱 Living ecology' : '🍂 Replant-only nature'); card.querySelectorAll('[data-setnature]').forEach(x => x.classList.toggle('sel', x.dataset.setnature === (state.regrow === false ? 'strict' : 'living'))); });
     card.querySelector('#set-close').onclick = () => el('settings-modal').classList.add('hidden');
   }
 
