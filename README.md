@@ -39,7 +39,9 @@ the live board from any device on the network (same swimlanes as the localhost w
 
 It's served by a Docker container (`node:*-alpine` running `node /app/server.js`)
 on a Synology **DS1517+** (DSM 7.1.1, legacy Docker package — see the NAS section
-below for the exact, no-compose setup). The container bind-mounts the repo source
+below for the exact, no-compose setup, and [`docs/HOMELAB.md`](./docs/HOMELAB.md)
+for the full hardware/software specs, current use & other things the NAS can do).
+The container bind-mounts the repo source
 read-only and serves it live, so a **browser refresh** — or the in-game **🔄 Update**
 button — shows the newest committed code after the source syncs.
 
