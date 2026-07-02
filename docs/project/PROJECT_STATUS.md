@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-06-29T19:56:38Z · 102 items_
+_board_state.json updated: 2026-07-02T04:15:32Z · 103 items_
 
 ## Summary
 
@@ -13,13 +13,13 @@ _board_state.json updated: 2026-06-29T19:56:38Z · 102 items_
 | Todo | 0 |
 | Planned | 0 |
 | Backlog | 3 |
-| Done | 0 |
+| Done | 1 |
 | Shipped | 96 |
 | Deferred | 2 |
 | Closed-No-Op | 1 |
-| **TOTAL** | **102** |
+| **TOTAL** | **103** |
 
-**96 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
+**97 landed on `main`** · **3 open** (in-CI / todo / planned / backlog).
 
 ## Outstanding work
 
@@ -38,7 +38,7 @@ _board_state.json updated: 2026-06-29T19:56:38Z · 102 items_
 
 ## Shipped / Done — by arch
 
-### (misc) (45)
+### (misc) (46)
 
 | Phase | Item | PR | Release |
 |---|---|---|---|
@@ -87,6 +87,7 @@ _board_state.json updated: 2026-06-29T19:56:38Z · 102 items_
 | None | Beaver fishery — dams thin the downstream river, starving the beavers' fish | [#77](https://github.com/newellnarco/neuroster-/pull/77) | `a437308` |
 | None | Ocean earthquakes → tsunami: sea recedes, then surges inland destroying all it reaches | [#78](https://github.com/newellnarco/neuroster-/pull/78) | `9f70935` |
 | None | Coastal wading, salt water (undrinkable) & the undertow (click to rescue) | [#79](https://github.com/newellnarco/neuroster-/pull/79) | `5afed84` |
+| None | Home NAS/Docker environment doc (specs, current use, other uses) | — | `—` |
 
 ### CREATURES (5)
 

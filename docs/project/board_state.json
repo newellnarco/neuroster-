@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-06-29T19:56:38Z",
+  "updated": "2026-07-02T04:15:32Z",
   "items": [
     {
       "key": "econ:1",
@@ -2611,6 +2611,23 @@
         }
       ],
       "updated": "2026-06-29T19:56:38+00:00"
+    },
+    {
+      "key": "feat:homelab-doc",
+      "issue": null,
+      "title": "Home NAS/Docker environment doc (specs, current use, other uses)",
+      "arch": null,
+      "phase": null,
+      "type": "Docs",
+      "area": "Docs",
+      "priority": "P3",
+      "status": "Done",
+      "pr": 0,
+      "release": null,
+      "detail": "",
+      "timeline": [],
+      "screenshots": [],
+      "updated": null
     }
   ]
 }
