@@ -1,11 +1,12 @@
 {
-  "comment": "Voiceover script for the marketing video. Order defines scene order. `clip` names the recorded footage (from record.mjs), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration.",
+  "comment": "Voiceover script for the marketing video. Order defines scene order. `clip` names the recorded footage (from record.mjs), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the pronunciation-respelled text actually sent to the TTS ('Neuroster' phonemizes badly, so it is respelled 'Newroster'); `vo` stays the human-readable line.",
   "scenes": [
     {
       "id": "cut_intro",
       "clip": "cut_intro.webm",
       "min": 5.0, "max": 8.0,
-      "vo": "This is Neuroster. A world-building colony game, where the workers... are hamsters."
+      "vo": "This is Neuroster. A world-building colony game, where the workers... are hamsters.",
+      "say": "This is Newroster. A world-building colony game, where the workers are hamsters."
     },
     {
       "id": "gameplay_found",
@@ -47,7 +48,8 @@
       "id": "cut_outro",
       "clip": "cut_outro.webm",
       "min": 6.0, "max": 9.0,
-      "vo": "Neuroster. Your colony. Your world. Start digging."
+      "vo": "Neuroster. Your colony. Your world. Start digging.",
+      "say": "Newroster. Your colony. Your world. Start digging."
     }
   ]
 }

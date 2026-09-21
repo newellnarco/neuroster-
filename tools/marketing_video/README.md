@@ -10,7 +10,7 @@ ambient music bed, and cuts everything into a ~60s 720p MP4.
 ```bash
 sudo apt-get install -y ffmpeg          # assembly
 pip3 install piper-tts                  # neural TTS
-python3 -m piper.download_voices en_US-ryan-high --data-dir tools/marketing_video/voices
+python3 -m piper.download_voices en_US-lessac-high --data-dir tools/marketing_video/voices
 ```
 
 (`voices/` and `build/` are gitignored — the voice model is ~120 MB.)

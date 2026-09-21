@@ -22,7 +22,7 @@ FOOTAGE = os.path.join(BUILD, "footage")
 VO_DIR = os.path.join(BUILD, "vo")
 TMP = os.path.join(BUILD, "clips")
 OUT = os.path.join(BUILD, "neuroster-trailer.mp4")
-MODEL = os.environ.get("PIPER_MODEL", os.path.join(HERE, "voices", "en_US-ryan-high.onnx"))
+MODEL = os.environ.get("PIPER_MODEL", os.path.join(HERE, "voices", "en_US-lessac-high.onnx"))
 W, H, FPS = 1280, 720, 30
 FADE = 0.35          # per-scene video fade in/out, seconds
 VO_LEAD = 0.45       # narration starts this far into its scene
@@ -46,9 +46,12 @@ scenes = json.load(open(os.path.join(HERE, "narration.json")))["scenes"]
 for s in scenes:
     wav = os.path.join(VO_DIR, s["id"] + ".wav")
     if not os.path.exists(wav):
+        # `say` is the pronunciation-respelled text (see narration.json);
+        # slightly slower read + real sentence gaps for clear enunciation.
         r = subprocess.run([sys.executable, "-m", "piper", "-m", MODEL,
-                            "--length-scale", "1.04", "-f", wav],
-                           input=s["vo"], capture_output=True, text=True)
+                            "--length-scale", "1.09", "--sentence-silence", "0.35",
+                            "-f", wav],
+                           input=s.get("say", s["vo"]), capture_output=True, text=True)
         if r.returncode != 0:
             sys.exit(f"piper failed for {s['id']}:\n{r.stderr[-1500:]}")
     s["vo_wav"] = wav

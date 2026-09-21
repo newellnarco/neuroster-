@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-09-21T20:51:02Z",
+  "updated": "2026-09-21T21:35:58Z",
   "items": [
     {
       "key": "econ:1",
@@ -2638,7 +2638,7 @@
       "type": "Docs",
       "area": "Docs",
       "priority": "P2",
-      "status": "Shipped",
+      "status": "In Progress",
       "pr": "83",
       "release": null,
       "detail": "",
@@ -2657,6 +2657,11 @@
           "at": "2026-09-21T20:51:02+00:00",
           "status": "Shipped",
           "note": "PR #83 squash-merged green (CI test ✓); trailer + website kit delivered"
+        },
+        {
+          "at": "2026-09-21T21:35:58+00:00",
+          "status": "In Progress",
+          "note": "v2 revision: fixed VO enunciation (Neuroster respelling, lessac-high voice, slower read) + canvas diorama cut-scenes"
         }
       ],
       "screenshots": [
@@ -2666,7 +2671,7 @@
           "caption": "Town overview carousel slide"
         }
       ],
-      "updated": "2026-09-21T20:51:02+00:00"
+      "updated": "2026-09-21T21:35:58+00:00"
     }
   ]
 }
