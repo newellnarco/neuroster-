@@ -1,5 +1,5 @@
 {
-  "comment": "Voiceover script for the marketing video, wording and pausing set by the project owner. Order defines scene order. `clip` names the recorded footage (from record.mjs; an externally produced .mp4 with the same scene name wins over a missing .webm), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the text actually sent to the TTS: pronunciation respellings ('Neuroster'\u2192'Nerohster' = neh-ROH-ster, one flowing word, 'colony'\u2192'coluny' = KOL-uh-nee single natural stress, 'biome'\u2192'bi-ohm', 'garrison'\u2192'garison' (flowing GAR-ih-son), 'automate'\u2192'auto mate', 'somebody'\u2192'sumbudy', 'thrive'\u2192'thryve', 'materials'\u2192'mateerials' (ma-TEER-ee-uhls), 'families'\u2192'famlys' (FAM-leez), 'shovel'\u2192'shuvvel' (SHUH-vul), 're-search', 'e-volve' \u2014 all verified via eSpeak IPA) and requested pauses as sentence breaks; `vo` stays the human-readable line.",
+  "comment": "Voiceover script for the marketing video, wording and pausing set by the project owner. Order defines scene order. `clip` names the recorded footage (from record.mjs; an externally produced .mp4 with the same scene name wins over a missing .webm), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the text actually sent to the TTS: pronunciation respellings ('Neuroster'\u2192'Nerohster' = neh-ROH-ster, one flowing word, 'colony'\u2192'coluny' = KOL-uh-nee single natural stress, 'biome'\u2192'bi-ohm', 'automate'\u2192'auto mate', 'somebody'\u2192'sumbudy', 'thrive'\u2192'thryve', 'materials'\u2192'mateerials' (ma-TEER-ee-uhls), 'families'\u2192'famlys' (FAM-leez), 'shovel'\u2192'shuvvel' (SHUH-vul), 're-search', 'e-volve' \u2014 all verified via eSpeak IPA) and requested pauses as sentence breaks; `vo` stays the human-readable line.",
   "scenes": [
     {
       "id": "cut_intro",
@@ -20,8 +20,8 @@
     {
       "id": "cut_build",
       "clip": "cut_build.webm",
-      "min": 5.0,
-      "max": 6.5,
+      "min": 4.0,
+      "max": 4.2,
       "vo": "Then you build \u2014 you automate \u2014 and thrive.",
       "say": "Then you build. You auto mate. And, thryve."
     },
@@ -44,8 +44,8 @@
     {
       "id": "cut_defend",
       "clip": "cut_defend.webm",
-      "min": 5.0,
-      "max": 6.5,
+      "min": 3.5,
+      "max": 3.5,
       "vo": "Out here, the wild is always watching.",
       "say": "Out here, the wild is always watching."
     },
@@ -55,7 +55,7 @@
       "min": 9.0,
       "max": 15.0,
       "vo": "Predators, disasters, rival factions. So you'll raise a garrison, research new skills, and evolve your rodents to handle whatever comes.",
-      "say": "Predators, disasters, rival factions. So you'll raise a garison, re-search new skills, and e-volve your rodents to handle whatever comes."
+      "say": "Predators, disasters, rival factions. So you'll raise a garrison, re-search new skills, and e-volve your rodents to handle whatever comes."
     },
     {
       "id": "cut_outro",
