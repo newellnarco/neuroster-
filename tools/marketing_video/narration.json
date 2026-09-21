@@ -1,5 +1,5 @@
 {
-  "comment": "Voiceover script for the marketing video, wording and pausing set by the project owner. Order defines scene order. `clip` names the recorded footage (from record.mjs; an externally produced .mp4 with the same scene name wins over a missing .webm), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the text actually sent to the TTS: pronunciation respellings ('Neuroster'\u2192'Nurrohster' = nur-OH-ster, 'garrison'\u2192'garrisun', 're-search', 'e-volve', 'colony'\u2192'col-un-ee' \u2014 all verified via eSpeak IPA) and requested pauses as sentence breaks; `vo` stays the human-readable line.",
+  "comment": "Voiceover script for the marketing video, wording and pausing set by the project owner. Order defines scene order. `clip` names the recorded footage (from record.mjs; an externally produced .mp4 with the same scene name wins over a missing .webm), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the text actually sent to the TTS: pronunciation respellings ('Neuroster'\u2192'Ner-oh-ster' = NER-OH-STER each part articulated, 'colony'\u2192'coluny' = KOL-uh-nee single natural stress, 'biome'\u2192'bi-ohm', 'garrison'\u2192'garrisun', 're-search', 'e-volve' \u2014 all verified via eSpeak IPA) and requested pauses as sentence breaks; `vo` stays the human-readable line.",
   "scenes": [
     {
       "id": "cut_intro",
@@ -7,7 +7,7 @@
       "min": 5.0,
       "max": 9.0,
       "vo": "This is Neuroster, a world-building colony game where all of your workers happen to be hamsters.",
-      "say": "This is Nurrohster, a world-building col-un-ee game where all of your workers, happen to be hamsters."
+      "say": "This is Ner-oh-ster, a world-building coluny game where all of your workers, happen to be hamsters."
     },
     {
       "id": "gameplay_found",
@@ -15,7 +15,7 @@
       "min": 10.0,
       "max": 16.0,
       "vo": "You start by building a colony in a living world. Pick a biome you like \u2014 and your first few hamsters get right to work, digging, and settling in.",
-      "say": "You start by building a col-un-ee in a living world. Pick a bi-ohm you like. And your first few hamsters get right to work, digging, and settling in."
+      "say": "You start by building a coluny in a living world. Pick a bi-ohm you like. And your first few hamsters get right to work, digging, and settling in."
     },
     {
       "id": "cut_build",
@@ -31,7 +31,7 @@
       "min": 12.0,
       "max": 20.0,
       "vo": "You'll mine materials and refine them \u2014 grow the settlement with farms, mills, depots and workshops. And once the toil is automated, the whole colony really comes alive.",
-      "say": "You'll mine materials and refine them. Grow the settlement with farms, mills, depots and workshops. And once the toil is automated, the whole col-un-ee really comes alive."
+      "say": "You'll mine materials and refine them. Grow the settlement with farms, mills, depots and workshops. And once the toil is automated, the whole coluny really comes alive."
     },
     {
       "id": "gameplay_life",
@@ -63,7 +63,7 @@
       "min": 8.0,
       "max": 9.5,
       "vo": "Neuroster. It's your colony \u2014 and your world. So grab a shovel, and start digging.",
-      "say": "Nurrohster. It's your col-un-ee. And your world. So grab a shovel, and start digging."
+      "say": "Ner-oh-ster. It's your coluny. And your world. So grab a shovel, and start digging."
     }
   ]
 }
