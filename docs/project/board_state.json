@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-09-21T20:49:31Z",
+  "updated": "2026-09-21T20:51:02Z",
   "items": [
     {
       "key": "econ:1",
@@ -2638,7 +2638,7 @@
       "type": "Docs",
       "area": "Docs",
       "priority": "P2",
-      "status": "In Progress",
+      "status": "Shipped",
       "pr": "83",
       "release": null,
       "detail": "",
@@ -2652,6 +2652,11 @@
           "at": "2026-09-21T20:49:31+00:00",
           "status": "In Progress",
           "note": "opened PR #83 (draft) — pipeline + website kit"
+        },
+        {
+          "at": "2026-09-21T20:51:02+00:00",
+          "status": "Shipped",
+          "note": "PR #83 squash-merged green (CI test ✓); trailer + website kit delivered"
         }
       ],
       "screenshots": [
@@ -2661,7 +2666,7 @@
           "caption": "Town overview carousel slide"
         }
       ],
-      "updated": "2026-09-21T20:49:31+00:00"
+      "updated": "2026-09-21T20:51:02+00:00"
     }
   ]
 }
