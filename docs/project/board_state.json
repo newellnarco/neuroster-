@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-07-02T04:15:32Z",
+  "updated": "2026-09-21T20:49:31Z",
   "items": [
     {
       "key": "econ:1",
@@ -2628,6 +2628,40 @@
       "timeline": [],
       "screenshots": [],
       "updated": null
+    },
+    {
+      "key": "marketing:trailer-and-website",
+      "issue": null,
+      "title": "Automated marketing trailer (VO + hero cut-scenes) & website write-up with carousel",
+      "arch": null,
+      "phase": null,
+      "type": "Docs",
+      "area": "Docs",
+      "priority": "P2",
+      "status": "In Progress",
+      "pr": "83",
+      "release": null,
+      "detail": "",
+      "timeline": [
+        {
+          "at": "2026-09-21T20:42:30+00:00",
+          "status": "In Progress",
+          "note": "capture/TTS/assembly pipeline in tools/marketing_video; write-up + carousel in docs/marketing"
+        },
+        {
+          "at": "2026-09-21T20:49:31+00:00",
+          "status": "In Progress",
+          "note": "opened PR #83 (draft) — pipeline + website kit"
+        }
+      ],
+      "screenshots": [
+        {
+          "at": "2026-09-21T20:42:30+00:00",
+          "path": "docs/marketing/carousel/03-town.png",
+          "caption": "Town overview carousel slide"
+        }
+      ],
+      "updated": "2026-09-21T20:49:31+00:00"
     }
   ]
 }

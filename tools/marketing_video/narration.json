@@ -1,0 +1,53 @@
+{
+  "comment": "Voiceover script for the marketing video. Order defines scene order. `clip` names the recorded footage (from record.mjs), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration.",
+  "scenes": [
+    {
+      "id": "cut_intro",
+      "clip": "cut_intro.webm",
+      "min": 5.0, "max": 8.0,
+      "vo": "This is Neuroster. A world-building colony game, where the workers... are hamsters."
+    },
+    {
+      "id": "gameplay_found",
+      "clip": "gameplay_found.webm",
+      "min": 10.0, "max": 16.0,
+      "vo": "Found your colony in a living world. Choose your biome, and your first hamsters get straight to work: digging, hauling, and settling in."
+    },
+    {
+      "id": "cut_build",
+      "clip": "cut_build.webm",
+      "min": 3.5, "max": 6.0,
+      "vo": "Build. Automate. Thrive."
+    },
+    {
+      "id": "gameplay_build",
+      "clip": "gameplay_build.webm",
+      "min": 12.0, "max": 20.0,
+      "vo": "Mine materials, refine them, and raise an ever-larger settlement. Farms, mills, storage depots, workshops. Automate the toil, and watch the whole colony come alive."
+    },
+    {
+      "id": "gameplay_life",
+      "clip": "gameplay_life.webm",
+      "min": 8.0, "max": 14.0,
+      "vo": "Every rodent has a name, a family, and a job to do. Keep them fed, watered, curious, and healthy."
+    },
+    {
+      "id": "cut_defend",
+      "clip": "cut_defend.webm",
+      "min": 3.5, "max": 6.0,
+      "vo": "But the wild is always watching."
+    },
+    {
+      "id": "gameplay_defend",
+      "clip": "gameplay_defend.webm",
+      "min": 9.0, "max": 15.0,
+      "vo": "Predators, disasters, rival factions. Raise a garrison, research new skills, and evolve your rodents to meet whatever comes."
+    },
+    {
+      "id": "cut_outro",
+      "clip": "cut_outro.webm",
+      "min": 6.0, "max": 9.0,
+      "vo": "Neuroster. Your colony. Your world. Start digging."
+    }
+  ]
+}
