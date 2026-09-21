@@ -47,9 +47,10 @@ for s in scenes:
     wav = os.path.join(VO_DIR, s["id"] + ".wav")
     if not os.path.exists(wav):
         # `say` is the pronunciation-respelled text (see narration.json);
-        # near-natural pace with short sentence gaps so it reads like speech.
+        # a touch slower than natural so every word lands, with real
+        # sentence gaps — deliberate, not synthetic.
         r = subprocess.run([sys.executable, "-m", "piper", "-m", MODEL,
-                            "--length-scale", "1.02", "--sentence-silence", "0.28",
+                            "--length-scale", "1.06", "--sentence-silence", "0.32",
                             "-f", wav],
                            input=s.get("say", s["vo"]), capture_output=True, text=True)
         if r.returncode != 0:
