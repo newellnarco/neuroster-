@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-09-21T20:42:30Z",
+  "updated": "2026-09-21T20:49:31Z",
   "items": [
     {
       "key": "econ:1",
@@ -2639,7 +2639,7 @@
       "area": "Docs",
       "priority": "P2",
       "status": "In Progress",
-      "pr": null,
+      "pr": "83",
       "release": null,
       "detail": "",
       "timeline": [
@@ -2647,6 +2647,11 @@
           "at": "2026-09-21T20:42:30+00:00",
           "status": "In Progress",
           "note": "capture/TTS/assembly pipeline in tools/marketing_video; write-up + carousel in docs/marketing"
+        },
+        {
+          "at": "2026-09-21T20:49:31+00:00",
+          "status": "In Progress",
+          "note": "opened PR #83 (draft) — pipeline + website kit"
         }
       ],
       "screenshots": [
@@ -2656,7 +2661,7 @@
           "caption": "Town overview carousel slide"
         }
       ],
-      "updated": "2026-09-21T20:42:30+00:00"
+      "updated": "2026-09-21T20:49:31+00:00"
     }
   ]
 }

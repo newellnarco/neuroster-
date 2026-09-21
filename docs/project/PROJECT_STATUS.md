@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-09-21T20:42:30Z · 104 items_
+_board_state.json updated: 2026-09-21T20:49:31Z · 104 items_
 
 ## Summary
 
@@ -25,7 +25,7 @@ _board_state.json updated: 2026-09-21T20:42:30Z · 104 items_
 
 | Status | Priority | Arch | Item | Issue | PR |
 |---|---|---|---|---|---|
-| In Progress | P2 | None | Automated marketing trailer (VO + hero cut-scenes) & website write-up with carousel | — | — |
+| In Progress | P2 | None | Automated marketing trailer (VO + hero cut-scenes) & website write-up with carousel | — | [#83](https://github.com/newellnarco/neuroster-/pull/83) |
 | Backlog | P3 | None | True isometric/dimetric camera + inverse picking | — | — |
 | Backlog | P3 | None | Hand-drawn pixel sprite sheets (replace procedural vectors) | — | — |
 | Backlog | P3 | RENDER | Full multi-level underground world view (descend/ascend, separate grid + render) | — | — |
