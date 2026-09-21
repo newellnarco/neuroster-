@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-09-21T21:41:47Z",
+  "updated": "2026-09-21T21:43:06Z",
   "items": [
     {
       "key": "econ:1",
@@ -2638,8 +2638,8 @@
       "type": "Docs",
       "area": "Docs",
       "priority": "P2",
-      "status": "In Progress",
-      "pr": "83",
+      "status": "Shipped",
+      "pr": "86",
       "release": null,
       "detail": "",
       "timeline": [
@@ -2667,6 +2667,11 @@
           "at": "2026-09-21T21:41:47+00:00",
           "status": "In Progress",
           "note": "v3: nur-OH-ster pronunciation, conversational script rewrite, ryan-high (young male) voice; cut-scene production storyboard added"
+        },
+        {
+          "at": "2026-09-21T21:43:06+00:00",
+          "status": "Shipped",
+          "note": "PR #86 squash-merged green — trailer v3 (natural-speech VO, ryan voice, nur-OH-ster) + cut-scene storyboard"
         }
       ],
       "screenshots": [
@@ -2676,7 +2681,7 @@
           "caption": "Town overview carousel slide"
         }
       ],
-      "updated": "2026-09-21T21:41:47+00:00"
+      "updated": "2026-09-21T21:43:06+00:00"
     }
   ]
 }
