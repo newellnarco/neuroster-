@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-09-21T21:35:58Z",
+  "updated": "2026-09-21T21:41:47Z",
   "items": [
     {
       "key": "econ:1",
@@ -2662,6 +2662,11 @@
           "at": "2026-09-21T21:35:58+00:00",
           "status": "In Progress",
           "note": "v2 revision: fixed VO enunciation (Neuroster respelling, lessac-high voice, slower read) + canvas diorama cut-scenes"
+        },
+        {
+          "at": "2026-09-21T21:41:47+00:00",
+          "status": "In Progress",
+          "note": "v3: nur-OH-ster pronunciation, conversational script rewrite, ryan-high (young male) voice; cut-scene production storyboard added"
         }
       ],
       "screenshots": [
@@ -2671,7 +2676,7 @@
           "caption": "Town overview carousel slide"
         }
       ],
-      "updated": "2026-09-21T21:35:58+00:00"
+      "updated": "2026-09-21T21:41:47+00:00"
     }
   ]
 }
