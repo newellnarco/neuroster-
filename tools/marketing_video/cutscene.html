@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- cutscene.html — animated hero title cards for the marketing video.
+     Opened by record.mjs with query params and screen-recorded:
+       ?title=Neuroster&sub=A+hamster+colony+world-builder&variant=intro
+     Variants tint the backdrop: intro (warm amber), build (leaf green),
+     defend (ember red), outro (night violet). Pure CSS animation, no deps. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Neuroster — cutscene</title>
+<style>
+  :root {
+    --bg1: #2a1d0e; --bg2: #0d0906; --glow: #f5a94233; --accent: #ffd27d;
+  }
+  body.variant-build  { --bg1: #14260f; --bg2: #060a05; --glow: #7ed95733; --accent: #b7f28e; }
+  body.variant-defend { --bg1: #2b0f0c; --bg2: #0a0404; --glow: #ff6b4d33; --accent: #ffb09b; }
+  body.variant-outro  { --bg1: #191233; --bg2: #060410; --glow: #9d8cff33; --accent: #cfc4ff; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(ellipse at 50% 42%, var(--bg1) 0%, var(--bg2) 78%);
+    font-family: Georgia, 'Times New Roman', serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* soft pulsing glow behind the title */
+  .halo {
+    position: absolute; left: 50%; top: 44%; width: 900px; height: 520px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse, var(--glow) 0%, transparent 65%);
+    animation: halo 5s ease-in-out infinite alternate;
+  }
+  @keyframes halo { from { opacity: .55; transform: translate(-50%,-50%) scale(.92); }
+                    to   { opacity: 1;   transform: translate(-50%,-50%) scale(1.08); } }
+  .card { position: relative; text-align: center; color: #f3e8d2; }
+  .emoji {
+    font-size: 96px; display: block; margin-bottom: 18px;
+    animation: drop .9s cubic-bezier(.2,1.6,.4,1) both;
+  }
+  @keyframes drop { from { opacity: 0; transform: translateY(-70px) scale(.5); }
+                    to   { opacity: 1; transform: translateY(0) scale(1); } }
+  h1 {
+    font-size: 92px; letter-spacing: 2px; font-weight: 700;
+    text-shadow: 0 4px 30px rgba(0,0,0,.7);
+    animation: rise 1.1s .25s cubic-bezier(.2,.9,.3,1) both;
+  }
+  h1 .accent { color: var(--accent); }
+  .sub {
+    margin-top: 20px; font-size: 34px; font-style: italic; opacity: .92;
+    color: var(--accent);
+    animation: rise 1.1s .55s cubic-bezier(.2,.9,.3,1) both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(36px); }
+                    to   { opacity: 1; transform: translateY(0); } }
+  .rule {
+    width: 0; height: 3px; margin: 26px auto 0; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: grow 1.2s .8s ease-out both;
+  }
+  @keyframes grow { to { width: 420px; } }
+  /* drifting particles: hamster & material emoji floating up like embers */
+  .p { position: absolute; bottom: -60px; font-size: 30px; opacity: 0;
+       animation: float linear infinite; filter: saturate(.8); }
+  @keyframes float {
+    0%   { opacity: 0; transform: translateY(0) rotate(0deg); }
+    12%  { opacity: .5; }
+    88%  { opacity: .5; }
+    100% { opacity: 0; transform: translateY(-880px) rotate(40deg); }
+  }
+  /* slow ken-burns on the whole card so nothing is ever static */
+  .card { animation: breathe 9s ease-in-out infinite alternate; }
+  @keyframes breathe { from { transform: scale(1); } to { transform: scale(1.045); } }
+</style>
+</head>
+<body>
+  <div class="halo"></div>
+  <div class="card">
+    <span class="emoji" id="emoji">🐹</span>
+    <h1 id="title"></h1>
+    <div class="rule"></div>
+    <div class="sub" id="sub"></div>
+  </div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const variant = q.get('variant') || 'intro';
+  document.body.classList.add('variant-' + variant);
+  document.getElementById('emoji').textContent = q.get('emoji') || '🐹';
+  const t = q.get('title') || 'Neuroster';
+  // Wrap the last word in an accent tint for a little typographic life.
+  const words = t.split(' ');
+  const last = words.pop();
+  document.getElementById('title').innerHTML =
+    (words.length ? words.map(w => w.replace(/</g,'&lt;')).join(' ') + ' ' : '') +
+    '<span class="accent">' + last.replace(/</g,'&lt;') + '</span>';
+  document.getElementById('sub').textContent = q.get('sub') || '';
+  // Particle field: seeded emoji drift, denser for the outro.
+  const EMO = { intro: ['🐹','🌾','🪵'], build: ['🏠','⚒️','📦','🌾'],
+                defend: ['🛡️','⚔️','🦉'], outro: ['🐹','✨','🌙'] }[variant] || ['🐹'];
+  for (let i = 0; i < 26; i++) {
+    const s = document.createElement('span');
+    s.className = 'p';
+    s.textContent = EMO[i % EMO.length];
+    s.style.left = (3 + (i * 37) % 94) + '%';
+    s.style.animationDuration = (7 + (i * 13) % 9) + 's';
+    s.style.animationDelay = ((i * 0.9) % 7 - 7) + 's';
+    s.style.fontSize = (20 + (i * 11) % 26) + 'px';
+    document.body.appendChild(s);
+  }
+</script>
+</body>
+</html>
