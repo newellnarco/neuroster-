@@ -36,8 +36,12 @@ const ctx = await browser.newContext({
 // before any page script runs so it never sits over the footage.
 await ctx.addInitScript(() => { try { localStorage.setItem('neuroster.seenHelp', '1'); } catch {} });
 
+// SCENES=cut_intro,cut_build … records only the named scenes (partial re-takes).
+const ONLY = (process.env.SCENES || '').split(',').filter(Boolean);
+
 /** Run one scene on a fresh page, then save its recording as <name>.webm. */
 async function scene(name, fn) {
+  if (ONLY.length && !ONLY.includes(name)) return;
   const page = await ctx.newPage();
   page.on('pageerror', e => console.error(`  [${name}] pageerror: ${e.message}`));
   try { await fn(page); }
@@ -113,10 +117,10 @@ await scene('gameplay_defend', async (page) => {
 // Hero cut-scenes: animated title cards from cutscene.html.
 const CUT = (p) => `http://localhost:${PORT}/tools/marketing_video/cutscene.html?${p}`;
 const cuts = [
-  ['cut_intro',  'title=Neuroster&sub=A+hamster+colony+world-builder&emoji=%F0%9F%90%B9&variant=intro',      9000],
-  ['cut_build',  'title=Build.+Automate.+Thrive.&sub=From+first+burrow+to+bustling+town&emoji=%F0%9F%8F%97%EF%B8%8F&variant=build', 7000],
-  ['cut_defend', 'title=The+wild+is+watching&sub=Defend+what+you+dig&emoji=%F0%9F%9B%A1%EF%B8%8F&variant=defend', 7000],
-  ['cut_outro',  'title=Neuroster&sub=Your+colony.+Your+world.+Start+digging.&emoji=%F0%9F%90%B9&variant=outro', 10000],
+  ['cut_intro',  'title=Neuroster&sub=A+hamster+colony+world-builder&variant=intro',      9000],
+  ['cut_build',  'title=Build.+Automate.+Thrive.&sub=From+first+burrow+to+bustling+town&variant=build', 7000],
+  ['cut_defend', 'title=The+wild+is+watching&sub=Defend+what+you+dig&variant=defend', 7000],
+  ['cut_outro',  'title=Neuroster&sub=Your+colony.+Your+world.+Start+digging.&variant=outro', 10000],
 ];
 for (const [name, params, ms] of cuts)
   await scene(name, async (page) => { await page.goto(CUT(params), { waitUntil: 'load' }); await sleep(ms); });
