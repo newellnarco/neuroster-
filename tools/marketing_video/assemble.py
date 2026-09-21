@@ -18,10 +18,10 @@ import json, math, os, subprocess, sys, wave
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(HERE, "build")
-FOOTAGE = os.path.join(BUILD, "footage")
+FOOTAGE = os.environ.get("FOOTAGE_DIR", os.path.join(BUILD, "footage"))
 VO_DIR = os.path.join(BUILD, "vo")
 TMP = os.path.join(BUILD, "clips")
-OUT = os.path.join(BUILD, "neuroster-trailer.mp4")
+OUT = os.environ.get("OUT_FILE", os.path.join(BUILD, "neuroster-trailer.mp4"))
 MODEL = os.environ.get("PIPER_MODEL", os.path.join(HERE, "voices", "en_US-ryan-high.onnx"))
 W, H, FPS = 1280, 720, 30
 FADE = 0.35          # per-scene video fade in/out, seconds
@@ -110,7 +110,11 @@ with open(concat_list, "w") as lst:
     for s in scenes:
         src = os.path.join(FOOTAGE, s["clip"])
         if not os.path.exists(src):
-            sys.exit(f"missing footage {src} — run record.mjs first")
+            # Externally produced takes (AI-generated, hand-edited) drop in as
+            # .mp4 under the same scene name and win over a missing .webm.
+            alt = os.path.splitext(src)[0] + ".mp4"
+            if os.path.exists(alt): src = alt
+            else: sys.exit(f"missing footage {src} — run record.mjs first")
         start = 0.3                        # skip the page-load flash
         avail = duration(src) - start
         pad = max(0.0, s["dur"] - avail)   # freeze last frame if footage is short
