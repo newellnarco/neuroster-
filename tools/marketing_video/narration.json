@@ -1,5 +1,5 @@
 {
-  "comment": "Voiceover script for the marketing video, wording and pausing set by the project owner. Order defines scene order. `clip` names the recorded footage (from record.mjs; an externally produced .mp4 with the same scene name wins over a missing .webm), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the text actually sent to the TTS: pronunciation respellings ('Neuroster'\u2192'Ner oh ster' = NER OH STER, three clear parts, 'colony'\u2192'coluny' = KOL-uh-nee single natural stress, 'biome'\u2192'bi-ohm', 'garrison'\u2192'gair-iss-un' (GAIR-ISS-UN), 'automate'\u2192'auto-mate', 'somebody'\u2192'sumbudy', 'watching'\u2192'watch-ing', 'materials'\u2192'mateerials' (ma-TEER-ee-uhls), 'families'\u2192'famlys' (FAM-leez), 'shovel'\u2192'shuvvel' (SHUH-vul), 're-search', 'e-volve' \u2014 all verified via eSpeak IPA) and requested pauses as sentence breaks; `vo` stays the human-readable line.",
+  "comment": "Voiceover script for the marketing video, wording and pausing set by the project owner. Order defines scene order. `clip` names the recorded footage (from record.mjs; an externally produced .mp4 with the same scene name wins over a missing .webm), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the text actually sent to the TTS: pronunciation respellings ('Neuroster'\u2192'Nerohster' = neh-ROH-ster, one flowing word, 'colony'\u2192'coluny' = KOL-uh-nee single natural stress, 'biome'\u2192'bi-ohm', 'garrison'\u2192'garison' (flowing GAR-ih-son), 'automate'\u2192'auto mate', 'somebody'\u2192'sumbudy', 'thrive'\u2192'thryve', 'materials'\u2192'mateerials' (ma-TEER-ee-uhls), 'families'\u2192'famlys' (FAM-leez), 'shovel'\u2192'shuvvel' (SHUH-vul), 're-search', 'e-volve' \u2014 all verified via eSpeak IPA) and requested pauses as sentence breaks; `vo` stays the human-readable line.",
   "scenes": [
     {
       "id": "cut_intro",
@@ -7,7 +7,7 @@
       "min": 5.0,
       "max": 9.0,
       "vo": "This is Neuroster, a world-building colony game where all of your workers happen to be hamsters.",
-      "say": "This is Ner oh ster, a world-building coluny game where all of your workers, happen to be hamsters."
+      "say": "This is Nerohster, a world-building coluny game where all of your workers, happen to be hamsters."
     },
     {
       "id": "gameplay_found",
@@ -23,7 +23,7 @@
       "min": 5.0,
       "max": 6.5,
       "vo": "Then you build \u2014 you automate \u2014 and thrive.",
-      "say": "Then you build. You auto-mate. And, thrive."
+      "say": "Then you build. You auto mate. And, thryve."
     },
     {
       "id": "gameplay_build",
@@ -47,7 +47,7 @@
       "min": 5.0,
       "max": 6.5,
       "vo": "Out here, the wild is always watching.",
-      "say": "Out here, the wild is always watch-ing."
+      "say": "Out here, the wild is always watching."
     },
     {
       "id": "gameplay_defend",
@@ -55,7 +55,7 @@
       "min": 9.0,
       "max": 15.0,
       "vo": "Predators, disasters, rival factions. So you'll raise a garrison, research new skills, and evolve your rodents to handle whatever comes.",
-      "say": "Predators, disasters, rival factions. So you'll raise a gair-iss-un, re-search new skills, and e-volve your rodents to handle whatever comes."
+      "say": "Predators, disasters, rival factions. So you'll raise a garison, re-search new skills, and e-volve your rodents to handle whatever comes."
     },
     {
       "id": "cut_outro",
@@ -63,7 +63,7 @@
       "min": 8.0,
       "max": 9.5,
       "vo": "Neuroster. It's your colony \u2014 and your world. So grab a shovel, and start digging.",
-      "say": "Ner oh ster. It's your coluny. And your world. So grab a shuvvel, and start digging."
+      "say": "Nerohster. It's your coluny. And your world. So grab a shuvvel, and start digging."
     }
   ]
 }
