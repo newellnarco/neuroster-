@@ -1,59 +1,61 @@
 {
-  "comment": "Voiceover script for the marketing video, written to flow like natural speech (connected sentences, contractions) rather than ad-copy fragments. Order defines scene order. `clip` names the recorded footage (from record.mjs), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the text actually sent to the TTS: pronunciation respellings ('Neuroster' phonemizes badly; 'Nurrohster' renders the intended nur-OH-ster) and dashes flattened to commas; `vo` stays the human-readable line.",
+  "comment": "Voiceover script for the marketing video, wording and pausing set by the project owner. Order defines scene order. `clip` names the recorded footage (from record.mjs; an externally produced .mp4 with the same scene name wins over a missing .webm), `min`/`max` bound the scene length in seconds; the assembler stretches each scene to fit its narration. Optional `say` is the text actually sent to the TTS: pronunciation respellings ('Neuroster'→'Nurrohster' = nur-OH-ster, 'garrison'→'garrisun', 're-search', 'e-volve' — all verified via eSpeak IPA) and requested pauses as sentence breaks; `vo` stays the human-readable line.",
   "scenes": [
     {
       "id": "cut_intro",
       "clip": "cut_intro.webm",
       "min": 5.0, "max": 9.0,
-      "vo": "This is Neuroster — a world-building colony game where all of your workers happen to be hamsters.",
+      "vo": "This is Neuroster, a world-building colony game where all of your workers happen to be hamsters.",
       "say": "This is Nurrohster, a world-building colony game where all of your workers, happen to be hamsters."
     },
     {
       "id": "gameplay_found",
       "clip": "gameplay_found.webm",
       "min": 10.0, "max": 16.0,
-      "vo": "You start by founding a colony in a living world. Pick a biome you like, and your first few hamsters get right to work — digging, hauling, and settling in.",
-      "say": "You start by founding a colony in a living world. Pick a biome you like, and your first few hamsters get right to work, digging, hauling, and settling in."
+      "vo": "You start by building a colony in a living world. Pick a biome you like — and your first few hamsters get right to work, digging, and settling in.",
+      "say": "You start by building a colony in a living world. Pick a biome you like. And your first few hamsters get right to work, digging, and settling in."
     },
     {
       "id": "cut_build",
       "clip": "cut_build.webm",
-      "min": 3.5, "max": 6.0,
-      "vo": "Then you build, you automate, and you thrive."
+      "min": 5.0, "max": 6.5,
+      "vo": "Then you build — you automate — and thrive.",
+      "say": "Then you build. You automate. And thrive."
     },
     {
       "id": "gameplay_build",
       "clip": "gameplay_build.webm",
       "min": 12.0, "max": 20.0,
-      "vo": "You'll mine materials and refine them, then grow the settlement with farms, mills, depots and workshops — and once the toil is automated, the whole colony really comes alive.",
-      "say": "You'll mine materials and refine them, then grow the settlement with farms, mills, depots and workshops. And once the toil is automated, the whole colony really comes alive."
+      "vo": "You'll mine materials and refine them — grow the settlement with farms, mills, depots and workshops. And once the toil is automated, the whole colony really comes alive.",
+      "say": "You'll mine materials and refine them. Grow the settlement with farms, mills, depots and workshops. And once the toil is automated, the whole colony really comes alive."
     },
     {
       "id": "gameplay_life",
       "clip": "gameplay_life.webm",
       "min": 8.0, "max": 14.0,
-      "vo": "And every rodent here is a somebody — they've got names, families, and jobs to do, and it's up to you to keep them fed, watered, curious and healthy.",
-      "say": "And every rodent here is a somebody. They've got names, families, and jobs to do, and it's up to you to keep them fed, watered, curious and healthy."
+      "vo": "Every rodent here is a somebody. They've got names, families, and jobs to do. It's up to you to keep them fed, watered, curious and healthy.",
+      "say": "Every rodent here is a somebody. They've got names, families, and jobs to do. It's up to you to keep them fed, watered, curious and healthy."
     },
     {
       "id": "cut_defend",
       "clip": "cut_defend.webm",
-      "min": 3.5, "max": 6.0,
-      "vo": "But out here, the wild is always watching."
+      "min": 5.0, "max": 6.5,
+      "vo": "Out here, the wild is always watching.",
+      "say": "Out here, the wild is always watching."
     },
     {
       "id": "gameplay_defend",
       "clip": "gameplay_defend.webm",
       "min": 9.0, "max": 15.0,
-      "vo": "Predators, disasters, rival factions — so you'll raise a garrison, research new skills, and evolve your rodents to handle whatever comes.",
-      "say": "Predators, disasters, rival factions. So you'll raise a garrison, research new skills, and evolve your rodents to handle whatever comes."
+      "vo": "Predators, disasters, rival factions. So you'll raise a garrison, research new skills, and evolve your rodents to handle whatever comes.",
+      "say": "Predators, disasters, rival factions. So you'll raise a garrisun, re-search new skills, and e-volve your rodents to handle whatever comes."
     },
     {
       "id": "cut_outro",
       "clip": "cut_outro.webm",
-      "min": 6.0, "max": 9.5,
-      "vo": "Neuroster. It's your colony, and your world — so grab a shovel, and start digging.",
-      "say": "Nurrohster. It's your colony, and your world. So grab a shovel, and start digging."
+      "min": 8.0, "max": 9.5,
+      "vo": "Neuroster. It's your colony — and your world. So grab a shovel, and start digging.",
+      "say": "Nurrohster. It's your colony. And your world. So grab a shovel, and start digging."
     }
   ]
 }
