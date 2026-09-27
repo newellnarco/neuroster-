@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://www.coderabbit.ai/integrations/schema.v2.json
+#
+# Standard CodeRabbit configuration (newellnarco repos). Tuned to stay out of the
+# Fair Usage "slow lane": CodeRabbit counts one review per PUSH (not per commit), a push
+# made while a review is still running supersedes it but is still charged, and sustained
+# activity over 24h/7d lowers the hourly refill rate. So: review the opening push, pause
+# early on busy branches, skip drafts/bots/WIP, and ask for a review explicitly when ready.
+# See docs/CODERABBIT.md; kit: templates/coderabbit/ in newellnarco/AlienInterface.
+language: en-US
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  sequence_diagrams: false
+  request_changes_workflow: false
+  path_filters:
+    - "!**/package-lock.json"
+    - "!**/node_modules/**"
+    - "!**/*.min.js"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!docs/project/board_state.json"
+    - "!docs/project/PROJECT_STATUS.md"
+    - "!docs/project/wall.html"
+    - "!docs/neuroster-systems-map.html"
+    - "!**/*.snap"
+  auto_review:
+    enabled: true
+    # Review the opening push; later pushes are reviewed only on request
+    # (`@coderabbitai review`), so rapid fix-push loops don't burn the allowance.
+    auto_incremental_review: false
+    # If incremental reviews are turned back on, pause after one reviewed commit.
+    auto_pause_after_reviewed_commits: 1
+    drafts: false
+    ignore_title_keywords:
+      - "WIP"
+      - "[skip review]"
+      - "[no review]"
+    ignore_usernames:
+      - "dependabot[bot]"
+      - "renovate[bot]"
+      - "github-actions[bot]"
+chat:
+  auto_reply: true
