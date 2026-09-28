@@ -28,6 +28,7 @@ The canonical kit lives in `newellnarco/AlienInterface` under `templates/coderab
    scripts/coderabbit-review.sh <pr> --full     # full re-review
    scripts/coderabbit-review.sh <pr> --status   # "@coderabbitai rate limit" (free), at most once an hour
    ```
-   Needs `gh` (authenticated) and `jq`. Tunables: `CR_MAX_RETRIES` (4), `CR_BASE_DELAY` (120 s), `CR_MAX_DELAY` (3600 s).
+   Needs `gh` (authenticated) and `jq`. Tunables: `CR_MAX_WAIT` (1200 s; `0` = no cap), `CR_MAX_RETRIES` (4), `CR_BASE_DELAY` (120 s), `CR_MAX_DELAY` (3600 s).
+   If CodeRabbit is rate limited, the script waits only when the limit clears within `CR_MAX_WAIT` (20 minutes, counting every rate-limit wait in the run). A longer limit, or a notice naming no time, exits 4 with nothing posted: not an error, proceed without a CodeRabbit review.
 3. Agents and automation (Claude Code, CI bots) must use the script or the same logic: check first,
    back off with jitter, at most one request per push, a retry cap, and never re-request on a timer.
