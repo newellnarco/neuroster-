@@ -22,6 +22,8 @@ Standing rules for every session (set by the project owner). These are not optio
   `python tools/compact_board_fragments.py`.
 
 ## Quality bar
+- Before you push, check the change against [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md), the failure registry.
+  A fix for a new class of bug adds its entry there in the same PR.
 - Every shipped item passes `npm test` (headless smoke) and, if it touches UI,
   `npm run verify:browser` (real Chromium, zero console errors). UI items get a screenshot.
 - Skip risky/architectural refactors flagged in `AUTO_BUILDER.md` — leave those for manual review.
