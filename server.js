@@ -2,7 +2,7 @@
 // Configurable host/IP and port via environment variables so you can serve it
 // on LAN or WAN from a specific address:
 //   HOST=0.0.0.0  PORT=8080  node server.js      (all interfaces — LAN/WAN)
-//   HOST=192.168.1.50 PORT=80 node server.js     (bind to a specific IP)
+//   HOST=<lan-ip> PORT=80 node server.js     (bind to a specific IP)
 // Aliases NEUROSTER_HOST / NEUROSTER_PORT are also honoured.
 import http from 'node:http';
 import fs from 'node:fs';

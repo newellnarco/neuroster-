@@ -35,7 +35,7 @@ machine. Its ceilings are the 4-core Atom CPU and 16 GB RAM.
 | Item | Value | Source |
 |---|---|---|
 | Model / DSM | **DS1517+**, **DSM 7.1.1** | `DECISIONS.md`, `README.md` |
-| LAN address | **`http://192.168.1.90:8080`** | `README.md` |
+| LAN address | **`http://<nas-ip>:8080`** | `README.md` |
 | Installed RAM | _unknown — fill in (2/8/16 GB)_ | — |
 | Drives / RAID | _unknown — fill in_ | — |
 
@@ -70,7 +70,7 @@ The NAS is the LAN host for this game. The deployment is deliberately **build-fr
   the share, and a **browser refresh** (or the in-game 🔄 Update button) serves the newest committed
   code (the server sends `Cache-Control: no-cache` and reads files fresh per request).
 - **Port 8080**, auto-restart on. Health check at `/healthz` → `ok`.
-- **Reachable at `http://192.168.1.90:8080`** (game) and `…/docs/project/wall.html` (project board).
+- **Reachable at `http://<nas-ip>:8080`** (game) and `…/docs/project/wall.html` (project board).
 
 **Why this shape:** zero-dependency Node static server + read-only bind mount = the NAS is a dumb,
 always-on file server for the app; all the "smarts" (git, CI) live upstream. Trade-off: **the PC
