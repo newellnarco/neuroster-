@@ -28,22 +28,82 @@ every arc/task through a status lifecycle and renders both a terminal page and a
   `docs/project/board_entries/` (insert or `{op:update}`) and the on-main job folds it in.
   See [`docs/project/README.md`](./docs/project/README.md).
 
-## 🏠 LAN deployment (current)
+## 🌐 A web-hosted game
 
-The colony runs on the home NAS — open it from any device on the network:
+Neuroster is played in a browser. The whole game is a folder of static files and a
+tiny zero-dependency Node server: host it anywhere, open the address, and play. Saves
+live in the browser. The in-game **🔄 Update** button, or a browser refresh, loads the
+newest served code.
 
-### **`http://<nas-ip>:8080`**
+## 📸 Screenshots
 
-📋 **Project wall on the LAN:** **`http://<nas-ip>:8080/docs/project/wall.html`** —
-the live board from any device on the network (same swimlanes as the localhost wall above).
+**The colony**
 
-It's served by a Docker container (`node:*-alpine` running `node /app/server.js`)
-on a Synology **DS1517+** (DSM 7.1.1, legacy Docker package — see the NAS section
-below for the exact, no-compose setup, and [`docs/HOMELAB.md`](./docs/HOMELAB.md)
-for the full hardware/software specs, current use & other things the NAS can do).
-The container bind-mounts the repo source
-read-only and serves it live, so a **browser refresh** — or the in-game **🔄 Update**
-button — shows the newest committed code after the source syncs.
+![Neuroster splash art: a hamster colony with burrows, a water wheel and rail carts](assets/splash.jpg)
+
+**A mountain colony and its deep mine**
+
+![A colony on mountain terrain with the build panel open](docs/screenshots/deep-mine.png)
+
+**Defense**
+
+![The Defense tab: guards, defensive works and threat readiness](docs/screenshots/defense-screen.png)
+
+**Neighbouring factions**
+
+![The Trade tab listing neighbouring rodent communities](docs/screenshots/faction-communities.png)
+
+**Storage and the grain silo**
+
+![A woodland colony with the storage buildings in the build panel](docs/screenshots/grain-silo.png)
+
+**Growth and maturation**
+
+![A colony with young rodents growing up](docs/screenshots/growth-maturation.png)
+
+**Map labels**
+
+![The map with resource and building labels turned on](docs/screenshots/map-labels.png)
+
+**Zoomed out**
+
+![The whole island at a wider zoom](docs/screenshots/map-zoom.png)
+
+**Selecting a group**
+
+![Several rodents selected with a drag box, and the group panel](docs/screenshots/multiselect.png)
+
+**The rabbits' warren**
+
+![A colony with a rabbit warren](docs/screenshots/rabbits-warren.png)
+
+**Hill terrain**
+
+![A map of hills and mountains](docs/screenshots/terrain-hills.png)
+
+**A raging river**
+
+![A map crossed by a river](docs/screenshots/terrain-raging-river.png)
+
+**Tree species**
+
+![An island planted with several tree species](docs/screenshots/tree-species-map.png)
+
+**A tsunami surge**
+
+![A tsunami flooding the map](docs/screenshots/tsunami-surge.png)
+
+**Undertow**
+
+![A beach colony with an undertow offshore](docs/screenshots/undertow.png)
+
+**Wild flora**
+
+![Wild plants growing across the map](docs/screenshots/wild-flora.png)
+
+**Difficulty and ecology settings**
+
+![The settings dialog: difficulty, predators and disasters, wild nature](docs/screenshots/ecology-settings.png)
 
 ## Play it (locally, for development)
 
@@ -67,7 +127,7 @@ via environment variables (`HOST`/`NEUROSTER_HOST`, `PORT`/`NEUROSTER_PORT`):
 # all interfaces (reachable from other devices on your LAN/WAN) on port 8080
 npm start
 # or pick a specific bind IP and port:
-HOST=<lan-ip> PORT=80 node server.js
+HOST=<server-ip> PORT=80 node server.js
 ```
 
 Then open `http://<server-ip>:<port>` from any device that can reach it.
@@ -79,7 +139,7 @@ There's a `/healthz` endpoint for load balancers/uptime checks.
 # build & run, exposed on all interfaces, port 8080
 docker compose up -d --build
 # or bind to a specific host IP / port via env:
-BIND_IP=<lan-ip> BIND_PORT=80 docker compose up -d --build
+BIND_IP=<server-ip> BIND_PORT=80 docker compose up -d --build
 ```
 
 Or with plain Docker:
@@ -88,11 +148,10 @@ docker build -t neuroster .
 docker run -d -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 --name neuroster neuroster
 ```
 
-#### Prebuilt image (GHCR) — for a NAS / server with no build step
+#### Prebuilt image (GHCR) — for a server with no build step
 
 CI can publish a **multi-arch** image (amd64 + arm64) to GitHub Container Registry so you
-can pull and run — no cloning or building on the box (ideal for a Synology Container
-Manager / Docker API setup). Publishing runs on a **version tag** (`git tag v0.1.0 && git
+can pull and run — no cloning or building on the server. Publishing runs on a **version tag** (`git tag v0.1.0 && git
 push --tags`) or a **manual run** of the *Publish Docker image* workflow. (To auto-publish
 on every push to `main`, set **Settings → Actions → General → Workflow permissions** to
 *Read and write*, then add `push: { branches: [main] }` back to `docker-publish.yml`.)
@@ -102,9 +161,8 @@ docker run -d -p 8080:8080 --restart unless-stopped \
   --name neuroster ghcr.io/newellnarco/neuroster-:latest
 ```
 
-On **Synology Container Manager**: *Registry* → add/search `ghcr.io/newellnarco/neuroster-`
-→ download `latest` → *Image* → run, map a host port to container port **8080**, enable
-auto-restart. Saves live in the browser, so the container is stateless (no volumes needed).
+Map a host port to container port **8080** and enable auto-restart.
+Saves live in the browser, so the container is stateless (no volumes needed).
 The package must be **public** in GitHub (or log in to `ghcr.io` with a token) to pull
 without auth.
 
@@ -116,73 +174,18 @@ matched to `main`, and `install-task.cmd` registers a Scheduled Task to run it e
 15 minutes. See [`scripts/windows/README.md`](scripts/windows/README.md). (Needs Git for
 Windows on `PATH` and credentials cached from your initial clone.)
 
-### Run on a Synology NAS from a shared Windows folder (live, no rebuilds)
+### Serve live from the source folder (no rebuilds)
 
-Pipeline: **GitHub → your PC** (auto-synced by the updater above) **→ NAS** (over the
-network) **→ any browser on your LAN**. The NAS serves the files straight from the shared
-folder using `docker-compose.nas.yml` (the official Node image — no build), so a new commit
-becomes live on the next browser refresh.
+`docker-compose.live.yml` runs the official Node image with the source folder mounted
+read-only, so a `git pull` on the source shows up on the next browser refresh. No build
+and no image to maintain:
 
-**1. Share the repo folder on Windows.**
-- Share the repo folder **directly** so the share *is* the project root. File Explorer →
-  right-click `C:\github\neuroster-` → **Properties → Sharing → Advanced Sharing** → tick
-  **Share this folder**, set the share name (e.g. `neuroster`) → **Permissions** → allow
-  **Read** for the account the NAS will use → OK. This gives a path like
-  **`\\OFFICE\neuroster`** (PC name = `hostname`).
-- Ensure the network profile is **Private** and *File and Printer Sharing* is on.
+```bash
+docker compose -f docker-compose.live.yml up -d
+```
 
-**2. Mount that share on the Synology.**
-- DSM → **Control Panel → Shared Folder → Create → Mount Remote Folder → SMB**.
-- Remote server = your PC's name/IP (e.g. `OFFICE`), shared folder = `neuroster`, with a
-  Windows account that can read it. In **File Station** the mounted folder should now show
-  `server.js`, `index.html`, `src/`, and `docker-compose.nas.yml` directly (it *is* the
-  repo root). *(Alternatively you can share the parent `C:\github` and point at the
-  `neuroster-` subfolder — same result.)*
-
-**3. Run it as a container.** Two paths depending on your DSM.
-
-> **Why not just `docker compose up`?** The legacy **Docker** package on older DSM
-> (≤ 7.1, e.g. the DS1517+ this runs on) has **no Compose support** — its *Container → Add →
-> File* imports a Synology *settings export*, not a `docker-compose.yml`. So on that box the
-> canonical path is the **hand-built single container (3a)**; the bundled `docker-compose.nas.yml`
-> is for **Container Manager (DSM 7.2+) only (3b)**. Both produce the same result — pick by your DSM.
-
-**3a. Legacy "Docker" package (DSM ≤ 7.1, e.g. DS1517+) — no compose support.**
-This is the **verified** setup for the current deployment. The package's
-*Container → Add → File* imports a settings export, **not** compose, so you build
-the container by hand (Neuroster is a single container):
-- **Registry** → search **`node`** (the official image) → **Download** → pick any
-  **`*-alpine`** tag (e.g. `lts-alpine`; the exact Node version doesn't matter).
-- **Image** → select it → **Launch** → name it `neuroster` → **Advanced Settings**:
-  - **Volume → Add Folder:** your mounted share → **Mount path** `/app`, **Read-Only**.
-  - **Port Settings:** Local `8080` → Container `8080` (change the *left* number if busy).
-  - **Environment → Command:** `node /app/server.js` *(essential — the image's default
-    just opens a REPL; the server reads files relative to its own location, so no
-    working-dir is needed).* Env vars are optional (defaults are `0.0.0.0:8080`).
-  - Enable **auto-restart**. Apply → run.
-
-**3b. Container Manager (DSM 7.2+) — compose works.**
-- **Project → Create → "Create docker-compose.yml" → paste** `docker-compose.nas.yml`
-  (pasting avoids the non-standard filename *and* CRLF issues). Set the Path to the
-  mounted share. Change the **left** port number to rebind. The file deliberately uses
-  a plain `8080:8080` (no `${VAR}` — Synology's validator rejects shell-style defaults),
-  and `.gitattributes` forces LF so the Windows checkout stays valid.
-
-**4. Open it on the network.**
-- From any device on your LAN: **`http://<NAS-IP>:8080`** (or whatever host port you set).
-- Health check: `http://<NAS-IP>:8080/healthz` → `ok`.
-
-**Updates** flow automatically: the Windows task pulls new commits → files change on the
-share → **refresh the browser** to see them (the server reads files fresh each request,
-with `Cache-Control: no-cache`). No rebuild, no restart.
-
-**Caveats.**
-- The NAS reads files over the network, so the **PC must be on** for the app to serve. For
-  an always-on server independent of the PC, use the GHCR prebuilt-image route above.
-- Bind-mounting a remote (SMB) folder into a container works on most DSM versions. If
-  Container Manager won't let you pick the mounted path as a volume, copy `neuroster-` into
-  a normal NAS shared folder instead (you then lose live-on-refresh and would re-sync or
-  rebuild manually).
+To serve on a different host port, change only the left number in its `ports` mapping.
+Health check: `http://<server-ip>:8080/healthz` → `ok`.
 
 ### Controls
 - **Build:** click a building in the Build panel, then **click the map** to place it (it reverts

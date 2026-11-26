@@ -1,0 +1,1 @@
+{ "op": "update", "key": "defer:synology-compose", "title": "Hosts without compose support need a hand-made container" }

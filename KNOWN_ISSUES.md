@@ -37,9 +37,9 @@ Seeded 2026-10-05 from the fixes already in the history.
 - **Prevention:** wait only when the limit clears within `CR_MAX_WAIT` (1200 s, 0 = no cap, counted
   across the run). Otherwise exit 4 with nothing posted, and the work proceeds without the review.
 
-### NR-OPS-001 - Synology Container Manager rejects the compose file
+### NR-OPS-001 - A compose validator rejects the compose file
 
-- **Seen:** #33. Container Manager's validator rejects shell-style `${VAR:-default}` interpolation
+- **Seen:** #33. Some container managers' validators reject shell-style `${VAR:-default}` interpolation
   ("the format ... is invalid"), and a CRLF checkout causes the same error.
-- **Prevention:** plain port mappings in `docker-compose.nas.yml`, a top-level `version`, and
+- **Prevention:** plain port mappings in `docker-compose.live.yml`, a top-level `version`, and
   `.gitattributes` forcing LF on yml, web and server files.

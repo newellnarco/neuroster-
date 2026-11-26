@@ -1,6 +1,6 @@
 name: Publish Docker image
 
-# Builds a multi-arch image (amd64 + arm64, so it runs on any Synology/NAS or
+# Builds a multi-arch image (amd64 + arm64, so it runs on any
 # server) and pushes it to GitHub Container Registry. Runs on version tags and
 # on manual dispatch (not every push to main), so it doesn't fail noisily before
 # the package/registry permissions are set up. To enable on every push to main:

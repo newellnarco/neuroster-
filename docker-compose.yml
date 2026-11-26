@@ -13,5 +13,5 @@ services:
     ports:
       # "HOST_IP:HOST_PORT:CONTAINER_PORT"
       # - Leave HOST_IP empty (default below) to expose on all interfaces (LAN/WAN).
-      # - Set a specific IP to bind to one interface, e.g. "<lan-ip>:8080:8080".
+      # - Set a specific IP to bind to one interface, e.g. "<server-ip>:8080:8080".
       - "${BIND_IP:-0.0.0.0}:${BIND_PORT:-8080}:8080"

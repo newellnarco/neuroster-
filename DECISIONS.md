@@ -60,16 +60,15 @@ the code.
   header keeps only Update/Help/Sound/Labels; autosave indicator; resource & virtue
   **label toggle**; click-to-pin tooltips; expandable alert bar with new-item blink.
 - **In-game 🔄 Update button** (autosave + reload to latest served code) + a version
-  poll that lights it up — so testers self-update without touching the NAS.
+  poll that lights it up — so testers self-update without touching the server.
 
 ## Deployment
-- **Target: Synology DS1517+, DSM 7.1.1** → only the legacy **Docker** package
-  (no Container Manager / no compose UI). So the canonical path is a **manually
-  created container** from `node:*-alpine`, command `node /app/server.js`, with the
-  source bind-mounted read-only at `/app` and port `8080`. `docker-compose.nas.yml`
-  is kept for Container-Manager-capable models (plain `8080:8080`, no `${VAR}`
-  interpolation — Synology's validator rejects it; `.gitattributes` forces LF).
-- **LAN URL: `http://<nas-ip>:8080`.** Source synced to the NAS from a Windows
-  git checkout via `scripts/windows/update-neuroster.vbs`; the server serves files
+- **Web-hosted.** The game is served by the zero-dependency Node server, either
+  directly or in a container from `node:*-alpine` running `node /app/server.js` with
+  the source mounted read-only at `/app` and port `8080`. `docker-compose.live.yml`
+  does the same with compose (plain `8080:8080`, no `${VAR}` interpolation, because
+  some compose validators reject it; `.gitattributes` forces LF).
+- **Live from source.** The source folder is kept in step with `main` by
+  `scripts/windows/update-neuroster.vbs`; the server serves files
   live with `Cache-Control: no-cache`, so a refresh (or the in-game Update button)
   shows the newest commit.

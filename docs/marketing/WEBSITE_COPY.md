@@ -63,9 +63,7 @@ persistent settlement you keep, tend, and grow across sessions.
 Neuroster is deliberately old-school in its engineering: **zero-dependency vanilla
 JavaScript** on a single HTML5 canvas — no engine, no build step, no framework. All
 art is generated procedurally at runtime. The whole game is a folder of static
-files: serve it from anything (it currently runs off a Synology NAS in a Docker
-container, playable from any device on the LAN) and it saves locally in the
-browser.
+files: serve it from anything and it saves locally in the browser.
 
 Development itself is part of the experiment: the project runs on a **git-native
 project wall** — a zero-API kanban board that lives in the repository, updated by
