@@ -35,6 +35,76 @@ tiny zero-dependency Node server: host it anywhere, open the address, and play. 
 live in the browser. The in-game **🔄 Update** button, or a browser refresh, loads the
 newest served code.
 
+## 📸 Screenshots
+
+**The colony**
+
+![Neuroster splash art: a hamster colony with burrows, a water wheel and rail carts](assets/splash.jpg)
+
+**A mountain colony and its deep mine**
+
+![A colony on mountain terrain with the build panel open](docs/screenshots/deep-mine.png)
+
+**Defense**
+
+![The Defense tab: guards, defensive works and threat readiness](docs/screenshots/defense-screen.png)
+
+**Neighbouring factions**
+
+![The Trade tab listing neighbouring rodent communities](docs/screenshots/faction-communities.png)
+
+**Storage and the grain silo**
+
+![A woodland colony with the storage buildings in the build panel](docs/screenshots/grain-silo.png)
+
+**Growth and maturation**
+
+![A colony with young rodents growing up](docs/screenshots/growth-maturation.png)
+
+**Map labels**
+
+![The map with resource and building labels turned on](docs/screenshots/map-labels.png)
+
+**Zoomed out**
+
+![The whole island at a wider zoom](docs/screenshots/map-zoom.png)
+
+**Selecting a group**
+
+![Several rodents selected with a drag box, and the group panel](docs/screenshots/multiselect.png)
+
+**The rabbits' warren**
+
+![A colony with a rabbit warren](docs/screenshots/rabbits-warren.png)
+
+**Hill terrain**
+
+![A map of hills and mountains](docs/screenshots/terrain-hills.png)
+
+**A raging river**
+
+![A map crossed by a river](docs/screenshots/terrain-raging-river.png)
+
+**Tree species**
+
+![An island planted with several tree species](docs/screenshots/tree-species-map.png)
+
+**A tsunami surge**
+
+![A tsunami flooding the map](docs/screenshots/tsunami-surge.png)
+
+**Undertow**
+
+![A beach colony with an undertow offshore](docs/screenshots/undertow.png)
+
+**Wild flora**
+
+![Wild plants growing across the map](docs/screenshots/wild-flora.png)
+
+**Difficulty and ecology settings**
+
+![The settings dialog: difficulty, predators and disasters, wild nature](docs/screenshots/ecology-settings.png)
+
 ## Play it (locally, for development)
 
 No build step, no dependencies — just serve the folder and open it in a browser:
