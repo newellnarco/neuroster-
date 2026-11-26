@@ -2,7 +2,7 @@
 
 > **Generated from `docs/project/board_state.json` by `tools/render_board.py`.** Read this file to answer *what's todo / done / in-CI / deferred* without hitting the GitHub API. It is rewritten on every push to `main` by the on-main compaction job (`compact_board_fragments` re-runs this renderer).
 
-_board_state.json updated: 2026-09-21T22:10:10Z · 104 items_
+_board_state.json updated: 2026-11-26T19:44:40Z · 104 items_
 
 ## Summary
 
@@ -87,7 +87,7 @@ _board_state.json updated: 2026-09-21T22:10:10Z · 104 items_
 | None | Beaver fishery — dams thin the downstream river, starving the beavers' fish | [#77](https://github.com/newellnarco/neuroster-/pull/77) | `a437308` |
 | None | Ocean earthquakes → tsunami: sea recedes, then surges inland destroying all it reaches | [#78](https://github.com/newellnarco/neuroster-/pull/78) | `9f70935` |
 | None | Coastal wading, salt water (undrinkable) & the undertow (click to rescue) | [#79](https://github.com/newellnarco/neuroster-/pull/79) | `5afed84` |
-| None | Home NAS/Docker environment doc (specs, current use, other uses) | — | `—` |
+| None | Hosting environment doc (removed: the game is documented as web-hosted) | — | `—` |
 | None | Automated marketing trailer (VO + hero cut-scenes) & website write-up with carousel | [#86](https://github.com/newellnarco/neuroster-/pull/86) | `—` |
 
 ### CREATURES (5)

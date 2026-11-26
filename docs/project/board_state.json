@@ -46,7 +46,7 @@
     "updated": null
   },
   "version": 1,
-  "updated": "2026-09-21T22:10:10Z",
+  "updated": "2026-11-26T19:44:40Z",
   "items": [
     {
       "key": "econ:1",
@@ -768,7 +768,7 @@
       "status": "Shipped",
       "pr": null,
       "release": null,
-      "detail": "Zero-dep configurable server (HOST/IP/PORT), Docker + compose, /healthz. Live on the NAS.",
+      "detail": "Zero-dep configurable server (HOST/IP/PORT), Docker + compose, /healthz. Web-hosted.",
       "timeline": [],
       "screenshots": [],
       "updated": "2026-06-25T00:00:00Z"
@@ -1686,7 +1686,7 @@
     {
       "key": "defer:synology-compose",
       "issue": null,
-      "title": "Legacy Synology Docker can't import compose",
+      "title": "Hosts without compose support need a hand-made container",
       "arch": null,
       "phase": null,
       "type": "Decision",
@@ -2615,7 +2615,7 @@
     {
       "key": "feat:homelab-doc",
       "issue": null,
-      "title": "Home NAS/Docker environment doc (specs, current use, other uses)",
+      "title": "Hosting environment doc (removed: the game is documented as web-hosted)",
       "arch": null,
       "phase": null,
       "type": "Docs",

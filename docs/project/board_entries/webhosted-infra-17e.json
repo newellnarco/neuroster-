@@ -1,1 +1,0 @@
-{ "op": "update", "key": "infra:17e", "detail": "Zero-dep configurable server (HOST/IP/PORT), Docker + compose, /healthz. Web-hosted." }
