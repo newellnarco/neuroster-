@@ -14,8 +14,7 @@ Pollution**, plant-trees + statues; a complete **graphics overhaul** (plush HiDP
 creatures + **64-colour palette & procedural textures** across terrain/objects/
 structures); a large **UX pass** (zoom + right-drag pan, resizable/collapsible
 panels, ☰ menu, expandable alert bar, label toggle, pin tooltips, in-game updater,
-favicon); **onboarding & pacing** tuning; and **Synology LAN deployment**
-(`http://<nas-ip>:8080`). See `DECISIONS.md`, `ARCHITECTURE.md`, `TODO.md`._
+favicon); **onboarding & pacing** tuning; and **web-hosted deployment**. See `DECISIONS.md`, `ARCHITECTURE.md`, `TODO.md`._
 
 ---
 
@@ -200,8 +199,7 @@ The game should **reward interaction without punishing absence-for-a-few-minutes
 ## Continue here (next session)
 
 **▶ Fresh-start brief (read this first):**
-- **Version `v0.3.9`**, all merged to `main`. Live on the NAS at
-  **`http://<nas-ip>:8080`** (refresh or the in-game 🔄 Update to get latest).
+- **Version `v0.3.9`**, all merged to `main`. Live on the web host (refresh or the in-game 🔄 Update to get latest).
 - **Docs:** `ARCHITECTURE.md` (code map + sim order), `LAYOUT.md` (UI),
   `DECISIONS.md` (rationale), `TODO.md` (backlog/next), `DESIGN.md` (vision).
 - **Workflow:** one branch → `npm run check` + `npm test` + Playwright (zero console

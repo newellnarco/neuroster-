@@ -39,7 +39,7 @@ Living backlog. Pull from freely; keep it honest about what's deferred and why.
 ## Known limitations
 - **Map size is fixed** (`GRID_W×GRID_H`). Selectable map size needs a world-dims
   refactor (currently module constants) — risky; deferred.
-- **Legacy Synology Docker** can't import compose; deploy is a hand-made container
+- **Hosts without compose support** get a hand-made container
   (see `README.md` / `DECISIONS.md`).
 - **No multiplayer / no server-side state.** Saves are per-browser `localStorage`
   (export/import to move between machines).
@@ -50,5 +50,5 @@ Doctrines, NPC fates, Power variety + Pollution, plant-trees + statues; full
 graphics overhaul (plush HiDPI creatures, 64-colour palette + procedural
 textures across terrain/objects/structures); large UX pass (zoom + pan,
 resizable/collapsible panels, ☰ menu, expandable alert bar, labels toggle,
-pin tooltips, in-game updater, favicon); onboarding & pacing tuning; Synology
+pin tooltips, in-game updater, favicon); onboarding & pacing tuning; web-hosted
 deployment.
