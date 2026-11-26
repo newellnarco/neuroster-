@@ -69,7 +69,7 @@ the code.
   source bind-mounted read-only at `/app` and port `8080`. `docker-compose.nas.yml`
   is kept for Container-Manager-capable models (plain `8080:8080`, no `${VAR}`
   interpolation — Synology's validator rejects it; `.gitattributes` forces LF).
-- **LAN URL: `http://192.168.1.90:8080`.** Source synced to the NAS from a Windows
+- **LAN URL: `http://<nas-ip>:8080`.** Source synced to the NAS from a Windows
   git checkout via `scripts/windows/update-neuroster.vbs`; the server serves files
   live with `Cache-Control: no-cache`, so a refresh (or the in-game Update button)
   shows the newest commit.

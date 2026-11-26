@@ -90,4 +90,4 @@ reattached on load; older saves are migrated forward. Autosave every
 - **Verify:** `npm run check` (`node --check` all sources) + `npm test`
   (`test/smoke.mjs`, a headless `stepEconomy` suite — 53 checks). CI runs both on
   every push/PR (`.github/workflows/ci.yml`).
-- **Deploy:** see `README.md` (Docker on NAS) — LAN: `http://192.168.1.90:8080`.
+- **Deploy:** see `README.md` (Docker on NAS) — LAN: `http://<nas-ip>:8080`.

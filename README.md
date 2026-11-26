@@ -32,9 +32,9 @@ every arc/task through a status lifecycle and renders both a terminal page and a
 
 The colony runs on the home NAS — open it from any device on the network:
 
-### **`http://192.168.1.90:8080`**
+### **`http://<nas-ip>:8080`**
 
-📋 **Project wall on the LAN:** **`http://192.168.1.90:8080/docs/project/wall.html`** —
+📋 **Project wall on the LAN:** **`http://<nas-ip>:8080/docs/project/wall.html`** —
 the live board from any device on the network (same swimlanes as the localhost wall above).
 
 It's served by a Docker container (`node:*-alpine` running `node /app/server.js`)
@@ -67,7 +67,7 @@ via environment variables (`HOST`/`NEUROSTER_HOST`, `PORT`/`NEUROSTER_PORT`):
 # all interfaces (reachable from other devices on your LAN/WAN) on port 8080
 npm start
 # or pick a specific bind IP and port:
-HOST=192.168.1.50 PORT=80 node server.js
+HOST=<lan-ip> PORT=80 node server.js
 ```
 
 Then open `http://<server-ip>:<port>` from any device that can reach it.
@@ -79,7 +79,7 @@ There's a `/healthz` endpoint for load balancers/uptime checks.
 # build & run, exposed on all interfaces, port 8080
 docker compose up -d --build
 # or bind to a specific host IP / port via env:
-BIND_IP=192.168.1.50 BIND_PORT=80 docker compose up -d --build
+BIND_IP=<lan-ip> BIND_PORT=80 docker compose up -d --build
 ```
 
 Or with plain Docker:
